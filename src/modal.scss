@@ -1,0 +1,102 @@
+.ZUnoRazberryModal
+{
+	display: flex;
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0,0,0,0.4);
+	align-items: center;
+	justify-content: center;
+	user-select: none;
+}
+
+.ZUnoRazberryModalContent
+{
+	display: flex;
+	background-color: #fefefe;
+	padding: 1rem;
+	border: 1px solid #888;
+	min-width: 50%;
+	min-height: 4rem;
+	flex-direction: column;
+}
+
+.ZUnoRazberryModalContentSectionButton
+{
+	display: flex;
+	position: relative;
+	justify-content: space-between;
+	width: 100%;
+	height: min-content;
+}
+
+.ZUnoRazberryModalContentSectionControlerInfo,
+.ZUnoRazberryModalContentSectionLog
+{
+	display: flex;
+	position: relative;
+	justify-content: space-between;
+	flex-direction: column;
+}
+
+$margin_section_log_item: 0.2rem;
+
+.ZUnoRazberryModalContentSectionControlerInfo > h3,
+.ZUnoRazberryModalContentSectionLog > h3
+{
+	display: flex;
+	position: relative;
+	justify-content: center;
+	width: 100%;
+	margin: $margin_section_log_item
+}
+
+.ZUnoRazberryModalContentSectionLog_section_txt
+{
+	display: flex;
+	position: relative;
+	flex-direction: column;
+	min-height: 5rem;
+	max-height: 5rem;
+	overflow: auto;
+	width: 100%;
+	margin: $margin_section_log_item;
+	cursor: text;
+	border-width: 0.1rem;
+	border-style: solid;
+	user-select: text;
+}
+
+.ZUnoRazberryModalContentSectionLog_section_txt > *
+{
+	white-space: nowrap;
+}
+
+.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td
+{
+	border-top: 0.1rem solid #9fd8ef;
+	padding: 0.25rem;
+}
+
+
+.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(1)
+{
+	width: 10rem;
+}
+
+.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(2)
+{
+	text-align: left;
+	user-select: text;
+	max-width: 100%;
+}
+
+.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(3)
+{
+	text-align: right;
+	max-width: 100%;
+}
