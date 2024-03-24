@@ -3,9 +3,9 @@ import {html_modal} from "./modal.js";
 import {sleep} from "./utilities";
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion} from "./controller_sapi";
 
-export {ZUnoRazberryClass};
+export {ControllerUiClass};
 
-class ZUnoRazberryClass {
+class ControllerUiClass {
 	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string			= "Sorry, this feature is supported only on Chrome, Edge and Opera";
 	private readonly MESSAGE_PORT_NOT_SELECT:string				= "No port selected";
 	private readonly MESSAGE_PORT_USE:string					= "Check yours, maybe another application is using it";

@@ -28,7 +28,7 @@ module.exports = {
   output: {
     filename: 'controller_ui.js',
     libraryTarget: 'umd',
-    library: 'ZUnoRazberry',
+    library: 'ControllerUiLib',
     path: path.resolve(__dirname, 'dist')
   }
 };
