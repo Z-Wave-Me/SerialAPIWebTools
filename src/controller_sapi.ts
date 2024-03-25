@@ -152,6 +152,8 @@ class ControllerSapiClass {
 	}
 
 	public async setRegion(region:string): Promise<ControllerSapiClassStatus> {
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
 		if (Object.hasOwn(this.region_string_to_number, region) == false)
 			return (ControllerSapiClassStatus.INVALID_ARG);
 		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [this.region_string_to_number[region]]);
@@ -161,6 +163,9 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
 		if (rerion_get.data[0x0] == 0x0)
 			return (ControllerSapiClassStatus.NOT_SET);
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], false);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as any));
 		return (ControllerSapiClassStatus.OK);
 	}
 

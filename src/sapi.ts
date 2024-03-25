@@ -431,7 +431,7 @@ class SapiClass {
 			if (rbuff[0] == this.ACK)
 				break ;
 			if (rbuff[0] == this.CAN) {
-				await this._recvIncomingRequest(1000);
+				await this._recvIncomingRequest(2000);
 				retries -= 1;
 				if (retries > 0)
 					continue ;
@@ -444,7 +444,7 @@ class SapiClass {
 			out.status = SapiClassStatus.NO_ACK;
 			return (out);
 		}
-		const result:SapiClassRet = await this._recvIncomingRequest(1000);
+		const result:SapiClassRet = await this._recvIncomingRequest(2000);
 		return (result);
 	}
 
@@ -531,6 +531,8 @@ class SapiClass {
 		const res:SapiClassRet = await this._send_cmd(cmd, args, have_callback, retries);
 		if (res.status != SapiClassStatus.OK)
 			return (res);
+		if (cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET)
+			cmd = SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED;
 		if (res.cmd != cmd) {
 			res.status = SapiClassStatus.WRONG_CMD;
 			return (res);
