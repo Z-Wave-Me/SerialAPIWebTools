@@ -5,7 +5,7 @@ import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSeri
 import {costruct_int, calcSigmaCRC16} from "./utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
-export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion};
+export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense};
 
 enum ControllerSapiClassStatus
 {
@@ -44,6 +44,12 @@ interface ControllerSapiClassRegion
 	region_array:string[];
 }
 
+interface ControllerSapiClassLicenseFlag
+{
+	name:string;
+	title:string;
+}
+
 interface ControllerSapiClassLicense
 {
 	status:ControllerSapiClassStatus;
@@ -51,6 +57,7 @@ interface ControllerSapiClassLicense
 	vendor_id:number
 	max_nodes:number;
 	count_support:number;
+	flags:Array<ControllerSapiClassLicenseFlag>;
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -108,6 +115,21 @@ class ControllerSapiClass {
 	private readonly RAZ7_FLAGS_SIZE															= 0x08;
 	private readonly RAZ7_COUNT_SUPPORT_OFFSET													= this.RAZ7_FLAG_OFFSET + this.RAZ7_FLAGS_SIZE
 
+	private readonly license_flags: {[key:number]: ControllerSapiClassLicenseFlag}				=
+	{
+		0x00: {name:"Controller Static API", title: "Enables static cotroller mode. User can switch Razberry to \"staic\" mode instead of default \"bridge\""},
+		0x01: {name:"Allow max RF power", title: "If set user can increase power amplifier up to 24dBm. Without that flag the user is limited by 7dBm"},
+		0x02: {name:"Backup/Restore", title: "Enables backup/restore operations"},
+		0x03: {name:"Battery save on sleeping", title: "If controller doesn't respond to WakeUp Notification, razberry responds itself with WakUp No more information. This prevents device battery discharge"},
+		0x04: {name:"Advanced network diagnostics", title: "Enables backward RSSI dump and other extendended ZME features"},
+		0x05: {name:"Z-Wave Long Range", title: "Enables Z-Wave Long Range support"},
+		0x06: {name:"Fast communications", title: "Enables UART baudrate setting command"},
+		0x07: {name:"Change vendor ID", title: "Maps subvendor to vendor field in controller information"},
+		0x08: {name:"Promiscuous mode (Zniffer)", title: "Enables promisc functionality. Controller dumps all the packages in its network"},
+		0x0A: {name:"RF jamming detection", title: "Enables jamming detection notifications"},
+		0x0B: {name:"Zniffer in PTI mode", title: "Enables Packet Trace Interface. Device dumps all the packets it sends and receives. This uses external UART interface and doesn't consume time of the main core"},
+		0x0C: {name:"Zniffer and Advanced Radio Tool", title: "Razberry works as direct transmitter"},
+	};
 	private readonly region_array:string[]														=
 	[
 		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
@@ -127,6 +149,7 @@ class ControllerSapiClass {
 
 	private seqNo:number																		= 0x0;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
+	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[]};
 
 	private _set_seq(): number {
 		const seq:number = this.seqNo;
@@ -175,17 +198,17 @@ class ControllerSapiClass {
 		return (out);
 	}
 
-	private async _get_capabilities(): Promise<ControllerSapiClassCapabilities> {
-		const out:ControllerSapiClassCapabilities = {status:ControllerSapiClassStatus.OK, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
+	private async _get_capabilities(out:ControllerSapiClassCapabilities): Promise<void> {
 		const capabilities_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, []);
 		if (capabilities_info.status != SapiClassStatus.OK) {
 			out.status = (capabilities_info.status as any);
-			return (out);
+			return ;
 		}
 		if (capabilities_info.data.length <= 0x8) {
 			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
-			return (out);
+			return ;
 		}
+		out.status = ControllerSapiClassStatus.OK;
 		out.ApiVersion = capabilities_info.data[0x0];
 		out.ApiRevision = capabilities_info.data[0x1];
 		out.VendorID = capabilities_info.data[0x2] << 0x8 | capabilities_info.data[0x3];
@@ -194,7 +217,6 @@ class ControllerSapiClass {
 			out.VendorIDName = controller_vendor_ids[out.VendorID].Name;
 			out.VendorIDWebpage = controller_vendor_ids[out.VendorID].Webpage;
 		}
-		return (out);
 	}
 
 	private async _readNVM(addr:number, size:number): Promise<SapiClassRet> {
@@ -327,29 +349,43 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
-	private _license_decode(raw_license:Array<number>): ControllerSapiClassLicense {
-		const get_license_info:ControllerSapiClassLicense = {status:ControllerSapiClassStatus.OK, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0};
+	private _license_decode(license_info:ControllerSapiClassLicense, raw_license:Array<number>): void {
+		let byte_i:number, bit_i:number;
+
 		if (raw_license.length < 32)
-			return (get_license_info);
+			return ;
 		raw_license = raw_license.slice(0, 32);
 		const crc16:number = raw_license[raw_license.length - 0x2] |(raw_license[raw_license.length - 0x1] << 0x8);
 		if (calcSigmaCRC16(this.RAZ7_LICENSE_CRC, raw_license, 0x0, raw_license.length - 0x2) != crc16)
-			return (get_license_info);
-		get_license_info.vallid = true;
-		get_license_info.vendor_id = (raw_license[0x0] << 0x8) | raw_license[0x1];
-		get_license_info.max_nodes = raw_license[0x2];
-		get_license_info.max_nodes = raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
-		get_license_info.count_support = (raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET+1] << 8) + raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET]
-		return (get_license_info);
+			return ;
+		license_info.vallid = true;
+		license_info.vendor_id = (raw_license[0x0] << 0x8) | raw_license[0x1];
+		license_info.max_nodes = raw_license[0x2];
+		license_info.max_nodes = raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
+		license_info.count_support = (raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET+1] << 8) + raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
+		byte_i = 0x0;
+		while (byte_i < this.RAZ7_FLAGS_SIZE) {
+			bit_i = 0x0;
+			while (bit_i < 0x8) {
+				if ((raw_license[this.RAZ7_FLAG_OFFSET + byte_i] & (0x1 << bit_i)) != 0x0) {
+					if (Object.hasOwn(this.license_flags, byte_i * 0x8 + bit_i) == true) {
+						license_info.flags.push(this.license_flags[byte_i * 0x8 + bit_i]);
+					}
+				}
+				bit_i++;
+			}
+			byte_i++;
+		}
+		return ;
 	}
 
-	private async _license_get(): Promise<ControllerSapiClassStatus> {
+	private async _license_get(license_info:ControllerSapiClassLicense): Promise<ControllerSapiClassLicense> {
 		const out:ControllerOutData = {data:[]};
-		const status:ControllerSapiClassStatus = await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
-		if (status != ControllerSapiClassStatus.OK)
-			return (status);
-		this._license_decode(out.data);
-		return (ControllerSapiClassStatus.OK);
+		license_info.status =  await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
+		if (license_info.status != ControllerSapiClassStatus.OK)
+			return (license_info);
+		this._license_decode(license_info, out.data);
+		return (license_info);
 	}
 
 	public async getBoardInfo(): Promise<ControllerSapiClassBoardInfo> {
@@ -399,15 +435,28 @@ class ControllerSapiClass {
 		return (out);
 	}
 
+	public getLicense(): ControllerSapiClassLicense {
+		return (this.license);
+	}
+
 	public getCapabilities(): ControllerSapiClassCapabilities {
 		return (this.capabilities);
 	}
 
-	public async connect(): Promise<boolean> {
-		this.capabilities = await this._get_capabilities();
+	public isRazberry7(): boolean {
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
-		await this._license_get();
+		if (this.capabilities.VendorID == 0x0115 || this.capabilities.VendorID == 0x0147)
+			return (true);
+		return (false);
+	}
+
+	public async connect(): Promise<boolean> {
+		await this._get_capabilities(this.capabilities);
+		if (this.capabilities.status != ControllerSapiClassStatus.OK)
+			return (false);
+		if (this.isRazberry7() == true)
+			await this._license_get(this.license);
 		return (true);
 	}
 
@@ -429,6 +478,7 @@ class ControllerSapiClass {
 
 	public async close(): Promise<boolean> {
 		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
+		this.license.status = ControllerSapiClassStatus.NOT_INIT;
 		return (this.sapi.close());
 	}
 }

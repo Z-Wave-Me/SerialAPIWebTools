@@ -12,6 +12,7 @@ class ControllerUiClass {
 	private readonly MESSAGE_CONNECT:string						= "Connect controller";
 	private readonly MESSAGE_READ_CAPABILITIES:string			= "Read capabilities the controller";
 	private readonly MESSAGE_READ_REGION:string					= "Read region the controller";
+	private readonly MESSAGE_LICENSE_REGION:string				= "Read license the controller";
 	private readonly MESSAGE_SET_REGION:string					= "Set region the controller";
 	private readonly MESSAGE_PLEASE_WAIT:string					= "Please wait until the previous operation is completed.";
 
@@ -207,6 +208,15 @@ class ControllerUiClass {
 		return (false);
 	}
 
+	private _start_display(find:string) {
+		const id_controller_info:HTMLElement|null = this.el_modal.querySelector(find);
+		if (id_controller_info == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		id_controller_info.style.display = "";
+	}
+
 	private _get_capabilities(): boolean {
 		this._log_info_start(this.MESSAGE_READ_CAPABILITIES);
 		const capabilities_info:ControllerSapiClassCapabilities = this.razberry.getCapabilities();
@@ -225,7 +235,7 @@ class ControllerUiClass {
 	}
 
 	private async _get_region(): Promise<boolean> {
-		let i:number, el_str:string, el_region:HTMLElement, list_region_button:HTMLCollectionOf<Element>;
+		let i:number, el_str:string, el_region:HTMLElement;
 
 		this._log_info_start(this.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
@@ -271,13 +281,24 @@ class ControllerUiClass {
 			display = true;
 		if (display == false)
 			return ;
-		const find:string = '[data-id_controller_info]';
-		const id_controller_info:HTMLElement|null = this.el_modal.querySelector(find);
-		if (id_controller_info == null) {
-			this._log_error_not_find_el(find);
+		this._start_display('[data-id_controller_info]');
+	}
+
+	private _get_license(): boolean {
+		this._log_info_start(this.MESSAGE_LICENSE_REGION);
+		this._log_info_done(this.MESSAGE_LICENSE_REGION);
+		return (true);
+	}
+
+	private _start_license_info(): void {
+		let display:boolean;
+
+		display = false;
+		if (this._get_license() == true)
+			display = true;
+		if (display == false)
 			return ;
-		}
-		id_controller_info.style.display = "";
+		this._start_display('[data-id_license_info]');
 	}
 
 	private async _start(): Promise<void> {
@@ -288,6 +309,8 @@ class ControllerUiClass {
 		if (await this._connect() == false)
 			return ;
 		await this._start_controller_info();
+		if (this.razberry.isRazberry7() == true)
+			this._start_license_info();
 	}
 
 	constructor(el:HTMLElement) {
