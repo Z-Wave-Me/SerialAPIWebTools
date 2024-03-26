@@ -1,44 +1,48 @@
 import {html_modal} from "./modal.js";
 
 import {sleep} from "./utilities";
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense} from "./controller_sapi";
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo} from "./controller_sapi";
 
 export {ControllerUiClass};
 
 class ControllerUiClass {
-	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string			= "Sorry, this feature is supported only on Chrome, Edge and Opera";
-	private readonly MESSAGE_PORT_NOT_SELECT:string				= "No port selected";
-	private readonly MESSAGE_PORT_USE:string					= "Check yours, maybe another application is using it";
-	private readonly MESSAGE_CONNECT:string						= "Connect controller";
-	private readonly MESSAGE_READ_CAPABILITIES:string			= "Read capabilities the controller";
-	private readonly MESSAGE_READ_REGION:string					= "Read region the controller";
-	private readonly MESSAGE_LICENSE_REGION:string				= "Read license the controller";
-	private readonly MESSAGE_SET_REGION:string					= "Set region the controller";
-	private readonly MESSAGE_PLEASE_WAIT:string					= "Please wait until the previous operation is completed.";
+	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string				= "Sorry, this feature is supported only on Chrome, Edge and Opera";
+	private readonly MESSAGE_PORT_NOT_SELECT:string					= "No port selected";
+	private readonly MESSAGE_PORT_USE:string						= "Check yours, maybe another application is using it";
+	private readonly MESSAGE_CONNECT:string							= "Connect controller";
+	private readonly MESSAGE_READ_CAPABILITIES:string				= "Read capabilities the controller";
+	private readonly MESSAGE_READ_REGION:string						= "Read region the controller";
+	private readonly MESSAGE_LICENSE_REGION:string					= "Read license the controller";
+	private readonly MESSAGE_LICENSE_BOARD_INFO:string				= "Read board info the controller";
+	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
+	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
 
-	private readonly TABLE_NAME_SERIAL_API_VERSION:string		= "Serial API Version:";
-	private readonly TABLE_NAME_VENDOR:string					= "Vendor:";
-	private readonly TABLE_NAME_VENDOR_ID:string				= "Vendor id:";
-	private readonly TABLE_NAME_REGION:string					= "Region:";
-	private readonly TABLE_NAME_REGION_SELECT_TITLE:string		= "Select region";
-	private readonly TABLE_NAME_REGION_BUTTON:string			= "Apple";
-	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string		= "Apple select region";
-	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string		= "Subvendor:";
-	private readonly TABLE_NAME_LICENSE_MAX_NODE:string			= "Nodes limit:";
-	private readonly TABLE_NAME_LICENSE_SUPPORT:string			= "Support:";
-	private readonly TABLE_NAME_LICENSE_YES:string				= '<input disabled="disabled" checked type="checkbox">';
-	private readonly TABLE_NAME_LICENSE_NO:string				= '<input disabled="disabled" type="checkbox">';
+	private readonly TABLE_NAME_SERIAL_API_VERSION:string			= "Serial API Version:";
+	private readonly TABLE_NAME_VENDOR:string						= "Vendor:";
+	private readonly TABLE_NAME_VENDOR_ID:string					= "Vendor id:";
+	private readonly TABLE_NAME_REGION:string						= "Region:";
+	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
+	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
+	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
+	private readonly TABLE_NAME_LICENSE_UUID:string					= "Uuid:";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS:string			= "More options:";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string	= "https://z-wave.me/hardware-capabilities/?uuid=";
+	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string			= "Subvendor:";
+	private readonly TABLE_NAME_LICENSE_MAX_NODE:string				= "Nodes limit:";
+	private readonly TABLE_NAME_LICENSE_SUPPORT:string				= "Support:";
+	private readonly TABLE_NAME_LICENSE_YES:string					= '<input disabled="disabled" checked type="checkbox">';
+	private readonly TABLE_NAME_LICENSE_NO:string					= '<input disabled="disabled" type="checkbox">';
 
-	private readonly BAUDRATE									= [115200, 230400, 460800, 921600];
-	private readonly dtr_timeout:number							= 250;
+	private readonly BAUDRATE										= [115200, 230400, 460800, 921600];
+	private readonly dtr_timeout:number								= 250;
 
 	private readonly el_modal:HTMLElement;
 	private readonly el_modal_section_log_txt:HTMLElement;
 
 
-	private region_current:string								= "";
-	private region_new:string									= "";
-	private razberry:ControllerSapiClass						= new ControllerSapiClass();
+	private region_current:string									= "";
+	private region_new:string										= "";
+	private razberry:ControllerSapiClass							= new ControllerSapiClass();
 
 	private _log(txt:string): void {
 		this.el_modal_section_log_txt.innerHTML += txt;
@@ -317,10 +321,39 @@ class ControllerUiClass {
 		return (true);
 	}
 
+	private _array_to_string_hex(data:Array<number>):string {
+		let str_hex:string, i:number;
+
+		str_hex = "";
+		i = 0x0;
+		while (i < data.length) {
+			str_hex = str_hex + data[i].toString(0x10);
+			i++;
+		}
+		return (str_hex);
+	}
+
+	private _get_board_info(): boolean {
+		this._log_info_start(this.MESSAGE_LICENSE_BOARD_INFO);
+		const board_info:ControllerSapiClassBoardInfo = this.razberry.getBoardInfo();
+		if (board_info.status != ControllerSapiClassStatus.OK) {
+			this._log_error_faled_code(this.MESSAGE_LICENSE_BOARD_INFO, board_info.status);
+			return (false);
+		}
+		const uuid_str_hex:string = this._array_to_string_hex(board_info.chip_uuid);
+		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_UUID, uuid_str_hex);
+		const more_options_link:string = '<a target="_blank" href="'+ this.TABLE_NAME_LICENSE_MORE_OPTIONS_LINK + uuid_str_hex +'">'+ 'link' +'</a>';
+		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MORE_OPTIONS, more_options_link);
+		this._log_info_done(this.MESSAGE_LICENSE_BOARD_INFO);
+		return (true);
+	}
+
 	private _start_license_info(): void {
 		let display:boolean;
 
 		display = false;
+		if (this._get_board_info() == true)
+			display = true;
 		if (this._get_license() == true)
 			display = true;
 		if (display == false)

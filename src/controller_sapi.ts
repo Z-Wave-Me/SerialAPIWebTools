@@ -5,7 +5,7 @@ import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSeri
 import {costruct_int, calcSigmaCRC16} from "./utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
-export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense};
+export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo};
 
 enum ControllerSapiClassStatus
 {
@@ -61,20 +61,15 @@ interface ControllerSapiClassLicense
 	flags:{[key:number]: ControllerSapiClassLicenseFlag};
 }
 
-// ------------------------------------------------------------------------------------------------------
-interface ControllerOutData
+interface ControllerSapiClassBoardInfo
 {
-	data:Array<number>;
-}
-
-interface ControllerSapiClassBoardInfoMain
-{
+	status:ControllerSapiClassStatus;
 	core_version:number;
 	build_seq:number;
 	build_ts:number;
 	hw_revision:number;
 	sdk_version:number;
-	chip_uuid:number;
+	chip_uuid:Array<number>;
 	sn_raw:Array<number>;
 	bootloader_version:number;
 	bootloader_crc32:number;
@@ -82,10 +77,11 @@ interface ControllerSapiClassBoardInfoMain
 	lock_status_name:string;
 }
 
-interface ControllerSapiClassBoardInfo
+
+// ------------------------------------------------------------------------------------------------------
+interface ControllerOutData
 {
-	status:ControllerSapiClassStatus;
-	main?:ControllerSapiClassBoardInfoMain;
+	data:Array<number>;
 }
 
 interface ControllerSapiClassSerialApiSetup
@@ -151,6 +147,7 @@ class ControllerSapiClass {
 	private seqNo:number																		= 0x0;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
 	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[]};
+	private board_info:ControllerSapiClassBoardInfo												= {status:ControllerSapiClassStatus.NOT_INIT, core_version:0x0, build_seq:0x0, build_ts:0x0, hw_revision:0x0, sdk_version:0x0, chip_uuid:[], sn_raw:[], bootloader_version:0x0, bootloader_crc32:0x0,lock_status:0x0, lock_status_name:""};
 
 	private _set_seq(): number {
 		const seq:number = this.seqNo;
@@ -388,19 +385,22 @@ class ControllerSapiClass {
 		return (license_info);
 	}
 
-	public async getBoardInfo(): Promise<ControllerSapiClassBoardInfo> {
+	private async _get_board_info(out:ControllerSapiClassBoardInfo): Promise<void> {
 		let lock_status_name:string;
 
-		const out:ControllerSapiClassBoardInfo = {status:ControllerSapiClassStatus.OK};
-		const board_info:SapiClassRet =  await this._readNVM(0xFFFF00, 0x31);
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_NVM_EXT_READ_LONG_BUFFER) == false) {
+			out.status = ControllerSapiClassStatus.UNSUPPORT_CMD;
+			return ;
+		}
+		const board_info:SapiClassRet = await this._readNVM(0xFFFF00, 0x31);
 		if (board_info.status != SapiClassStatus.OK) {
 			out.status = (board_info.status as any);
-			return (out);
+			return ;
 		}
 		const data:Array<number> = board_info.data;
 		if (data.length < 27) {
 			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
-			return (out);
+			return ;
 		}
 		switch (data[51]) {
 			case ControllerSapiClassLockStatus.UNLOCKED:
@@ -419,20 +419,23 @@ class ControllerSapiClass {
 				lock_status_name = "UNKNOWN";
 				break ;
 		}
-		out.main = {
-			core_version:costruct_int(data.slice(3, 3 + 2),2, false),
-			build_seq: costruct_int(data.slice(5, 5 +4), 4, false),
-			build_ts: costruct_int(data.slice(9, 9 + 4), 4, false),
-			hw_revision: costruct_int(data.slice(13, 13 + 2), 2, false),
-			sdk_version:  costruct_int(data.slice(15, 15 + 4), 4, false),
-			chip_uuid: costruct_int(data.slice(19, 19 + 8), 8, false),
-			sn_raw:data.slice(27,43),
-			bootloader_version: costruct_int(data.slice(43, 47), 4, false),
-			bootloader_crc32: costruct_int(data.slice(47, 51), 4, false),
-			lock_status: data[51],
-			lock_status_name: lock_status_name,
-		};
-		return (out);
+		console.log(data);
+		out.status = ControllerSapiClassStatus.OK;
+		out.core_version = costruct_int(data.slice(0, 0 + 2),2, false);
+		out.build_seq = costruct_int(data.slice(2, 2 +4), 4, false);
+		out.build_ts = costruct_int(data.slice(6, 6 + 4), 4, false);
+		out.hw_revision = costruct_int(data.slice(10, 10 + 2), 2, false);
+		out.sdk_version = costruct_int(data.slice(12, 12 + 4), 4, false);
+		out.chip_uuid = data.slice(16, 16 + 8);
+		out.sn_raw = data.slice(24,40);
+		out.bootloader_version = costruct_int(data.slice(40, 44), 4, false);
+		out.bootloader_crc32 = costruct_int(data.slice(44, 48), 4, false);
+		out.lock_status = data[48];
+		out.lock_status_name = lock_status_name;
+	}
+
+	public getBoardInfo(): ControllerSapiClassBoardInfo {
+		return (this.board_info);
 	}
 
 	public getLicense(): ControllerSapiClassLicense {
@@ -455,8 +458,10 @@ class ControllerSapiClass {
 		await this._get_capabilities(this.capabilities);
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
-		if (this.isRazberry7() == true)
+		if (this.isRazberry7() == true) {
 			await this._license_get(this.license);
+			await this._get_board_info(this.board_info);
+		}
 		return (true);
 	}
 
@@ -479,6 +484,7 @@ class ControllerSapiClass {
 	public async close(): Promise<boolean> {
 		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
 		this.license.status = ControllerSapiClassStatus.NOT_INIT;
+		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
 		return (this.sapi.close());
 	}
 }
