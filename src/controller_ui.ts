@@ -1,7 +1,7 @@
 import {html_modal} from "./modal.js";
 
 import {sleep} from "./utilities";
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion} from "./controller_sapi";
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense} from "./controller_sapi";
 
 export {ControllerUiClass};
 
@@ -23,6 +23,11 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_REGION_SELECT_TITLE:string		= "Select region";
 	private readonly TABLE_NAME_REGION_BUTTON:string			= "Apple";
 	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string		= "Apple select region";
+	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string		= "Subvendor:";
+	private readonly TABLE_NAME_LICENSE_MAX_NODE:string			= "Nodes limit:";
+	private readonly TABLE_NAME_LICENSE_SUPPORT:string			= "Support:";
+	private readonly TABLE_NAME_LICENSE_YES:string				= '<input disabled="disabled" checked type="checkbox">';
+	private readonly TABLE_NAME_LICENSE_NO:string				= '<input disabled="disabled" type="checkbox">';
 
 	private readonly BAUDRATE									= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number							= 250;
@@ -160,30 +165,33 @@ class ControllerUiClass {
 		});
 	}
 
-	private _create_table_element(name:string, value:string, action:string = ""): HTMLElement {
+	private _create_table_element(find:string, name:string, value:string, action:string, title:string): HTMLElement {
 		const el_tr: HTMLElement = document.createElement("tr");
 		const el_td_1: HTMLElement = document.createElement("td");
 		const el_td_2: HTMLElement = document.createElement("td");
 		const el_td_3: HTMLElement = document.createElement("td");
+		el_td_1.title = title;
 		el_td_1.innerHTML = name;
 		el_td_2.innerHTML = value;
 		el_td_3.innerHTML = action;
 		el_tr.appendChild(el_td_1);
 		el_tr.appendChild(el_td_2);
 		el_tr.appendChild(el_td_3);
-		return (el_tr);
-	}
-
-	private _create_table_element_controler_info(name:string, value:string, action:string = ""): HTMLElement {
-		const el_tr: HTMLElement = this._create_table_element(name, value, action);
-		const find:string = '[data-id_controller_info] tbody';
-		const controler_info_tbody:HTMLElement|null = this.el_modal.querySelector(find);
-		if (controler_info_tbody == null) {
+		const tbody:HTMLElement|null = this.el_modal.querySelector(find);
+		if (tbody == null) {
 			this._log_error_not_find_el(find);
 			return (el_tr);
 		}
-		controler_info_tbody.appendChild(el_tr);
+		tbody.appendChild(el_tr);
 		return (el_tr);
+	}
+
+	private _create_table_element_controler_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
+		return (this._create_table_element('[data-id_controller_info] tbody', name, value, action, title));
+	}
+
+	private _create_table_element_license_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
+		return (this._create_table_element('[data-id_license_info] tbody', name, value, action, title));
 	}
 
 	private async _connect(): Promise<boolean> {
@@ -285,7 +293,26 @@ class ControllerUiClass {
 	}
 
 	private _get_license(): boolean {
+		let key:string, flag_status:string;
+
 		this._log_info_start(this.MESSAGE_LICENSE_REGION);
+		const license:ControllerSapiClassLicense = this.razberry.getLicense();
+		if (license.status != ControllerSapiClassStatus.OK) {
+			this._log_error_faled_code(this.MESSAGE_LICENSE_REGION, license.status);
+			return (false);
+		}
+		if (license.vallid == true) {
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUBVENDOR_ID, String(license.vendor_id));
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MAX_NODE, String(license.max_nodes));
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUPPORT, String(license.count_support));
+			for (key in license.flags) {
+				if (license.flags[key].active == true)
+					flag_status = this.TABLE_NAME_LICENSE_YES;
+				else
+					flag_status = this.TABLE_NAME_LICENSE_NO;
+				this._create_table_element_license_info(license.flags[key].name + ":", flag_status, "", license.flags[key].title);
+			}
+		}
 		this._log_info_done(this.MESSAGE_LICENSE_REGION);
 		return (true);
 	}

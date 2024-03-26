@@ -48,6 +48,7 @@ interface ControllerSapiClassLicenseFlag
 {
 	name:string;
 	title:string;
+	active:boolean;
 }
 
 interface ControllerSapiClassLicense
@@ -57,7 +58,7 @@ interface ControllerSapiClassLicense
 	vendor_id:number
 	max_nodes:number;
 	count_support:number;
-	flags:Array<ControllerSapiClassLicenseFlag>;
+	flags:{[key:number]: ControllerSapiClassLicenseFlag};
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -117,18 +118,18 @@ class ControllerSapiClass {
 
 	private readonly license_flags: {[key:number]: ControllerSapiClassLicenseFlag}				=
 	{
-		0x00: {name:"Controller Static API", title: "Enables static cotroller mode. User can switch Razberry to \"staic\" mode instead of default \"bridge\""},
-		0x01: {name:"Allow max RF power", title: "If set user can increase power amplifier up to 24dBm. Without that flag the user is limited by 7dBm"},
-		0x02: {name:"Backup/Restore", title: "Enables backup/restore operations"},
-		0x03: {name:"Battery save on sleeping", title: "If controller doesn't respond to WakeUp Notification, razberry responds itself with WakUp No more information. This prevents device battery discharge"},
-		0x04: {name:"Advanced network diagnostics", title: "Enables backward RSSI dump and other extendended ZME features"},
-		0x05: {name:"Z-Wave Long Range", title: "Enables Z-Wave Long Range support"},
-		0x06: {name:"Fast communications", title: "Enables UART baudrate setting command"},
-		0x07: {name:"Change vendor ID", title: "Maps subvendor to vendor field in controller information"},
-		0x08: {name:"Promiscuous mode (Zniffer)", title: "Enables promisc functionality. Controller dumps all the packages in its network"},
-		0x0A: {name:"RF jamming detection", title: "Enables jamming detection notifications"},
-		0x0B: {name:"Zniffer in PTI mode", title: "Enables Packet Trace Interface. Device dumps all the packets it sends and receives. This uses external UART interface and doesn't consume time of the main core"},
-		0x0C: {name:"Zniffer and Advanced Radio Tool", title: "Razberry works as direct transmitter"},
+		0x00: {name:"Controller Static API", title: "Enables static cotroller mode. User can switch Razberry to \"staic\" mode instead of default \"bridge\"", active:false},
+		0x01: {name:"Allow max RF power", title: "If set user can increase power amplifier up to 24dBm. Without that flag the user is limited by 7dBm", active:false},
+		0x02: {name:"Backup/Restore", title: "Enables backup/restore operations", active:false},
+		0x03: {name:"Battery save on sleeping", title: "If controller doesn't respond to WakeUp Notification, razberry responds itself with WakUp No more information. This prevents device battery discharge", active:false},
+		0x04: {name:"Advanced network diagnostics", title: "Enables backward RSSI dump and other extendended ZME features", active:false},
+		0x05: {name:"Z-Wave Long Range", title: "Enables Z-Wave Long Range support", active:false},
+		0x06: {name:"Fast communications", title: "Enables UART baudrate setting command", active:false},
+		0x07: {name:"Change vendor ID", title: "Maps subvendor to vendor field in controller information", active:false},
+		0x08: {name:"Promiscuous mode (Zniffer)", title: "Enables promisc functionality. Controller dumps all the packages in its network", active:false},
+		0x0A: {name:"RF jamming detection", title: "Enables jamming detection notifications", active:false},
+		0x0B: {name:"Zniffer in PTI mode", title: "Enables Packet Trace Interface. Device dumps all the packets it sends and receives. This uses external UART interface and doesn't consume time of the main core", active:false},
+		0x0C: {name:"Zniffer and Advanced Radio Tool", title: "Razberry works as direct transmitter", active:false},
 	};
 	private readonly region_array:string[]														=
 	[
@@ -361,16 +362,14 @@ class ControllerSapiClass {
 		license_info.vallid = true;
 		license_info.vendor_id = (raw_license[0x0] << 0x8) | raw_license[0x1];
 		license_info.max_nodes = raw_license[0x2];
-		license_info.max_nodes = raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
 		license_info.count_support = (raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET+1] << 8) + raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
 		byte_i = 0x0;
 		while (byte_i < this.RAZ7_FLAGS_SIZE) {
 			bit_i = 0x0;
 			while (bit_i < 0x8) {
 				if ((raw_license[this.RAZ7_FLAG_OFFSET + byte_i] & (0x1 << bit_i)) != 0x0) {
-					if (Object.hasOwn(this.license_flags, byte_i * 0x8 + bit_i) == true) {
-						license_info.flags.push(this.license_flags[byte_i * 0x8 + bit_i]);
-					}
+					if (Object.hasOwn(license_info.flags, byte_i * 0x8 + bit_i) == true)
+						license_info.flags[byte_i * 0x8 + bit_i].active = true;
 				}
 				bit_i++;
 			}
@@ -381,6 +380,7 @@ class ControllerSapiClass {
 
 	private async _license_get(license_info:ControllerSapiClassLicense): Promise<ControllerSapiClassLicense> {
 		const out:ControllerOutData = {data:[]};
+		license_info.flags = this.license_flags;
 		license_info.status =  await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
 		if (license_info.status != ControllerSapiClassStatus.OK)
 			return (license_info);
