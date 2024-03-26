@@ -9,6 +9,7 @@ class ControllerUiClass {
 	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string			= "Sorry, this feature is supported only on Chrome, Edge and Opera";
 	private readonly MESSAGE_PORT_NOT_SELECT:string				= "No port selected";
 	private readonly MESSAGE_PORT_USE:string					= "Check yours, maybe another application is using it";
+	private readonly MESSAGE_CONNECT:string						= "Connect controller";
 	private readonly MESSAGE_READ_CAPABILITIES:string			= "Read capabilities the controller";
 	private readonly MESSAGE_READ_REGION:string					= "Read region the controller";
 	private readonly MESSAGE_SET_REGION:string					= "Set region the controller";
@@ -171,41 +172,47 @@ class ControllerUiClass {
 		return (el_tr);
 	}
 
-	private async _open_port(): Promise<ControllerSapiClassCapabilities|undefined> {
+	private async _connect(): Promise<boolean> {
 		let i:number;
 
-		this._log_info_start(this.MESSAGE_READ_CAPABILITIES);
+		this._log_info_start(this.MESSAGE_CONNECT);
 		i = 0x0;
 		while (i < this.BAUDRATE.length) {
 			if (await this.razberry.open(this.BAUDRATE[i]) == false) {
 				this._log_error(this.MESSAGE_PORT_USE);
-				return (undefined);
+				return (false);
 			}
-			const capabilities_info:ControllerSapiClassCapabilities = await this.razberry.getCapabilities();
-			if (capabilities_info.status == ControllerSapiClassStatus.OK) {
+			if (await this.razberry.connect() == true) {
 				this.baudRate = this.BAUDRATE[i];
-				this._log_info_done(this.MESSAGE_READ_CAPABILITIES);
-				return (capabilities_info);
+				this._log_info_done(this.MESSAGE_CONNECT);
+				return (true);
 			}
 			await this.razberry.close();
 			await sleep(this.dtr_timeout);// The time for the capacitor on the DTR line to recharge
 			i++;
 		}
-		this._log_error_faled(this.MESSAGE_READ_CAPABILITIES);
-		return (undefined);
+		this._log_error_faled(this.MESSAGE_CONNECT);
+		return (false);
 	}
 
-	private async _get_capabilities(capabilities_info:ControllerSapiClassCapabilities): Promise<void> {
+	private _get_capabilities(): boolean {
+		this._log_info_start(this.MESSAGE_READ_CAPABILITIES);
+		const capabilities_info:ControllerSapiClassCapabilities = this.razberry.getCapabilities();
+		if (capabilities_info.status != ControllerSapiClassStatus.OK) {
+			this._log_error_faled_code(this.MESSAGE_READ_CAPABILITIES, capabilities_info.status);
+			return (false);
+		}
 		this._create_table_element(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision);
 		if (capabilities_info.VendorIDWebpage == undefined)
 			this._create_table_element(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName);
 		else
 			this._create_table_element(this.TABLE_NAME_VENDOR, '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>');
 		this._create_table_element(this.TABLE_NAME_VENDOR_ID, String(capabilities_info.VendorID));
-		this.el_modal_controler_info.style.display = "";
+		this._log_info_done(this.MESSAGE_READ_CAPABILITIES);
+		return (true);
 	}
 
-	private async _get_region(): Promise<void> {
+	private async _get_region(): Promise<boolean> {
 		let i:number, el_str:string, el_region:HTMLElement, list_region_button:HTMLCollectionOf<Element>;
 
 		this._log_info_start(this.MESSAGE_READ_REGION);
@@ -232,6 +239,7 @@ class ControllerUiClass {
 				this._html_event(el_region, "click");
 				list_region_button = el_region.getElementsByTagName("button");
 				this.el_region_button = list_region_button[0x0] as HTMLElement;
+				return (true);
 				break ;
 			case ControllerSapiClassStatus.UNSUPPORT_CMD:
 				this._log_error_unsupport(this.MESSAGE_READ_REGION);
@@ -240,18 +248,26 @@ class ControllerUiClass {
 				this._log_error_faled_code(this.MESSAGE_READ_REGION, region_info.status);
 				break ;
 		}
+		return (false);
 	}
 
 	private async _start(): Promise<void> {
+		let display:boolean;
+
 		if (this.razberry.supported() == false)
 			return (this._log_error(this.MESSAGE_NOT_SUPPORT_BROWSER));
 		if (await this.razberry.request() == false)
 			return (this._log_error(this.MESSAGE_PORT_NOT_SELECT));
-		const capabilities_info:ControllerSapiClassCapabilities|undefined = await this._open_port();
-		if (capabilities_info == undefined)
+		if (await this._connect() == false)
 			return ;
-		await this._get_capabilities(capabilities_info);
-		await this._get_region();
+		display = false;
+		if (this._get_capabilities() == true)
+			display = true;
+		if (await this._get_region() == true)
+			display = true;
+		if (display == false)
+			return ;
+		this.el_modal_controler_info.style.display = "";
 	}
 
 	constructor(el:HTMLElement) {

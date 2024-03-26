@@ -22,6 +22,7 @@ enum ControllerSapiClassStatus
 	WRONG_CRC,
 	WRONG_LENGTH_SEQ,
 	WRONG_LENGTH_CALLBACK,
+	NOT_INIT,
 }
 
 interface ControllerSapiClassCapabilities
@@ -113,6 +114,7 @@ class ControllerSapiClass {
 	private readonly raz_key:Array<number>														= [0x86, 0x78, 0x02, 0x09, 0x8D, 0x89, 0x4D, 0x41, 0x8F, 0x3F, 0xD2, 0x04, 0x2E, 0xEC, 0xF5, 0xC4, 0x05, 0x8C, 0xB9, 0x36, 0xA9, 0xCC, 0x4B, 0x87, 0x91, 0x39, 0x36, 0xB7, 0x43, 0x18, 0x37, 0x42];
 
 	private seqNo:number																		= 0x0;
+	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
 	private support_cmd_mask:Array<number>														= [];
 	private vendor_id:number																	= 0x0;
 
@@ -161,6 +163,30 @@ class ControllerSapiClass {
 		return (out);
 	}
 
+	private async _get_capabilities(): Promise<ControllerSapiClassCapabilities> {
+		const out:ControllerSapiClassCapabilities = {status:ControllerSapiClassStatus.OK, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
+		const capabilities_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, []);
+		if (capabilities_info.status != SapiClassStatus.OK) {
+			out.status = (capabilities_info.status as any);
+			return (out);
+		}
+		if (capabilities_info.data.length <= 0x8) {
+			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
+			return (out);
+		}
+		out.ApiVersion = capabilities_info.data[0x0];
+		out.ApiRevision = capabilities_info.data[0x1];
+		out.VendorID = capabilities_info.data[0x2] << 0x8 | capabilities_info.data[0x3];
+		out.cmd_mask = capabilities_info.data.slice(0x8, capabilities_info.data.length);
+		this.support_cmd_mask = out.cmd_mask;
+		this.vendor_id = out.VendorID;
+		if (Object.hasOwn(controller_vendor_ids, out.VendorID) == true) {
+			out.VendorIDName = controller_vendor_ids[out.VendorID].Name;
+			out.VendorIDWebpage = controller_vendor_ids[out.VendorID].Webpage;
+		}
+		return (out);
+	}
+
 	private async _readNVM(addr:number, size:number): Promise<SapiClassRet> {
 		return (await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_READ_LONG_BUFFER, [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (size >> 8) & 0xFF, size & 0xFF]));
 	}
@@ -200,30 +226,6 @@ class ControllerSapiClass {
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as any));
 		return (ControllerSapiClassStatus.OK);
-	}
-
-	public async getCapabilities(): Promise<ControllerSapiClassCapabilities> {
-		const out:ControllerSapiClassCapabilities = {status:ControllerSapiClassStatus.OK, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
-		const capabilities_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, []);
-		if (capabilities_info.status != SapiClassStatus.OK) {
-			out.status = (capabilities_info.status as any);
-			return (out);
-		}
-		if (capabilities_info.data.length <= 0x8) {
-			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
-			return (out);
-		}
-		out.ApiVersion = capabilities_info.data[0x0];
-		out.ApiRevision = capabilities_info.data[0x1];
-		out.VendorID = capabilities_info.data[0x2] << 0x8 | capabilities_info.data[0x3];
-		out.cmd_mask = capabilities_info.data.slice(0x8, capabilities_info.data.length);
-		this.support_cmd_mask = out.cmd_mask;
-		this.vendor_id = out.VendorID;
-		if (Object.hasOwn(controller_vendor_ids, out.VendorID) == true) {
-			out.VendorIDName = controller_vendor_ids[out.VendorID].Name;
-			out.VendorIDWebpage = controller_vendor_ids[out.VendorID].Webpage;
-		}
-		return (out);
 	}
 
 	private async _license_send(out:ControllerOutData, data:Array<number>): Promise<ControllerSapiClassStatus> {
@@ -370,6 +372,17 @@ class ControllerSapiClass {
 		return (out);
 	}
 
+	public getCapabilities(): ControllerSapiClassCapabilities {
+		return (this.capabilities);
+	}
+
+	public async connect(): Promise<boolean> {
+		this.capabilities = await this._get_capabilities();
+		if (this.capabilities.status != ControllerSapiClassStatus.OK)
+			return (false);
+		return (true);
+	}
+
 	public busy(): boolean {
 		return (this.sapi.busy());
 	}
@@ -387,6 +400,7 @@ class ControllerSapiClass {
 	}
 
 	public async close(): Promise<boolean> {
+		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
 		this.support_cmd_mask = [];
 		this.vendor_id = 0x0;
 		return (this.sapi.close());
