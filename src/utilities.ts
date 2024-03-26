@@ -15,9 +15,9 @@ function checksum(data:Array<number>):number {
 	return (ret);
 }
 
-function calcSigmaCRC16(crc:number, data:Array<number>, offset:number, llen:number):number {
+function calcSigmaCRC16(crc:number, data:Array<number>|Uint8Array, offset:number, llen:number):number {
 	let new_bit:number, wrk_data:number, b:number, a:number, bit_mask:number;
-	const bin_data:Array<number> = data;
+	const bin_data:Array<number>|Uint8Array = data;
 	const CRC_POLY:number = 0x1021;
 
 	while (llen != 0) {

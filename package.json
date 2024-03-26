@@ -10,6 +10,12 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies":{
+    "@types/uuid": "9.0.1",
+    "@types/aes-js":"3.1.2",
+    "aes-js": "3.1.2",
+    "uuid": "9.0.1"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",

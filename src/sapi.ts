@@ -276,7 +276,6 @@ class SapiClass {
 	private b_open:boolean																				= false;
 	private port:SapiPort|undefined																		= undefined;
 	private queue:Array<number>																			= [];
-	private seqNo:number																				= 0x0;
 
 	private async _readWithTimeout(timeout:number): Promise<Uint8Array> {
 		let out:Uint8Array;
@@ -354,34 +353,24 @@ class SapiClass {
 		}
 	}
 
-	private async _sendData(cmd:number, databuff:Array<number>, have_callback:boolean = false): Promise<boolean> {
-		let final_data:Array<number>, data_len:number;
+	private async _sendData(cmd:number, databuff:Array<number>): Promise<boolean> {
+		let final_data:Array<number>;
 
-		data_len = databuff.length + this.ADDITIONAL_SIZE;
-		if (have_callback == true)
-			data_len++;
+		const data_len = databuff.length + this.ADDITIONAL_SIZE;
 		if (data_len > 255) {
 			const crc_data:Array<number> = [0x00, this.REQUEST, cmd].concat(databuff);
 			final_data = [0x00, (data_len >> 8)& 0x0FF, data_len & 0x0FF, this.REQUEST, cmd].concat(databuff);
-			if (have_callback == true)
-				final_data = final_data.concat([this.seqNo]);
 			const crc16:number = calcSigmaCRC16(0x1D0F, crc_data, 0, crc_data.length);
 			final_data = [this.SOF].concat(final_data).concat([(crc16 >> 8) & 0xFF, (crc16) & 0xFF]);
 			if (await this._write(final_data) == false)
 				return (false);
-			this.seqNo += 1;
-			this.seqNo &= 0XFF;// 1 byte
 			return (true);
 		}
 		final_data = [data_len & 0x0FF, this.REQUEST, cmd].concat(databuff);
-		if (have_callback == true)
-			final_data = final_data.concat([this.seqNo]);
 		const crc:number = checksum(final_data);
 		final_data = [this.SOF].concat(final_data).concat([crc]);
 		if (await this._write(final_data) == false)
 			return (false);
-		this.seqNo += 1;
-		this.seqNo &= 0XFF;// 1 byte
 		return (true);
 	}
 
@@ -409,7 +398,7 @@ class SapiClass {
 		return (false);
 	}
 
-	private async _send_cmd(cmd:number, databuff:Array<number>, have_callback:boolean = false, retries:number): Promise<SapiClassRet> {
+	private async _send_cmd(cmd:number, databuff:Array<number>,retries:number): Promise<SapiClassRet> {
 		let rbuff:Array<number>;
 
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
@@ -419,7 +408,7 @@ class SapiClass {
 		}
 		await this._clear();
 		for (;;) {
-			if (await this._sendData(cmd, databuff, have_callback) == false) {
+			if (await this._sendData(cmd, databuff) == false) {
 				out.status = SapiClassStatus.WRITE;
 				return (out);
 			}
@@ -527,8 +516,8 @@ class SapiClass {
 		return (out);
 	}
 
-	private async _sendCommandUnSz(cmd:number, args:Array<number>, have_callback:boolean , retries:number): Promise<SapiClassRet> {
-		const res:SapiClassRet = await this._send_cmd(cmd, args, have_callback, retries);
+	private async _sendCommandUnSz(cmd:number, args:Array<number>, retries:number): Promise<SapiClassRet> {
+		const res:SapiClassRet = await this._send_cmd(cmd, args, retries);
 		if (res.status != SapiClassStatus.OK)
 			return (res);
 		if (cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET)
@@ -552,14 +541,14 @@ class SapiClass {
 		return (res);
 	}
 
-	public async sendCommandUnSz(cmd:number, args:Array<number>, have_callback:boolean = false, retries:number = 0x3): Promise<SapiClassRet> {
+	public async sendCommandUnSz(cmd:number, args:Array<number>, retries:number = 0x3): Promise<SapiClassRet> {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
 		if (this.b_busy == true) {
 			out.status = SapiClassStatus.PORT_BUSY;
 			return (out);
 		}
 		this.b_busy = true;
-		const res = await this._sendCommandUnSz(cmd, args, have_callback, retries);
+		const res = await this._sendCommandUnSz(cmd, args, retries);
 		this.b_busy = false;
 		return (res);
 	}
