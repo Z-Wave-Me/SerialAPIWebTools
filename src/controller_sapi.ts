@@ -44,6 +44,15 @@ interface ControllerSapiClassRegion
 	region_array:string[];
 }
 
+interface ControllerSapiClassLicense
+{
+	status:ControllerSapiClassStatus;
+	vallid:boolean;
+	vendor_id:number
+	max_nodes:number;
+	count_support:number;
+}
+
 // ------------------------------------------------------------------------------------------------------
 interface ControllerOutData
 {
@@ -95,6 +104,9 @@ class ControllerSapiClass {
 	private readonly RAZ7_LICENSE_CMD_LEN														= 0x30;
 	private readonly RAZ7_LICENSE_NONCE_LEN														= 0x08;
 	private readonly RAZ7_LICENSE_IV_LEN														= 0x10;
+	private readonly RAZ7_FLAG_OFFSET															= 0x03
+	private readonly RAZ7_FLAGS_SIZE															= 0x08;
+	private readonly RAZ7_COUNT_SUPPORT_OFFSET													= this.RAZ7_FLAG_OFFSET + this.RAZ7_FLAGS_SIZE
 
 	private readonly region_array:string[]														=
 	[
@@ -315,11 +327,28 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	private _license_decode(raw_license:Array<number>): ControllerSapiClassLicense {
+		const get_license_info:ControllerSapiClassLicense = {status:ControllerSapiClassStatus.OK, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0};
+		if (raw_license.length < 32)
+			return (get_license_info);
+		raw_license = raw_license.slice(0, 32);
+		const crc16:number = raw_license[raw_license.length - 0x2] |(raw_license[raw_license.length - 0x1] << 0x8);
+		if (calcSigmaCRC16(this.RAZ7_LICENSE_CRC, raw_license, 0x0, raw_license.length - 0x2) != crc16)
+			return (get_license_info);
+		get_license_info.vallid = true;
+		get_license_info.vendor_id = (raw_license[0x0] << 0x8) | raw_license[0x1];
+		get_license_info.max_nodes = raw_license[0x2];
+		get_license_info.max_nodes = raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET];
+		get_license_info.count_support = (raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET+1] << 8) + raw_license[this.RAZ7_COUNT_SUPPORT_OFFSET]
+		return (get_license_info);
+	}
+
 	private async _license_get(): Promise<ControllerSapiClassStatus> {
 		const out:ControllerOutData = {data:[]};
 		const status:ControllerSapiClassStatus = await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
+		this._license_decode(out.data);
 		return (ControllerSapiClassStatus.OK);
 	}
 

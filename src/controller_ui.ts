@@ -27,17 +27,12 @@ class ControllerUiClass {
 
 	private readonly dtr_timeout:number							= 250;
 
-	private readonly el_modal:HTMLElement						= document.createElement("div");
-
+	private readonly el_modal:HTMLElement												= document.createElement("div");
 	private readonly el_modal_section_log_txt:HTMLElement;
-	private readonly el_modal_controler_info:HTMLElement;
-	private readonly el_modal_controler_info_body:HTMLElement;
 
-	private el_region_button:HTMLElement|undefined;
 
 	private region_current:string								= "";
 	private region_new:string									= "";
-	private baudRate:number										= 230400;
 	private razberry:ControllerSapiClass						= new ControllerSapiClass();
 
 	private _log(txt:string): void {
@@ -77,6 +72,10 @@ class ControllerUiClass {
 		this._log_error(txt + " unsupported");
 	}
 	
+	private _log_error_not_find_el(txt:string): void {
+		this._log_error("Not find el: " + txt);
+	}
+
 	private async _destructors(): Promise<void> {
 		await this.razberry.close();
 		this.el_modal.remove();
@@ -111,15 +110,19 @@ class ControllerUiClass {
 	}
 
 	private _region_common(): void {
-		if (this.el_region_button == undefined)
-			return ;
-		if (this.region_new  == this.region_current) {
-			this.el_region_button.setAttribute("disabled", "");
-			this.el_region_button.removeAttribute("title");
+		const find:string = '[data-id_apple_region]';
+		const apple_region:HTMLElement|null = this.el_modal.querySelector(find);
+		if (apple_region == null) {
+			this._log_error_not_find_el(find);
 			return ;
 		}
-		this.el_region_button.setAttribute("title", this.TABLE_NAME_REGION_BUTTON_TITLE);
-		this.el_region_button.removeAttribute("disabled");
+		if (this.region_new  == this.region_current) {
+			apple_region.setAttribute("disabled", "");
+			apple_region.removeAttribute("title");
+			return ;
+		}
+		apple_region.setAttribute("title", this.TABLE_NAME_REGION_BUTTON_TITLE);
+		apple_region.removeAttribute("disabled");
 	}
 
 	private _region_change(event:Event): void {
@@ -168,7 +171,18 @@ class ControllerUiClass {
 		el_tr.appendChild(el_td_1);
 		el_tr.appendChild(el_td_2);
 		el_tr.appendChild(el_td_3);
-		this.el_modal_controler_info_body.appendChild(el_tr);
+		return (el_tr);
+	}
+
+	private _create_table_element_controler_info(name:string, value:string, action:string = ""): HTMLElement {
+		const el_tr: HTMLElement = this._create_table_element(name, value, action);
+		const find:string = '[data-id_controller_info] tbody';
+		const controler_info_tbody:HTMLElement|null = this.el_modal.querySelector(find);
+		if (controler_info_tbody == null) {
+			this._log_error_not_find_el(find);
+			return (el_tr);
+		}
+		controler_info_tbody.appendChild(el_tr);
 		return (el_tr);
 	}
 
@@ -183,7 +197,6 @@ class ControllerUiClass {
 				return (false);
 			}
 			if (await this.razberry.connect() == true) {
-				this.baudRate = this.BAUDRATE[i];
 				this._log_info_done(this.MESSAGE_CONNECT);
 				return (true);
 			}
@@ -202,12 +215,12 @@ class ControllerUiClass {
 			this._log_error_faled_code(this.MESSAGE_READ_CAPABILITIES, capabilities_info.status);
 			return (false);
 		}
-		this._create_table_element(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision);
+		this._create_table_element_controler_info(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision);
 		if (capabilities_info.VendorIDWebpage == undefined)
-			this._create_table_element(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName);
+			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName);
 		else
-			this._create_table_element(this.TABLE_NAME_VENDOR, '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>');
-		this._create_table_element(this.TABLE_NAME_VENDOR_ID, String(capabilities_info.VendorID));
+			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>');
+		this._create_table_element_controler_info(this.TABLE_NAME_VENDOR_ID, String(capabilities_info.VendorID));
 		this._log_info_done(this.MESSAGE_READ_CAPABILITIES);
 		return (true);
 	}
@@ -234,11 +247,9 @@ class ControllerUiClass {
 					i++;
 				}
 				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '" data-change="_region_change(event)">' + el_str +'</select>';
-				el_region = this._create_table_element(this.TABLE_NAME_REGION, el_str, '<button data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>');
+				el_region = this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>');
 				this._html_event(el_region, "change");
 				this._html_event(el_region, "click");
-				list_region_button = el_region.getElementsByTagName("button");
-				this.el_region_button = list_region_button[0x0] as HTMLElement;
 				return (true);
 				break ;
 			case ControllerSapiClassStatus.UNSUPPORT_CMD:
@@ -251,15 +262,9 @@ class ControllerUiClass {
 		return (false);
 	}
 
-	private async _start(): Promise<void> {
+	private async _start_controller_info(): Promise<void> {
 		let display:boolean;
 
-		if (this.razberry.supported() == false)
-			return (this._log_error(this.MESSAGE_NOT_SUPPORT_BROWSER));
-		if (await this.razberry.request() == false)
-			return (this._log_error(this.MESSAGE_PORT_NOT_SELECT));
-		if (await this._connect() == false)
-			return ;
 		display = false;
 		if (this._get_capabilities() == true)
 			display = true;
@@ -267,7 +272,23 @@ class ControllerUiClass {
 			display = true;
 		if (display == false)
 			return ;
-		this.el_modal_controler_info.style.display = "";
+		const find:string = '[data-id_controller_info]';
+		const id_controller_info:HTMLElement|null = this.el_modal.querySelector(find);
+		if (id_controller_info == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		id_controller_info.style.display = "";
+	}
+
+	private async _start(): Promise<void> {
+		if (this.razberry.supported() == false)
+			return (this._log_error(this.MESSAGE_NOT_SUPPORT_BROWSER));
+		if (await this.razberry.request() == false)
+			return (this._log_error(this.MESSAGE_PORT_NOT_SELECT));
+		if (await this._connect() == false)
+			return ;
+		await this._start_controller_info();
 	}
 
 	constructor(el:HTMLElement) {
@@ -276,10 +297,6 @@ class ControllerUiClass {
 		this._html_event(this.el_modal, "click");
 		const list_el_log:HTMLCollectionOf<Element> = this.el_modal.getElementsByClassName("ZUnoRazberryModalContentSectionLog_section_txt");
 		this.el_modal_section_log_txt = list_el_log[0x0] as HTMLElement;
-		const list_el_controler_info:HTMLCollectionOf<Element> = this.el_modal.getElementsByClassName("ZUnoRazberryModalContentSectionControlerInfo");
-		this.el_modal_controler_info = list_el_controler_info[0x0] as HTMLElement;
-		const list_el_controler_info_body:HTMLCollectionOf<Element> = this.el_modal.getElementsByClassName("ZUnoRazberryModalContentSectionControlerInfo_body");
-		this.el_modal_controler_info_body = list_el_controler_info_body[0x0] as HTMLElement;
 		el.appendChild(this.el_modal);
 		this._start();
 	}

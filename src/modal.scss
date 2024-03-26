@@ -34,7 +34,7 @@
 	height: min-content;
 }
 
-.ZUnoRazberryModalContentSectionControlerInfo,
+.ZUnoRazberryModalContentSection_table,
 .ZUnoRazberryModalContentSectionLog
 {
 	display: flex;
@@ -45,7 +45,7 @@
 
 $margin_section_log_item: 0.2rem;
 
-.ZUnoRazberryModalContentSectionControlerInfo > h3,
+.ZUnoRazberryModalContentSection_table > h3,
 .ZUnoRazberryModalContentSectionLog > h3
 {
 	display: flex;
@@ -76,26 +76,26 @@ $margin_section_log_item: 0.2rem;
 	white-space: nowrap;
 }
 
-.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td
+.ZUnoRazberryModalContentSection_table td
 {
 	border-top: 0.1rem solid #9fd8ef;
 	padding: 0.25rem;
 }
 
 
-.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(1)
+.ZUnoRazberryModalContentSection_table td:nth-child(1)
 {
 	width: 10rem;
 }
 
-.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(2)
+.ZUnoRazberryModalContentSection_table td:nth-child(2)
 {
 	text-align: left;
 	user-select: text;
 	max-width: 100%;
 }
 
-.ZUnoRazberryModalContentSectionControlerInfo > table > tbody > tr > td:nth-child(3)
+.ZUnoRazberryModalContentSection_table td:nth-child(3)
 {
 	text-align: right;
 	max-width: 100%;
