@@ -24,10 +24,9 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string		= "Apple select region";
 
 	private readonly BAUDRATE									= [115200, 230400, 460800, 921600];
-
 	private readonly dtr_timeout:number							= 250;
 
-	private readonly el_modal:HTMLElement												= document.createElement("div");
+	private readonly el_modal:HTMLElement;
 	private readonly el_modal_section_log_txt:HTMLElement;
 
 
@@ -292,6 +291,7 @@ class ControllerUiClass {
 	}
 
 	constructor(el:HTMLElement) {
+		this.el_modal = document.createElement("div");
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.innerHTML = html_modal;
 		this._html_event(this.el_modal, "click");
