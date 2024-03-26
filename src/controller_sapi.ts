@@ -115,8 +115,6 @@ class ControllerSapiClass {
 
 	private seqNo:number																		= 0x0;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
-	private support_cmd_mask:Array<number>														= [];
-	private vendor_id:number																	= 0x0;
 
 	private _set_seq(): number {
 		const seq:number = this.seqNo;
@@ -126,12 +124,14 @@ class ControllerSapiClass {
 	}
 
 	private _test_cmd(cmd:number): boolean {
+		if (this.capabilities.status != ControllerSapiClassStatus.OK)
+			return (false);
 		if (cmd <= 0x0)
 			return (false);
 		cmd--;
-		if ((cmd / 0x8) >= this.support_cmd_mask.length)
+		if ((cmd / 0x8) >= this.capabilities.cmd_mask.length)
 			return (false);
-		if ((this.support_cmd_mask[(cmd - (cmd % 0x8)) / 0x8] & (0x1 << (cmd % 0x8))) == 0x0)
+		if ((this.capabilities.cmd_mask[(cmd - (cmd % 0x8)) / 0x8] & (0x1 << (cmd % 0x8))) == 0x0)
 			return (false);
 		return (true);
 	}
@@ -178,8 +178,6 @@ class ControllerSapiClass {
 		out.ApiRevision = capabilities_info.data[0x1];
 		out.VendorID = capabilities_info.data[0x2] << 0x8 | capabilities_info.data[0x3];
 		out.cmd_mask = capabilities_info.data.slice(0x8, capabilities_info.data.length);
-		this.support_cmd_mask = out.cmd_mask;
-		this.vendor_id = out.VendorID;
 		if (Object.hasOwn(controller_vendor_ids, out.VendorID) == true) {
 			out.VendorIDName = controller_vendor_ids[out.VendorID].Name;
 			out.VendorIDWebpage = controller_vendor_ids[out.VendorID].Webpage;
@@ -231,8 +229,6 @@ class ControllerSapiClass {
 	private async _license_send(out:ControllerOutData, data:Array<number>): Promise<ControllerSapiClassStatus> {
 		let nonse_info:SapiClassRet;
 	
-		if (this._test_cmd(this.RAZ7_LICENSE_CMD) == false)
-			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
 		const seq:number = this._set_seq();
 		nonse_info = await this.sapi.sendCommandUnSz(this.RAZ7_LICENSE_CMD, data.concat([seq]));
 		if (nonse_info.status != SapiClassStatus.OK)
@@ -295,6 +291,8 @@ class ControllerSapiClass {
 	private async _license(sub_cmd:number, data:Array<number>, out:ControllerOutData): Promise<ControllerSapiClassStatus> {
 		let status:ControllerSapiClassStatus;
 
+		if (this._test_cmd(this.RAZ7_LICENSE_CMD) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
 		status = await this._license_get_nonce(out);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
@@ -317,7 +315,7 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
-	public async getLicense(): Promise<ControllerSapiClassStatus> {
+	private async _license_get(): Promise<ControllerSapiClassStatus> {
 		const out:ControllerOutData = {data:[]};
 		const status:ControllerSapiClassStatus = await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
 		if (status != ControllerSapiClassStatus.OK)
@@ -380,6 +378,7 @@ class ControllerSapiClass {
 		this.capabilities = await this._get_capabilities();
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
+		await this._license_get();
 		return (true);
 	}
 
@@ -401,8 +400,6 @@ class ControllerSapiClass {
 
 	public async close(): Promise<boolean> {
 		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
-		this.support_cmd_mask = [];
-		this.vendor_id = 0x0;
 		return (this.sapi.close());
 	}
 }
