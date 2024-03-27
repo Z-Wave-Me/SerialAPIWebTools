@@ -58,6 +58,7 @@ interface ControllerSapiClassLicense
 	vendor_id:number
 	max_nodes:number;
 	count_support:number;
+	crc16:number;
 	flags:{[key:number]: ControllerSapiClassLicenseFlag};
 }
 
@@ -146,7 +147,7 @@ class ControllerSapiClass {
 
 	private seqNo:number																		= 0x0;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
-	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[]};
+	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[], crc16:0x0};
 	private board_info:ControllerSapiClassBoardInfo												= {status:ControllerSapiClassStatus.NOT_INIT, core_version:0x0, build_seq:0x0, build_ts:0x0, hw_revision:0x0, sdk_version:0x0, chip_uuid:[], sn_raw:[], bootloader_version:0x0, bootloader_crc32:0x0,lock_status:0x0, lock_status_name:""};
 
 	private _set_seq(): number {
@@ -356,6 +357,7 @@ class ControllerSapiClass {
 		const crc16:number = raw_license[raw_license.length - 0x2] |(raw_license[raw_license.length - 0x1] << 0x8);
 		if (calcSigmaCRC16(this.RAZ7_LICENSE_CRC, raw_license, 0x0, raw_license.length - 0x2) != crc16)
 			return ;
+		license_info.crc16 = crc16;
 		license_info.vallid = true;
 		license_info.vendor_id = (raw_license[0x0] << 0x8) | raw_license[0x1];
 		license_info.max_nodes = raw_license[0x2];
@@ -375,14 +377,14 @@ class ControllerSapiClass {
 		return ;
 	}
 
-	private async _license_get(license_info:ControllerSapiClassLicense): Promise<ControllerSapiClassLicense> {
+	private async _license_get(license_info:ControllerSapiClassLicense): Promise<void> {
 		const out:ControllerOutData = {data:[]};
 		license_info.flags = this.license_flags;
-		license_info.status =  await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
+		license_info.status = await this._license(this.RAZ7_LICENSE_GET_SUBCMD, [], out);
 		if (license_info.status != ControllerSapiClassStatus.OK)
-			return (license_info);
+			return ;
 		this._license_decode(license_info, out.data);
-		return (license_info);
+		return ;
 	}
 
 	private async _get_board_info(out:ControllerSapiClassBoardInfo): Promise<void> {
@@ -419,7 +421,6 @@ class ControllerSapiClass {
 				lock_status_name = "UNKNOWN";
 				break ;
 		}
-		console.log(data);
 		out.status = ControllerSapiClassStatus.OK;
 		out.core_version = costruct_int(data.slice(0, 0 + 2),2, false);
 		out.build_seq = costruct_int(data.slice(2, 2 +4), 4, false);
@@ -436,6 +437,15 @@ class ControllerSapiClass {
 
 	public getBoardInfo(): ControllerSapiClassBoardInfo {
 		return (this.board_info);
+	}
+
+	public async setLicense(license:Array<number>): Promise<ControllerSapiClassStatus> {
+		const out:ControllerOutData = {data:[]};
+		const status:ControllerSapiClassStatus = await this._license(this.RAZ7_LICENSE_SET_SUBCMD, license, out);
+		if (status != ControllerSapiClassStatus.OK)
+			return (status);
+		await this._license_get(this.license);
+		return (this.license.status);
 	}
 
 	public getLicense(): ControllerSapiClassLicense {

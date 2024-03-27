@@ -1,4 +1,24 @@
-export {sleep, checksum, calcSigmaCRC16, costruct_int};
+export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes};
+
+function hexToBytes(hex:string):Array<number>|undefined {
+	let i:number;
+
+	if (hex.length == 0x0)
+		return (undefined);
+	if ((hex.length & 0x1) != 0x0)
+		return (undefined);
+	const bytes = [];
+	i = 0x0;
+	while (i < hex.length) {
+		try {
+			bytes.push(parseInt(hex.substring(i, i + 0x2), 0x10));
+		} catch (error) {
+			return (undefined);
+		}
+		i = i + 0x2;
+	}
+	return (bytes);
+}
 
 function sleep(ms:number):Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
