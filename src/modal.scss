@@ -14,7 +14,7 @@
 	user-select: none;
 }
 
-.ZUnoRazberryModalContent
+.ZUnoRazberryModal > section
 {
 	display: flex;
 	background-color: #fefefe;
@@ -34,8 +34,7 @@
 	height: min-content;
 }
 
-.ZUnoRazberryModalContentSection_table,
-.ZUnoRazberryModalContentSectionLog
+.ZUnoRazberryModalContentSection_table
 {
 	display: flex;
 	position: relative;
@@ -45,8 +44,7 @@
 
 $margin_section_log_item: 0.2rem;
 
-.ZUnoRazberryModalContentSection_table > h3,
-.ZUnoRazberryModalContentSectionLog > h3
+.ZUnoRazberryModalContentSection_table > h3
 {
 	display: flex;
 	position: relative;

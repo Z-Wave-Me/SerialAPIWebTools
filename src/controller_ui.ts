@@ -417,6 +417,7 @@ class ControllerUiClass {
 			return (undefined);
 		if (crc16 == this.new_license_timer.crc16)
 			return (undefined);
+		return (undefined);
 		return ('720620DA52FE35169D84A76675FD416195F42E32B1119F00ED8FA40737E57838554AFFAF9106442C');
 	}
 
