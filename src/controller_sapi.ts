@@ -222,43 +222,6 @@ class ControllerSapiClass {
 		return (await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_READ_LONG_BUFFER, [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (size >> 8) & 0xFF, size & 0xFF]));
 	}
 
-	public async getRegion(): Promise<ControllerSapiClassRegion> {
-		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_array};
-		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
-		if (rerion_get.status != ControllerSapiClassStatus.OK) {
-			out.status = rerion_get.status;
-			return (out);
-		}
-		if (rerion_get.data.length < 0x1) {
-			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
-			return (out);
-		}
-		if (Object.hasOwn(this.region_number_to_string, rerion_get.data[0x0]) == false) {
-			out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
-			return (out);
-		}
-		out.region = this.region_number_to_string[rerion_get.data[0x0]];
-		return (out);
-	}
-
-	public async setRegion(region:string): Promise<ControllerSapiClassStatus> {
-		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) == false)
-			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
-		if (Object.hasOwn(this.region_string_to_number, region) == false)
-			return (ControllerSapiClassStatus.INVALID_ARG);
-		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [this.region_string_to_number[region]]);
-		if (rerion_get.status != ControllerSapiClassStatus.OK)
-			return (rerion_get.status);
-		if (rerion_get.data.length < 0x1)
-			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
-		if (rerion_get.data[0x0] == 0x0)
-			return (ControllerSapiClassStatus.NOT_SET);
-		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, []);
-		if (res.status != SapiClassStatus.OK)
-			return ((res.status as any));
-		return (ControllerSapiClassStatus.OK);
-	}
-
 	private async _license_send(out:ControllerOutData, data:Array<number>): Promise<ControllerSapiClassStatus> {
 		let nonse_info:SapiClassRet;
 	
@@ -433,6 +396,43 @@ class ControllerSapiClass {
 		out.bootloader_crc32 = costruct_int(data.slice(44, 48), 4, false);
 		out.lock_status = data[48];
 		out.lock_status_name = lock_status_name;
+	}
+
+	public async getRegion(): Promise<ControllerSapiClassRegion> {
+		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_array};
+		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
+		if (rerion_get.status != ControllerSapiClassStatus.OK) {
+			out.status = rerion_get.status;
+			return (out);
+		}
+		if (rerion_get.data.length < 0x1) {
+			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
+			return (out);
+		}
+		if (Object.hasOwn(this.region_number_to_string, rerion_get.data[0x0]) == false) {
+			out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
+			return (out);
+		}
+		out.region = this.region_number_to_string[rerion_get.data[0x0]];
+		return (out);
+	}
+
+	public async setRegion(region:string): Promise<ControllerSapiClassStatus> {
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
+		if (Object.hasOwn(this.region_string_to_number, region) == false)
+			return (ControllerSapiClassStatus.INVALID_ARG);
+		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [this.region_string_to_number[region]]);
+		if (rerion_get.status != ControllerSapiClassStatus.OK)
+			return (rerion_get.status);
+		if (rerion_get.data.length < 0x1)
+			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
+		if (rerion_get.data[0x0] == 0x0)
+			return (ControllerSapiClassStatus.NOT_SET);
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, []);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as any));
+		return (ControllerSapiClassStatus.OK);
 	}
 
 	public getBoardInfo(): ControllerSapiClassBoardInfo {
