@@ -32,6 +32,7 @@ class ControllerUiClass {
 	private readonly MESSAGE_READ_BOARD_INFO:string					= "Read board info the controller";
 	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
 	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
+	private readonly MESSAGE_VERSION_LOG							= "SerialAPIWebTools version 0.0.0.1";
 
 	private readonly TABLE_NAME_SERIAL_API_VERSION:string			= "Serial API Version:";
 	private readonly TABLE_NAME_VENDOR:string						= "Vendor:";
@@ -58,7 +59,7 @@ class ControllerUiClass {
 	private readonly BAUDRATE										= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number								= 250;
 	private readonly ms_timeout_get_new_license:number				= 10000;
-	private readonly ms_timeout_get_new_license_xhr:number			= 1000;
+	private readonly ms_timeout_get_new_license_xhr:number			= 2000;
 	private readonly ms_timeout_get_new_license_port:number			= 1000;
 
 	private readonly el_modal:HTMLElement;
@@ -528,6 +529,7 @@ class ControllerUiClass {
 	private async _start(): Promise<void> {
 		if (this.razberry.supported() == false)
 			return (this._log_error(this.MESSAGE_NOT_SUPPORT_BROWSER));
+		this._log_info(this.MESSAGE_VERSION_LOG);
 		if (await this.razberry.request() == false)
 			return (this._log_error(this.MESSAGE_PORT_NOT_SELECT));
 		if (await this._connect() == false)
