@@ -28,7 +28,7 @@ class ControllerUiClass {
 	private readonly MESSAGE_READ_CAPABILITIES:string				= "Read capabilities the controller";
 	private readonly MESSAGE_READ_REGION:string						= "Read region the controller";
 	private readonly MESSAGE_READ_LICENSE:string					= "Read license the controller";
-	private readonly MESSAGE_SET_LICENSE:string					= "Set license the controller";
+	private readonly MESSAGE_SET_LICENSE:string						= "Set license the controller";
 	private readonly MESSAGE_READ_BOARD_INFO:string					= "Read board info the controller";
 	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
 	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
@@ -49,6 +49,11 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_LICENSE_SUPPORT:string				= "Support:";
 	private readonly TABLE_NAME_LICENSE_YES:string					= '<input disabled="disabled" checked type="checkbox">';
 	private readonly TABLE_NAME_LICENSE_NO:string					= '<input disabled="disabled" type="checkbox">';
+
+	private readonly SECTION_ID_DATA_LICENSE_INFO:string			= '[data-id_license_info]';
+	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string		= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
+	private readonly SECTION_ID_DATA_CONTROLLER_INFO:string			= '[data-id_controller_info]';
+	private readonly SECTION_ID_DATA_CONTROLLER_INFO_TBODY:string	= this.SECTION_ID_DATA_CONTROLLER_INFO + ' tbody';
 
 	private readonly BAUDRATE										= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number								= 250;
@@ -234,11 +239,11 @@ class ControllerUiClass {
 	}
 
 	private _create_table_element_controler_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
-		return (this._create_table_element('[data-id_controller_info] tbody', name, value, action, title));
+		return (this._create_table_element(this.SECTION_ID_DATA_CONTROLLER_INFO_TBODY, name, value, action, title));
 	}
 
 	private _create_table_element_license_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
-		return (this._create_table_element('[data-id_license_info] tbody', name, value, action, title));
+		return (this._create_table_element(this.SECTION_ID_DATA_LICENSE_INFO_TBODY, name, value, action, title));
 	}
 
 	private async _connect(): Promise<boolean> {
@@ -336,7 +341,7 @@ class ControllerUiClass {
 			display = true;
 		if (display == false)
 			return ;
-		this._start_display('[data-id_controller_info]');
+		this._start_display(this.SECTION_ID_DATA_CONTROLLER_INFO);
 	}
 
 	private _get_license(): boolean {
@@ -497,7 +502,7 @@ class ControllerUiClass {
 		if (display == false)
 			return ;
 		this._license_timer();
-		this._start_display('[data-id_license_info]');
+		this._start_display(this.SECTION_ID_DATA_LICENSE_INFO);
 	}
 
 	private async _start(): Promise<void> {
