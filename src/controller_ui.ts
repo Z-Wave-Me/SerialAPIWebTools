@@ -309,13 +309,13 @@ class ControllerUiClass {
 			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUBVENDOR_ID, String(license.vendor_id));
 			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MAX_NODE, String(license.max_nodes));
 			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUPPORT, String(license.count_support));
-			for (key in license.flags) {
-				if (license.flags[key].active == true)
-					flag_status = this.TABLE_NAME_LICENSE_YES;
-				else
-					flag_status = this.TABLE_NAME_LICENSE_NO;
-				this._create_table_element_license_info(license.flags[key].name + ":", flag_status, "", license.flags[key].title);
-			}
+		}
+		for (key in license.flags) {
+			if (license.flags[key].active == true)
+				flag_status = this.TABLE_NAME_LICENSE_YES;
+			else
+				flag_status = this.TABLE_NAME_LICENSE_NO;
+			this._create_table_element_license_info(license.flags[key].name + ":", flag_status, "", license.flags[key].title);
 		}
 		this._log_info_done(this.MESSAGE_LICENSE_REGION);
 		return (true);
@@ -369,7 +369,7 @@ class ControllerUiClass {
 		if (await this._connect() == false)
 			return ;
 		await this._start_controller_info();
-		if (this.razberry.isRazberry7() == true)
+		if (this.razberry.isRazberry() == true)
 			this._start_license_info();
 	}
 

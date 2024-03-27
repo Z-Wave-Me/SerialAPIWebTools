@@ -446,7 +446,7 @@ class ControllerSapiClass {
 		return (this.capabilities);
 	}
 
-	public isRazberry7(): boolean {
+	public isRazberry(): boolean {
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
 		if (this.capabilities.VendorID == 0x0115 || this.capabilities.VendorID == 0x0147)
@@ -458,7 +458,7 @@ class ControllerSapiClass {
 		await this._get_capabilities(this.capabilities);
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
-		if (this.isRazberry7() == true) {
+		if (this.isRazberry() == true) {
 			await this._license_get(this.license);
 			await this._get_board_info(this.board_info);
 		}
