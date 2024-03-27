@@ -123,7 +123,7 @@ class ControllerUiClass {
 		this._log_error("Internet request " + url + " - invalid data");
 	}
 
-	private async _destructors(): Promise<void> {
+	private _destructors_license(): void {
 		if (this.new_license_timer.timer_id != undefined) {
 			window.clearTimeout(this.new_license_timer.timer_id);
 			this.new_license_timer.timer_id = undefined;
@@ -134,6 +134,10 @@ class ControllerUiClass {
 		}
 		this.new_license_timer.crc16 = undefined;
 		this.new_license_timer.uuid_hex = undefined;
+	}
+
+	private async _destructors(): Promise<void> {
+		this._destructors_license();
 		await this.razberry.close();
 		this.el_modal.remove();
 	}
@@ -268,13 +272,24 @@ class ControllerUiClass {
 		return (false);
 	}
 
-	private _start_display(find:string) {
+	private _start_display(find:string, display:string):boolean {
 		const id_controller_info:HTMLElement|null = this.el_modal.querySelector(find);
 		if (id_controller_info == null) {
 			this._log_error_not_find_el(find);
-			return ;
+			return (false);
 		}
-		id_controller_info.style.display = "";
+		id_controller_info.style.display = display;
+		return (true);
+	}
+
+	private _start_clear(find:string):boolean {
+		const tbody:HTMLElement|null = this.el_modal.querySelector(find);
+		if (tbody == null) {
+			this._log_error_not_find_el(find);
+			return (false);
+		}
+		tbody.innerHTML = "";
+		return (true);
 	}
 
 	private _get_capabilities(): boolean {
@@ -341,7 +356,7 @@ class ControllerUiClass {
 			display = true;
 		if (display == false)
 			return ;
-		this._start_display(this.SECTION_ID_DATA_CONTROLLER_INFO);
+		this._start_display(this.SECTION_ID_DATA_CONTROLLER_INFO, "");
 	}
 
 	private _get_license(): boolean {
@@ -422,8 +437,7 @@ class ControllerUiClass {
 			return (undefined);
 		if (crc16 == this.new_license_timer.crc16)
 			return (undefined);
-		return (undefined);
-		return ('720620DA52FE35169D84A76675FD416195F42E32B1119F00ED8FA40737E57838554AFFAF9106442C');
+		return (in_json.license);
 	}
 
 	private _license_timer(): void {
@@ -482,6 +496,7 @@ class ControllerUiClass {
 					}
 					this._log_info_done(this.MESSAGE_SET_LICENSE);
 					this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
+					this._start_license_info();
 				}
 				this.new_license_timer.timer_id = window.setTimeout(fun_controller_timer, 0x0);
 			};
@@ -494,6 +509,11 @@ class ControllerUiClass {
 	private _start_license_info(): void {
 		let display:boolean;
 
+		if (this._start_display(this.SECTION_ID_DATA_LICENSE_INFO, "none") == false)
+			return ;
+		this._destructors_license();
+		if (this._start_clear(this.SECTION_ID_DATA_LICENSE_INFO_TBODY) == false)
+			return ;
 		display = false;
 		if (this._get_board_info() == true)
 			display = true;
@@ -502,7 +522,7 @@ class ControllerUiClass {
 		if (display == false)
 			return ;
 		this._license_timer();
-		this._start_display(this.SECTION_ID_DATA_LICENSE_INFO);
+		this._start_display(this.SECTION_ID_DATA_LICENSE_INFO, "");
 	}
 
 	private async _start(): Promise<void> {
