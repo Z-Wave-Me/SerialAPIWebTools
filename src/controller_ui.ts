@@ -320,7 +320,7 @@ class ControllerUiClass {
 	}
 
 	private async _get_region(): Promise<boolean> {
-		let i:number, el_str:string, el_region:HTMLElement;
+		let i:number, el_str:string;
 
 		this._log_info_start(this.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
@@ -341,9 +341,7 @@ class ControllerUiClass {
 					i++;
 				}
 				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '" data-change="_region_change(event)">' + el_str +'</select>';
-				el_region = this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>', this.TABLE_NAME_REGION_TITLE);
-				this._html_event(el_region, "change");
-				this._html_event(el_region, "click");
+				this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>', this.TABLE_NAME_REGION_TITLE);
 				return (true);
 				break ;
 			case ControllerSapiClassStatus.UNSUPPORT_CMD:
@@ -354,6 +352,11 @@ class ControllerUiClass {
 				break ;
 		}
 		return (false);
+	}
+
+	private _get_controller_default(): boolean {
+		
+		return (true);
 	}
 
 	private async _start_controller_info(): Promise<void> {
@@ -546,6 +549,8 @@ class ControllerUiClass {
 		await this._start_controller_info();
 		if (this.razberry.isRazberry() == true)
 			this._start_license_info();
+		this._html_event(this.el_modal, "change");
+		this._html_event(this.el_modal, "click");
 	}
 
 	constructor(el:HTMLElement) {
