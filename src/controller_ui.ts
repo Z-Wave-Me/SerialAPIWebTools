@@ -35,19 +35,28 @@ class ControllerUiClass {
 	private readonly MESSAGE_VERSION_LOG							= "SerialAPIWebTools version 0.0.1";
 
 	private readonly TABLE_NAME_SERIAL_API_VERSION:string			= "Serial API Version:";
+	private readonly TABLE_NAME_SERIAL_API_VERSION_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_VENDOR:string						= "Vendor:";
+	private readonly TABLE_NAME_VENDOR_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_VENDOR_ID:string					= "Vendor id:";
+	private readonly TABLE_NAME_VENDOR_ID_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_REGION:string						= "Region:";
+	private readonly TABLE_NAME_REGION_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
 	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
 	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
 	private readonly TABLE_NAME_LICENSE_UUID:string					= "Uuid:";
+	private readonly TABLE_NAME_LICENSE_UUID_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS:string			= "More options:";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string	= "https://z-wave.me/hardware-capabilities/?uuid=";
 	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string			= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string			= "Subvendor:";
+	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_MAX_NODE:string				= "Nodes limit:";
+	private readonly TABLE_NAME_LICENSE_MAX_NODE_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_SUPPORT:string				= "Support:";
+	private readonly TABLE_NAME_LICENSE_SUPPORT_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_YES:string					= '<input disabled="disabled" checked type="checkbox">';
 	private readonly TABLE_NAME_LICENSE_NO:string					= '<input disabled="disabled" type="checkbox">';
 
@@ -300,12 +309,12 @@ class ControllerUiClass {
 			this._log_error_faled_code(this.MESSAGE_READ_CAPABILITIES, capabilities_info.status);
 			return (false);
 		}
-		this._create_table_element_controler_info(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision);
+		this._create_table_element_controler_info(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision, "", this.TABLE_NAME_SERIAL_API_VERSION_TITLE);
 		if (capabilities_info.VendorIDWebpage == undefined)
-			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName);
+			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName, "", this.TABLE_NAME_VENDOR_TITLE);
 		else
-			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>');
-		this._create_table_element_controler_info(this.TABLE_NAME_VENDOR_ID, String(capabilities_info.VendorID));
+			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>', "", this.TABLE_NAME_VENDOR_TITLE);
+		this._create_table_element_controler_info(this.TABLE_NAME_VENDOR_ID, String(capabilities_info.VendorID), "", this.TABLE_NAME_VENDOR_ID_TITLE);
 		this._log_info_done(this.MESSAGE_READ_CAPABILITIES);
 		return (true);
 	}
@@ -332,7 +341,7 @@ class ControllerUiClass {
 					i++;
 				}
 				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '" data-change="_region_change(event)">' + el_str +'</select>';
-				el_region = this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>');
+				el_region = this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>', this.TABLE_NAME_REGION_TITLE);
 				this._html_event(el_region, "change");
 				this._html_event(el_region, "click");
 				return (true);
@@ -370,9 +379,9 @@ class ControllerUiClass {
 			return (false);
 		}
 		if (license.vallid == true) {
-			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUBVENDOR_ID, String(license.vendor_id));
-			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MAX_NODE, String(license.max_nodes));
-			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUPPORT, String(license.count_support));
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUBVENDOR_ID, String(license.vendor_id), "", this.TABLE_NAME_LICENSE_SUBVENDOR_ID_TITLE);
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MAX_NODE, String(license.max_nodes), "", this.TABLE_NAME_LICENSE_MAX_NODE_TITLE);
+			this._create_table_element_license_info(this.TABLE_NAME_LICENSE_SUPPORT, String(license.count_support), "", this.TABLE_NAME_LICENSE_SUPPORT_TITLE);
 			this.new_license_timer.crc16 = license.crc16;
 		}
 		else
@@ -409,9 +418,9 @@ class ControllerUiClass {
 		}
 		const uuid_str_hex:string = this._array_to_string_hex(board_info.chip_uuid);
 		this.new_license_timer.uuid_hex = uuid_str_hex;
-		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_UUID, uuid_str_hex);
+		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_UUID, uuid_str_hex, "", this.TABLE_NAME_LICENSE_UUID_TITLE);
 		const more_options_link:string = '<a target="_blank" href="'+ this.TABLE_NAME_LICENSE_MORE_OPTIONS_LINK + uuid_str_hex +'">'+ 'link' +'</a>';
-		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MORE_OPTIONS, more_options_link);
+		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_MORE_OPTIONS, more_options_link, "", this.TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE);
 		this._log_info_done(this.MESSAGE_READ_BOARD_INFO);
 		return (true);
 	}
