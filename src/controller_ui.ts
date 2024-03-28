@@ -31,6 +31,7 @@ class ControllerUiClass {
 	private readonly MESSAGE_SET_LICENSE:string						= "Set license the controller";
 	private readonly MESSAGE_READ_BOARD_INFO:string					= "Read board info the controller";
 	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
+	private readonly MESSAGE_SET_DEFAULT:string						= "Set default the controller";
 	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
 	private readonly MESSAGE_VERSION_LOG							= "SerialAPIWebTools version 0.0.1";
 
@@ -42,6 +43,10 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_VENDOR_ID_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_REGION:string						= "Region:";
 	private readonly TABLE_NAME_REGION_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_RESET_DEFAULT:string				= "Reset default:";
+	private readonly TABLE_NAME_RESET_DEFAULT_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON:string			= "Reset";
+	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
 	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
 	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
@@ -218,6 +223,18 @@ class ControllerUiClass {
 		this._log_error_faled_code(this.MESSAGE_SET_REGION, status);
 	}
 
+	private async _reset_default(): Promise<void> {
+		if (this._is_busy() == true)
+			return ;
+		this._log_info_start(this.MESSAGE_SET_DEFAULT);
+		const status:ControllerSapiClassStatus = await this.razberry.setDefault();
+		if (status == ControllerSapiClassStatus.OK) {
+			this._log_info_done(this.MESSAGE_SET_DEFAULT);
+			return ;
+		}
+		this._log_error_faled_code(this.MESSAGE_SET_DEFAULT, status);
+	}
+
 	private _html_event(el:HTMLElement, data:string): void {
 		const list:NodeListOf<HTMLElement> = el.querySelectorAll('[data-'+ data + ']');
 		list.forEach((item:HTMLElement) => {
@@ -355,7 +372,7 @@ class ControllerUiClass {
 	}
 
 	private _get_controller_default(): boolean {
-		
+		this._create_table_element_controler_info(this.TABLE_NAME_RESET_DEFAULT, "", '<button data-click="_reset_default()" title="' + this.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE + '" type="button">' + this.TABLE_NAME_RESET_DEFAULT_BUTTON + '</button>', this.TABLE_NAME_RESET_DEFAULT_TITLE);
 		return (true);
 	}
 
@@ -366,6 +383,8 @@ class ControllerUiClass {
 		if (this._get_capabilities() == true)
 			display = true;
 		if (await this._get_region() == true)
+			display = true;
+		if (await this._get_controller_default() == true)
 			display = true;
 		if (display == false)
 			return ;

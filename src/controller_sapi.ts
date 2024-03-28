@@ -435,6 +435,20 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	public async setDefault(): Promise<ControllerSapiClassStatus> {
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_ZW_SET_DEFAULT) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
+		const seq:number = this._set_seq();
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_ZW_SET_DEFAULT, [seq]);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as any));
+		if (res.data.length < 0x1)//0x1 seq
+			return (ControllerSapiClassStatus.WRONG_LENGTH_SEQ);
+		if (res.data[0x0] != seq)
+			return (ControllerSapiClassStatus.WRONG_SEQ);
+		return (ControllerSapiClassStatus.OK);
+	}
+
 	public getBoardInfo(): ControllerSapiClassBoardInfo {
 		return (this.board_info);
 	}
