@@ -91,15 +91,15 @@ class ControllerUiClass {
 	}
 
 	private _log_error(txt:string): void {
-		this._log("<div style=\"color: red;\">" + txt + "</div>");
+		this._log('<div class="ZUnoRazberryModal_color_error">' + txt + "</div>");
 	}
 
 	private _log_info(txt:string): void {
-		this._log("<div style=\"color: green;\">" + txt + "</div>");
+		this._log('<div class="ZUnoRazberryModal_color_info">' + txt + "</div>");
 	}
 
 	private _log_warning(txt:string): void {
-		this._log("<div style=\"color: yellow;\">" + txt + "</div>");
+		this._log('<div class="ZUnoRazberryModal_color_warning">' + txt + "</div>");
 	}
 
 	private _log_info_start(txt:string): void {
@@ -372,7 +372,8 @@ class ControllerUiClass {
 	}
 
 	private _get_controller_default(): boolean {
-		this._create_table_element_controler_info(this.TABLE_NAME_RESET_DEFAULT, "", '<button data-click="_reset_default()" title="' + this.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE + '" type="button">' + this.TABLE_NAME_RESET_DEFAULT_BUTTON + '</button>', this.TABLE_NAME_RESET_DEFAULT_TITLE);
+		const value:string = '<button class="ZUnoRazberryModal_color_warning_info" data-click="_reset_default()" title="' + this.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE + '" type="button">' + this.TABLE_NAME_RESET_DEFAULT_BUTTON + '</button>';
+		this._create_table_element_controler_info(this.TABLE_NAME_RESET_DEFAULT, "", value, this.TABLE_NAME_RESET_DEFAULT_TITLE);
 		return (true);
 	}
 

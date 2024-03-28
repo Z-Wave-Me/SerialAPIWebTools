@@ -14,6 +14,29 @@
 	user-select: none;
 }
 
+.ZUnoRazberryModal_color_error
+{
+	color: red;
+}
+
+.ZUnoRazberryModal_color_info
+{
+	color: green;
+}
+
+.ZUnoRazberryModal_color_warning
+{
+	color: yellow;
+}
+
+.ZUnoRazberryModal_color_warning_info
+{
+	color: #fff;
+	background-color: #d9534f;
+	border-color: #d43f3a;
+}
+
+
 .ZUnoRazberryModal > section
 {
 	display: flex;
