@@ -1,0 +1,26 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		
+		{
+			"type": "msedge",
+			"request": "launch",
+			"name": "Example",
+			"file": "example.html"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "webpack",
+			"program": "${workspaceRoot}/node_modules/webpack/bin/webpack.js",
+			"args": ["--mode=development"]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "gulp",
+			"program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
+			"args": ["build"]
+		}
+	]
+}
