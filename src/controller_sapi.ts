@@ -5,7 +5,7 @@ import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSeri
 import {costruct_int, calcSigmaCRC16} from "./utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
-export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo};
+export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower};
 
 enum ControllerSapiClassStatus
 {
@@ -23,6 +23,8 @@ enum ControllerSapiClassStatus
 	WRONG_LENGTH_SEQ,
 	WRONG_LENGTH_CALLBACK,
 	NOT_INIT,
+	NOT_RAZBERRY,
+	INVALID_SET,
 }
 
 interface ControllerSapiClassCapabilities
@@ -42,6 +44,15 @@ interface ControllerSapiClassRegion
 	status:ControllerSapiClassStatus;
 	region:string;
 	region_array:string[];
+}
+
+interface ControllerSapiClassPower
+{
+	status:ControllerSapiClassStatus;
+	power_raw:number;
+	step:number;
+	min:number;
+	max:number;
 }
 
 interface ControllerSapiClassLicenseFlag
@@ -289,6 +300,8 @@ class ControllerSapiClass {
 
 		if (this._test_cmd(this.RAZ7_LICENSE_CMD) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
+		if (this.isRazberry() == false)
+			return (ControllerSapiClassStatus.NOT_RAZBERRY);
 		status = await this._license_get_nonce(out);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
@@ -396,6 +409,42 @@ class ControllerSapiClass {
 		out.bootloader_crc32 = costruct_int(data.slice(44, 48), 4, false);
 		out.lock_status = data[48];
 		out.lock_status_name = lock_status_name;
+	}
+
+	public async getPower(): Promise<ControllerSapiClassPower> {
+		const power_get_out:ControllerSapiClassPower = {status: ControllerSapiClassStatus.OK, power_raw:0x0, step:0x1, min:1, max:247};
+		if (this.isRazberry() == false) {
+			power_get_out.status = ControllerSapiClassStatus.NOT_RAZBERRY;
+			return (power_get_out);
+		}
+		const power_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_TX_POWERLEVEL_GET, []);
+		if (power_get.status != ControllerSapiClassStatus.OK) {
+			power_get_out.status = power_get.status
+			return (power_get_out);
+		}
+		if (power_get.data.length < 0x2) {
+			power_get_out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
+			return (power_get_out);
+		}
+		if (power_get.data[0x1] != 0x0) {
+			power_get_out.status = ControllerSapiClassStatus.NOT_RAZBERRY;
+			return (power_get_out);
+		}
+		power_get_out.power_raw = power_get.data[0x0];
+		return (power_get_out);
+	}
+
+	public async setPower(power_raw:number): Promise<ControllerSapiClassStatus> {
+		if (this.isRazberry() == false)
+			return (ControllerSapiClassStatus.NOT_RAZBERRY);
+		const power_set:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_TX_POWERLEVEL_SET, [power_raw, 0x0]);
+		if (power_set.status != ControllerSapiClassStatus.OK)
+			return (power_set.status);
+		if (power_set.data.length < 0x1)
+			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
+		if (power_set.data[0x1] == 0x0)
+			return (ControllerSapiClassStatus.INVALID_SET);
+		return (ControllerSapiClassStatus.OK);
 	}
 
 	public async getRegion(): Promise<ControllerSapiClassRegion> {

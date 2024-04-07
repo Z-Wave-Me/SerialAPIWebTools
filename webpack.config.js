@@ -2,9 +2,9 @@ const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = function(env, argv) {
-	return {
+	const config =
+	{
 		plugins: [new MiniCssExtractPlugin()],
-		devtool: env.production ? 'source-map' : 'eval',
 		entry: './src/controller_ui.ts',
 		module: 
 		{
@@ -36,5 +36,10 @@ module.exports = function(env, argv) {
 			library: 'ControllerUiLib',
 			path: path.resolve(__dirname, 'build')
 		}
-	}
+	};
+	if (argv.mode == "development")
+		config["devtool"] = 'source-map';
+	else if (argv.mode == "production")
+		config["devtool"] = 'eval';
+	return (config);
 };

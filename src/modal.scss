@@ -1,3 +1,10 @@
+$color_error: red;
+$color_info: green;
+$color_valid: green;
+$color_invalid: red;
+$color_warning: yellow;
+
+
 .ZUnoRazberryModal
 {
 	display: flex;
@@ -16,17 +23,17 @@
 
 .ZUnoRazberryModal_color_error
 {
-	color: red;
+	color: $color_error;
 }
 
 .ZUnoRazberryModal_color_info
 {
-	color: green;
+	color: $color_info;
 }
 
 .ZUnoRazberryModal_color_warning
 {
-	color: yellow;
+	color: $color_warning;
 }
 
 .ZUnoRazberryModal_color_warning_info
@@ -120,4 +127,18 @@ $margin_section_log_item: 0.2rem;
 {
 	text-align: right;
 	max-width: 100%;
+}
+
+.ZUnoRazberryModalContentSection_table input[type=number]:valid + span:after
+{
+	content: '✓';
+	padding-left: 0.2rem;
+	color: $color_valid;
+}
+
+.ZUnoRazberryModalContentSection_table input[type=number]:invalid + span:after
+{
+	content: '✖';
+	padding-left: 0.2rem;
+	color: $color_invalid;
 }

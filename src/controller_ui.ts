@@ -1,7 +1,7 @@
 import {html_modal} from "./modal.js";
 
 import {sleep, hexToBytes} from "./utilities";
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo} from "./controller_sapi";
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower} from "./controller_sapi";
 
 export {ControllerUiClass};
 
@@ -27,10 +27,12 @@ class ControllerUiClass {
 	private readonly MESSAGE_CONNECT:string							= "Connect controller";
 	private readonly MESSAGE_READ_CAPABILITIES:string				= "Read capabilities the controller";
 	private readonly MESSAGE_READ_REGION:string						= "Read region the controller";
+	private readonly MESSAGE_READ_POWER:string						= "Read power the controller";
 	private readonly MESSAGE_READ_LICENSE:string					= "Read license the controller";
 	private readonly MESSAGE_SET_LICENSE:string						= "Set license the controller";
 	private readonly MESSAGE_READ_BOARD_INFO:string					= "Read board info the controller";
 	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
+	private readonly MESSAGE_SET_POWER:string						= "Set power the controller";
 	private readonly MESSAGE_SET_DEFAULT:string						= "Set default the controller";
 	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
 	private readonly MESSAGE_VERSION_LOG							= "SerialAPIWebTools version 0.0.1";
@@ -43,13 +45,17 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_VENDOR_ID_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_REGION:string						= "Region:";
 	private readonly TABLE_NAME_REGION_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
+	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
+	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
 	private readonly TABLE_NAME_RESET_DEFAULT:string				= "Reset default:";
 	private readonly TABLE_NAME_RESET_DEFAULT_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON:string			= "Reset";
 	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
-	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
-	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
+	private readonly TABLE_NAME_POWER:string						= "Power:";
+	private readonly TABLE_NAME_POWER_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_POWER_BUTTON:string					= "Apple";
+	private readonly TABLE_NAME_POWER_BUTTON_TITLE:string			= "Apple select power";
 	private readonly TABLE_NAME_LICENSE_UUID:string					= "Uuid:";
 	private readonly TABLE_NAME_LICENSE_UUID_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS:string			= "More options:";
@@ -65,6 +71,8 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_LICENSE_YES:string					= '<input disabled="disabled" checked type="checkbox">';
 	private readonly TABLE_NAME_LICENSE_NO:string					= '<input disabled="disabled" type="checkbox">';
 
+	private readonly SECTION_ID_BUTTON_APPLE_REGION:string			= 'data-id_apple_region';
+	private readonly SECTION_ID_BUTTON_APPLE_POWER:string			= 'data-id_apple_power';
 	private readonly SECTION_ID_DATA_LICENSE_INFO:string			= '[data-id_license_info]';
 	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string		= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
 	private readonly SECTION_ID_DATA_CONTROLLER_INFO:string			= '[data-id_controller_info]';
@@ -82,6 +90,8 @@ class ControllerUiClass {
 
 	private region_current:string									= "";
 	private region_new:string										= "";
+	private power_current:number									= 0x0;
+	private power_new:number										= 0x0;
 	private razberry:ControllerSapiClass							= new ControllerSapiClass();
 	private new_license_timer:ControllerUiClassNewLicense			= {};
 
@@ -185,20 +195,20 @@ class ControllerUiClass {
 		navigator.clipboard.writeText(txt);
 	}
 
-	private _region_common(): void {
-		const find:string = '[data-id_apple_region]';
-		const apple_region:HTMLElement|null = this.el_modal.querySelector(find);
-		if (apple_region == null) {
+	private _aplle_common_change(id:string, title:string, change:boolean): void {
+		const find:string = '['+ id +']';
+		const el_apple:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_apple == null) {
 			this._log_error_not_find_el(find);
 			return ;
 		}
-		if (this.region_new  == this.region_current) {
-			apple_region.setAttribute("disabled", "");
-			apple_region.removeAttribute("title");
+		if (change == true) {
+			el_apple.setAttribute("disabled", "");
+			el_apple.removeAttribute("title");
 			return ;
 		}
-		apple_region.setAttribute("title", this.TABLE_NAME_REGION_BUTTON_TITLE);
-		apple_region.removeAttribute("disabled");
+		el_apple.setAttribute("title", title);
+		el_apple.removeAttribute("disabled");
 	}
 
 	private _region_change(event:Event): void {
@@ -206,7 +216,7 @@ class ControllerUiClass {
 			return ;
 		const el_target:any = (event.target as any);
 		this.region_new = (el_target.value as string);
-		this._region_common();
+		this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_REGION, this.TABLE_NAME_REGION_BUTTON_TITLE, (this.region_new == this.region_current) ? true:false);
 	}
 
 	private async _region_apple(): Promise<void> {
@@ -217,10 +227,32 @@ class ControllerUiClass {
 		if (status == ControllerSapiClassStatus.OK) {
 			this._log_info_done(this.MESSAGE_SET_REGION);
 			this.region_current = this.region_new;
-			this._region_common();
+			this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_REGION, this.TABLE_NAME_REGION_BUTTON_TITLE, (this.region_new == this.region_current) ? true:false);
 			return ;
 		}
 		this._log_error_faled_code(this.MESSAGE_SET_REGION, status);
+	}
+
+	private _power_change(event:Event): void {
+		if (event.target == null)
+			return ;
+		const el_target:any = (event.target as any);
+		this.power_new = Number(el_target.value as string);
+		this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_POWER, this.TABLE_NAME_POWER_BUTTON_TITLE, (this.power_new == this.power_current) ? true:false);
+	}
+
+	private async _power_apple(): Promise<void> {
+		if (this._is_busy() == true)
+			return ;
+		this._log_info_start(this.MESSAGE_SET_POWER);
+		const status:ControllerSapiClassStatus = await this.razberry.setPower(this.power_new);
+		if (status == ControllerSapiClassStatus.OK) {
+			this._log_info_done(this.MESSAGE_SET_POWER);
+			this.power_current = this.power_new;
+			this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_POWER, this.TABLE_NAME_POWER_BUTTON_TITLE, (this.power_new == this.power_current) ? true:false);
+			return ;
+		}
+		this._log_error_faled_code(this.MESSAGE_SET_POWER, status);
 	}
 
 	private async _reset_default(): Promise<void> {
@@ -337,7 +369,7 @@ class ControllerUiClass {
 	}
 
 	private async _get_region(): Promise<boolean> {
-		let i:number, el_str:string;
+		let i:number, el_str:string, el_button_str:string;
 
 		this._log_info_start(this.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
@@ -358,7 +390,8 @@ class ControllerUiClass {
 					i++;
 				}
 				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '" data-change="_region_change(event)">' + el_str +'</select>';
-				this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, '<button data-id_apple_region data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>', this.TABLE_NAME_REGION_TITLE);
+				el_button_str = '<button '+ this.SECTION_ID_BUTTON_APPLE_REGION +' data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>';
+				this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, el_button_str, this.TABLE_NAME_REGION_TITLE);
 				return (true);
 				break ;
 			case ControllerSapiClassStatus.UNSUPPORT_CMD:
@@ -369,6 +402,23 @@ class ControllerUiClass {
 				break ;
 		}
 		return (false);
+	}
+
+	private async _get_power(): Promise<boolean> {
+		if (this.razberry.isRazberry() == false)
+			return (false);
+		this._log_info_start(this.MESSAGE_READ_POWER);
+		const power:ControllerSapiClassPower = await this.razberry.getPower();
+		if (power.status != ControllerSapiClassStatus.OK) {
+			this._log_error_faled_code(this.MESSAGE_READ_POWER, power.status);
+			return (false);
+		}
+		this.power_current = power.power_raw;
+		const el_value:string = '<input type="number"'+ ' data-change="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
+		const el_action:string = '<button ' + this.SECTION_ID_BUTTON_APPLE_POWER +' data-click="_power_apple()" disabled type="button">' + this.TABLE_NAME_POWER_BUTTON + '</button>';
+		this._create_table_element_controler_info(this.TABLE_NAME_POWER, el_value, el_action, this.TABLE_NAME_POWER_TITLE);
+		this._log_info_done(this.MESSAGE_READ_POWER);
+		return (true);
 	}
 
 	private _get_controller_default(): boolean {
@@ -385,7 +435,9 @@ class ControllerUiClass {
 			display = true;
 		if (await this._get_region() == true)
 			display = true;
-		if (await this._get_controller_default() == true)
+		if (await this._get_power() == true)
+			display = true;
+		if (this._get_controller_default() == true)
 			display = true;
 		if (display == false)
 			return ;
