@@ -54,6 +54,7 @@ class ControllerUiClass {
 	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	private readonly TABLE_NAME_POWER:string						= "Power:";
 	private readonly TABLE_NAME_POWER_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_POWER_SELECT_TITLE:string			= "Select power";
 	private readonly TABLE_NAME_POWER_BUTTON:string					= "Apple";
 	private readonly TABLE_NAME_POWER_BUTTON_TITLE:string			= "Apple select power";
 	private readonly TABLE_NAME_LICENSE_UUID:string					= "Uuid:";
@@ -414,7 +415,7 @@ class ControllerUiClass {
 			return (false);
 		}
 		this.power_current = power.power_raw;
-		const el_value:string = '<input type="number"'+ ' data-change="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
+		const el_value:string = '<input title="' + this.TABLE_NAME_POWER_SELECT_TITLE + '" type="number"'+ ' data-change="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
 		const el_action:string = '<button ' + this.SECTION_ID_BUTTON_APPLE_POWER +' data-click="_power_apple()" disabled type="button">' + this.TABLE_NAME_POWER_BUTTON + '</button>';
 		this._create_table_element_controler_info(this.TABLE_NAME_POWER, el_value, el_action, this.TABLE_NAME_POWER_TITLE);
 		this._log_info_done(this.MESSAGE_READ_POWER);
