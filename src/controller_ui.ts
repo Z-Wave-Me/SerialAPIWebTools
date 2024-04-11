@@ -92,8 +92,9 @@ class ControllerUiClass {
 	private readonly ms_timeout_get_update_xhr:number						= 10000;
 	private readonly ms_timeout_get_update_gbl_xhr:number					= 30000;
 	private readonly ms_timeout_get_update_gbl_timer_bus:number				= 3000;
-
-	private readonly el_modal:HTMLElement;
+	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass();
+	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
+	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_modal_section_log_txt:HTMLElement;
 
 	private capabilities_info?:ControllerSapiClassCapabilities				= undefined;
@@ -106,8 +107,6 @@ class ControllerUiClass {
 	private region_new:string												= "";
 	private power_current:number											= 0x0;
 	private power_new:number												= 0x0;
-	private razberry:ControllerSapiClass									= new ControllerSapiClass();
-	private locale:ControllerUiLangClass									= new ControllerUiLangClass();
 	private new_license_timer:ControllerUiClassNewLicense					= {};
 	private get_update_info_xhr:XMLHttpRequest|undefined					= undefined;
 	private get_update_finware_xhr:XMLHttpRequest|undefined					= undefined;
@@ -975,7 +974,6 @@ class ControllerUiClass {
 	}
 
 	constructor(el:HTMLElement) {
-		this.el_modal = document.createElement("div");
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.innerHTML = html_modal;
 		this._html_event(this.el_modal, "click");
