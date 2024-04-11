@@ -98,6 +98,7 @@ class ControllerUiClass {
 	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
 	private readonly log:ControllerUiLogClass;
 	private readonly el_modal:HTMLElement									= document.createElement("div");
+	private readonly el_section:HTMLElement									= document.createElement("section");
 
 	private capabilities_info?:ControllerSapiClassCapabilities				= undefined;
 	private board_info?:ControllerSapiClassBoardInfo						= undefined;
@@ -165,18 +166,6 @@ class ControllerUiClass {
 			return (true);
 		}
 		return (false);
-	}
-
-	private async _close(): Promise<void> {
-		if (this._is_busy() == true)
-			return ;
-		this._destructors();
-		await this.razberry.close();
-		this.el_modal.remove();
-	}
-
-	private _copy(): void {
-		navigator.clipboard.writeText(this.log.getLog());
 	}
 
 	private _aplle_common_change(id:string, title:string, change:boolean): void {
@@ -911,9 +900,39 @@ class ControllerUiClass {
 		await this._start_update();
 	}
 
+	private _constructor_button_create(el_section_button:HTMLElement, func:EventListener, text:string, title:string): void {
+		const el_button = document.createElement("button");
+		el_button.textContent = text;
+		el_button.title = title;
+		el_button.addEventListener("click", func);
+		el_section_button.appendChild(el_button);
+	}
+
+	private _constructor_button(): void {
+		const el_section_button:HTMLElement  = document.createElement("section");
+		el_section_button.className = "ZUnoRazberryModalContentSectionButton";
+		const event_copy:EventListener = () => {
+			navigator.clipboard.writeText(this.log.getLog());
+		};
+		const event_close:EventListener = async () => {
+			if (this._is_busy() == true)
+				return ;
+			this._destructors();
+			await this.razberry.close();
+			this.el_modal.remove();
+		};
+		this._constructor_button_create(el_section_button, event_copy, this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_TEXT), this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_TITLE));
+		this._constructor_button_create(el_section_button, event_close, this.locale.getLocale(ControllerUiLangClassId.BUTTON_CLOSE_TEXT), this.locale.getLocale(ControllerUiLangClassId.BUTTON_CLOSE_TITLE));
+		this.el_section.appendChild(el_section_button);
+	}
+
 	constructor(el:HTMLElement) {
 		this.el_modal.className = "ZUnoRazberryModal";
-		this.el_modal.innerHTML = html_modal;
+		this.el_modal.appendChild(this.el_section);
+		this._constructor_button();
+		const el_section_tmp:HTMLElement  = document.createElement("section");
+		el_section_tmp.innerHTML = html_modal;
+		this.el_section.appendChild(el_section_tmp);
 		this._html_event(this.el_modal, "click");
 		const list_el_log:HTMLCollectionOf<Element> = this.el_modal.getElementsByClassName("ZUnoRazberryModalContentSectionLog_section_txt");
 		this.log = new ControllerUiLogClass(list_el_log[0x0] as HTMLElement, this.locale);

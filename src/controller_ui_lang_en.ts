@@ -77,4 +77,8 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.LOG_XHR_TIMEOUT]: "Internet request {{url}} - timeout",
 	[ControllerUiLangClassId.LOG_XHR_ERROR]: "Internet request {{url}} - error",
 	[ControllerUiLangClassId.LOG_XHR_INVALID_DATA]: "Internet request {{url}} - invalid data",
+	[ControllerUiLangClassId.BUTTON_COPY_TEXT]: "Copy",
+	[ControllerUiLangClassId.BUTTON_COPY_TITLE]: "Copy the log to clipboard",
+	[ControllerUiLangClassId.BUTTON_CLOSE_TEXT]: "Close",
+	[ControllerUiLangClassId.BUTTON_CLOSE_TITLE]: "Closes and stops working with the com port",
 };
