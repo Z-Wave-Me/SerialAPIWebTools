@@ -1,9 +1,32 @@
 import {html_modal} from "./modal.js";
 
-import {sleep, hexToBytes} from "./utilities";
+import {sleep, hexToBytes, arrayToStringHex, versionNumberToString} from "./utilities";
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower} from "./controller_sapi";
+import { utils } from "aes-js";
 
 export {ControllerUiClass};
+
+interface ControllerUiClassJsonUpdateInfo
+{
+	targetAppVersionMajor:string;
+	targetAppVersionMinor:string;
+	fileURL:string;
+	enabled:string;
+	type:string;
+}
+
+interface ControllerUiClassUpdateInfoData
+{
+	version:number;
+	url:string;
+	beta:boolean;
+}
+
+interface ControllerUiClassUpdateInfo
+{
+	version:number;
+	data:Array<ControllerUiClassUpdateInfoData>;
+}
 
 interface ControllerUiClassNewLicenseXhr
 {
@@ -21,80 +44,137 @@ interface ControllerUiClassNewLicense
 }
 
 class ControllerUiClass {
-	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string				= "Sorry, this feature is supported only on Chrome, Edge and Opera";
-	private readonly MESSAGE_PORT_NOT_SELECT:string					= "No port selected";
-	private readonly MESSAGE_PORT_USE:string						= "Check yours, maybe another application is using it";
-	private readonly MESSAGE_CONNECT:string							= "Connect controller";
-	private readonly MESSAGE_READ_CAPABILITIES:string				= "Read capabilities the controller";
-	private readonly MESSAGE_READ_REGION:string						= "Read region the controller";
-	private readonly MESSAGE_READ_POWER:string						= "Read power the controller";
-	private readonly MESSAGE_READ_LICENSE:string					= "Read license the controller";
-	private readonly MESSAGE_SET_LICENSE:string						= "Set license the controller";
-	private readonly MESSAGE_READ_BOARD_INFO:string					= "Read board info the controller";
-	private readonly MESSAGE_SET_REGION:string						= "Set region the controller";
-	private readonly MESSAGE_SET_POWER:string						= "Set power the controller";
-	private readonly MESSAGE_SET_DEFAULT:string						= "Set default the controller";
-	private readonly MESSAGE_PLEASE_WAIT:string						= "Please wait until the previous operation is completed.";
-	private readonly MESSAGE_VERSION_LOG							= "SerialAPIWebTools version 0.0.1";
+	private readonly URL_UPDATE_FIMWARE:string								= "https://service.z-wave.me/expertui/uzb/";
 
-	private readonly TABLE_NAME_SERIAL_API_VERSION:string			= "Serial API Version:";
-	private readonly TABLE_NAME_SERIAL_API_VERSION_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_VENDOR:string						= "Vendor:";
-	private readonly TABLE_NAME_VENDOR_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_VENDOR_ID:string					= "Vendor id:";
-	private readonly TABLE_NAME_VENDOR_ID_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_REGION:string						= "Region:";
-	private readonly TABLE_NAME_REGION_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_REGION_SELECT_TITLE:string			= "Select region";
-	private readonly TABLE_NAME_REGION_BUTTON:string				= "Apple";
-	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string			= "Apple select region";
-	private readonly TABLE_NAME_RESET_DEFAULT:string				= "Reset default:";
-	private readonly TABLE_NAME_RESET_DEFAULT_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON:string			= "Reset";
-	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_POWER:string						= "Power:";
-	private readonly TABLE_NAME_POWER_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_POWER_SELECT_TITLE:string			= "Select power";
-	private readonly TABLE_NAME_POWER_BUTTON:string					= "Apple";
-	private readonly TABLE_NAME_POWER_BUTTON_TITLE:string			= "Apple select power";
-	private readonly TABLE_NAME_LICENSE_UUID:string					= "Uuid:";
-	private readonly TABLE_NAME_LICENSE_UUID_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS:string			= "More options:";
-	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string	= "https://z-wave.me/hardware-capabilities/?uuid=";
-	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string			= "https://service.z-wave.me/hardware/capabilities/?uuid=";
-	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string			= "Subvendor:";
-	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID_TITLE:string	= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_LICENSE_MAX_NODE:string				= "Nodes limit:";
-	private readonly TABLE_NAME_LICENSE_MAX_NODE_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_LICENSE_SUPPORT:string				= "Support:";
-	private readonly TABLE_NAME_LICENSE_SUPPORT_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-	private readonly TABLE_NAME_LICENSE_YES:string					= '<input disabled="disabled" checked type="checkbox">';
-	private readonly TABLE_NAME_LICENSE_NO:string					= '<input disabled="disabled" type="checkbox">';
+	private readonly MESSAGE_NOT_SUPPORT_BROWSER:string						= "Sorry, this feature is supported only on Chrome, Edge and Opera";
+	private readonly MESSAGE_PORT_NOT_SELECT:string							= "No port selected";
+	private readonly MESSAGE_PORT_USE:string								= "Check yours, maybe another application is using it";
+	private readonly MESSAGE_CONNECT:string									= "Connect controller";
+	private readonly MESSAGE_READ_CAPABILITIES:string						= "Read capabilities the controller";
+	private readonly MESSAGE_READ_REGION:string								= "Read region the controller";
+	private readonly MESSAGE_READ_POWER:string								= "Read power the controller";
+	private readonly MESSAGE_READ_LICENSE:string							= "Read license the controller";
+	private readonly MESSAGE_SET_LICENSE:string								= "Set license the controller";
+	private readonly MESSAGE_READ_BOARD_INFO:string							= "Read board info the controller";
+	private readonly MESSAGE_SET_REGION:string								= "Set region the controller";
+	private readonly MESSAGE_SET_POWER:string								= "Set power the controller";
+	private readonly MESSAGE_SET_DEFAULT:string								= "Set default the controller";
+	private readonly MESSAGE_PLEASE_WAIT:string								= "Please wait until the previous operation is completed.";
+	private readonly MESSAGE_NAME_APP:string								= "SerialAPIWebTools";
+	private readonly MESSAGE_VERSION_LOG									= this.MESSAGE_NAME_APP + " 0.0.1";
+	private readonly MESSAGE_UPDATE_DWNLOAD_INFO:string						= "Download update info";
+	private readonly MESSAGE_UPDATE_DWNLOAD_FILE:string						= "Download update file";
+	private readonly MESSAGE_UPDATE_START_FINWARE:string					= "Start update finware";
 
-	private readonly SECTION_ID_BUTTON_APPLE_REGION:string			= 'data-id_apple_region';
-	private readonly SECTION_ID_BUTTON_APPLE_POWER:string			= 'data-id_apple_power';
-	private readonly SECTION_ID_DATA_LICENSE_INFO:string			= '[data-id_license_info]';
-	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string		= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
-	private readonly SECTION_ID_DATA_CONTROLLER_INFO:string			= '[data-id_controller_info]';
-	private readonly SECTION_ID_DATA_CONTROLLER_INFO_TBODY:string	= this.SECTION_ID_DATA_CONTROLLER_INFO + ' tbody';
+	private readonly LOCAL_STORAGE_KEY_UPDATE_BETA:string					= this.MESSAGE_NAME_APP + '_update_beta';
+	private readonly LOCAL_STORAGE_VALUE_TRUE:string						= 'true';
+	private readonly LOCAL_STORAGE_VALUE_FALSE:string						= 'false';
 
-	private readonly BAUDRATE										= [115200, 230400, 460800, 921600];
-	private readonly dtr_timeout:number								= 250;
-	private readonly ms_timeout_get_new_license:number				= 10000;
-	private readonly ms_timeout_get_new_license_xhr:number			= 2000;
-	private readonly ms_timeout_get_new_license_port:number			= 1000;
+	private readonly TABLE_NAME_SERIAL_API_VERSION:string					= "Serial API Version:";
+	private readonly TABLE_NAME_SERIAL_API_VERSION_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_VENDOR:string								= "Vendor:";
+	private readonly TABLE_NAME_VENDOR_TITLE:string							= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_VENDOR_ID:string							= "Vendor id:";
+	private readonly TABLE_NAME_VENDOR_ID_TITLE:string						= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_REGION:string								= "Region:";
+	private readonly TABLE_NAME_REGION_TITLE:string							= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_REGION_SELECT_TITLE:string					= "Select region";
+	private readonly TABLE_NAME_REGION_BUTTON:string						= "Apple";
+	private readonly TABLE_NAME_REGION_BUTTON_TITLE:string					= "Apple select region";
+	private readonly TABLE_NAME_RESET_DEFAULT:string						= "Reset default:";
+	private readonly TABLE_NAME_RESET_DEFAULT_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON:string					= "Reset";
+	private readonly TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_POWER:string								= "Power:";
+	private readonly TABLE_NAME_POWER_TITLE:string							= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_POWER_SELECT_TITLE:string					= "Select power";
+	private readonly TABLE_NAME_POWER_BUTTON:string							= "Apple";
+	private readonly TABLE_NAME_POWER_BUTTON_TITLE:string					= "Apple select power";
+	private readonly TABLE_NAME_UPDATE_FINWARE_BUTTON:string				= "Update";
+	private readonly TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_BOOTLOADER_BUTTON:string				= "Update";
+	private readonly TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_UUID:string							= "Uuid:";
+	private readonly TABLE_NAME_LICENSE_UUID_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS:string					= "More options:";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string			= "https://z-wave.me/hardware-capabilities/?uuid=";
+	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string					= "https://service.z-wave.me/hardware/capabilities/?uuid=";
+	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID:string					= "Subvendor:";
+	private readonly TABLE_NAME_LICENSE_SUBVENDOR_ID_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_MAX_NODE:string						= "Nodes limit:";
+	private readonly TABLE_NAME_LICENSE_MAX_NODE_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_SUPPORT:string						= "Support:";
+	private readonly TABLE_NAME_LICENSE_SUPPORT_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_LICENSE_YES:string							= '<input disabled="disabled" checked type="checkbox">';
+	private readonly TABLE_NAME_LICENSE_NO:string							= '<input disabled="disabled" type="checkbox">';
+	private readonly TABLE_NAME_UPDATE_BETA:string							= 'Beta:';
+	private readonly TABLE_NAME_UPDATE_BETA_SELECT_TITLE:string				= 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:';
+	private readonly TABLE_NAME_UPDATE_BETA_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_FINWARE:string						= 'Finware:';
+	private readonly TABLE_NAME_UPDATE_FINWARE_TITLE:string					= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE:string			= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_NOT_UPDATE_SELECT_TITLE:string		= "Not update";
+	private readonly TABLE_NAME_UPDATE_BOOTLOADER:string					= 'Bootloader:';
+	private readonly TABLE_NAME_UPDATE_BOOTLOADER_TITLE:string				= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE:string		= "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+	private readonly TABLE_NAME_UPDATE_DOWNLOAD_INFO:string					= "Download info...";
+	private readonly TABLE_NAME_UPDATE_DOWNLOAD_FILE:string					= "Download file...";
+	private readonly TABLE_NAME_UPDATE_WAIT_BUS_SERIAL:string				= "Wait bus serial...";
+	private readonly TABLE_NAME_UPDATE_WAIT_UPDATE:string					= "Wait update...";
+	private readonly TABLE_NAME_UPDATE_JSON_ENABLED:string					= "enabled";
+	private readonly TABLE_NAME_UPDATE_JSON_TYPE_FINWARE:string				= "firmware";
+
+	private readonly SELECTOR_DEFAULT:string								= 'data-default';
+	private readonly SELECTOR_BETA:string									= 'data-beta';
+	private readonly SELECTOR_ID:string										= 'data-id-';
+	private readonly SELECTOR_FUNCTION:string								= 'data-func-';
+	private readonly SELECTOR_FUNCTION_CHANGE:string						= this.SELECTOR_FUNCTION + 'change';
+	private readonly SELECTOR_FUNCTION_CLICK:string							= this.SELECTOR_FUNCTION + 'click';
+
+	private readonly SECTION_ID_BUTTON_APPLE_REGION:string					= this.SELECTOR_ID + 'apple_region';
+	private readonly SECTION_ID_BUTTON_APPLE_POWER:string					= this.SELECTOR_ID + 'apple_power';
+	private readonly SECTION_ID_BUTTON_UPDATE_FINWARE:string				= this.SELECTOR_ID + 'update_finware';
+	private readonly SECTION_ID_BUTTON_UPDATE_BOOTLOADER:string				= this.SELECTOR_ID + 'update_bootloader';
+
+	private readonly SECTION_ID_DATA_UPDATE_INFO:string						= '[' + this.SELECTOR_ID + 'update_info]';
+	private readonly SECTION_ID_DATA_UPDATE_INFO_TBODY:string				= this.SECTION_ID_DATA_UPDATE_INFO + ' tbody';
+	private readonly SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT:string		= this.SECTION_ID_DATA_UPDATE_INFO_TBODY + ' tr:nth-child(2) td:nth-child(2)';
+	private readonly SECTION_ID_DATA_UPDATE_INFO_BOOTLOADER_SELECT:string	= this.SECTION_ID_DATA_UPDATE_INFO_TBODY + ' tr:nth-child(3) td:nth-child(2)';
+	private readonly SECTION_ID_DATA_LICENSE_INFO:string					= '[' + this.SELECTOR_ID + 'license_info]';
+	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string				= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
+	private readonly SECTION_ID_DATA_CONTROLLER_INFO:string					= '[' + this.SELECTOR_ID + 'controller_info]';
+	private readonly SECTION_ID_DATA_CONTROLLER_INFO_TBODY:string			= this.SECTION_ID_DATA_CONTROLLER_INFO + ' tbody';
+
+	private readonly BAUDRATE												= [115200, 230400, 460800, 921600];
+	private readonly dtr_timeout:number										= 250;
+	private readonly ms_timeout_get_new_license:number						= 10000;
+	private readonly ms_timeout_get_new_license_xhr:number					= 3000;
+	private readonly ms_timeout_get_new_license_port:number					= 1000;
+	private readonly ms_timeout_get_update_xhr:number						= 10000;
+	private readonly ms_timeout_get_update_gbl_xhr:number					= 30000;
+	private readonly ms_timeout_get_update_gbl_timer_bus:number				= 3000;
 
 	private readonly el_modal:HTMLElement;
 	private readonly el_modal_section_log_txt:HTMLElement;
 
-
-	private region_current:string									= "";
-	private region_new:string										= "";
-	private power_current:number									= 0x0;
-	private power_new:number										= 0x0;
-	private razberry:ControllerSapiClass							= new ControllerSapiClass();
-	private new_license_timer:ControllerUiClassNewLicense			= {};
+	private capabilities_info?:ControllerSapiClassCapabilities				= undefined;
+	private board_info?:ControllerSapiClassBoardInfo						= undefined;
+	private url_finware_current:string										= "";
+	private url_finware_new:string											= "";
+	private url_bootloader_current:string										= "";
+	private url_bootloader_new:string											= "";
+	private region_current:string											= "";
+	private region_new:string												= "";
+	private power_current:number											= 0x0;
+	private power_new:number												= 0x0;
+	private razberry:ControllerSapiClass									= new ControllerSapiClass();
+	private new_license_timer:ControllerUiClassNewLicense					= {};
+	private get_update_info_xhr:XMLHttpRequest|undefined					= undefined;
+	private get_update_finware_xhr:XMLHttpRequest|undefined					= undefined;
+	private get_update_finware_timer_id?:number								= undefined;
+	private app_update_info?:ControllerUiClassUpdateInfo					= undefined;
+	
 
 	private _log(txt:string): void {
 		this.el_modal_section_log_txt.innerHTML += txt;
@@ -149,6 +229,22 @@ class ControllerUiClass {
 		this._log_error("Internet request " + url + " - invalid data");
 	}
 
+	private _destructors_update(): void {
+		if (this.get_update_info_xhr != undefined) {
+			this.get_update_info_xhr.abort();
+			this.get_update_info_xhr = undefined;
+		}
+		if (this.get_update_finware_xhr != undefined) {
+			this.get_update_finware_xhr.abort();
+			this.get_update_finware_xhr = undefined;
+		}
+		if (this.get_update_finware_timer_id != undefined) {
+			window.clearTimeout(this.get_update_finware_timer_id);
+			this.get_update_finware_timer_id = undefined;
+		}
+		this.app_update_info = undefined;
+	}
+
 	private _destructors_license(): void {
 		if (this.new_license_timer.timer_id != undefined) {
 			window.clearTimeout(this.new_license_timer.timer_id);
@@ -162,10 +258,19 @@ class ControllerUiClass {
 		this.new_license_timer.uuid_hex = undefined;
 	}
 
-	private async _destructors(): Promise<void> {
+	private _destructors_capabilities(): void {
+		this.capabilities_info = undefined;
+	}
+
+	private _destructors_board_info(): void {
+		this.board_info = undefined;
+	}
+
+	private _destructors(): void {
 		this._destructors_license();
-		await this.razberry.close();
-		this.el_modal.remove();
+		this._destructors_update();
+		this._destructors_capabilities();
+		this._destructors_board_info();
 	}
 
 	private _is_busy(): boolean {
@@ -179,7 +284,9 @@ class ControllerUiClass {
 	private async _close(): Promise<void> {
 		if (this._is_busy() == true)
 			return ;
-		await this._destructors();
+		this._destructors();
+		await this.razberry.close();
+		this.el_modal.remove();
 	}
 
 	private _copy(): void {
@@ -268,10 +375,173 @@ class ControllerUiClass {
 		this._log_error_faled_code(this.MESSAGE_SET_DEFAULT, status);
 	}
 
+	private _update_beta_aplle_select(beta:boolean, find:string, title:string): void {
+		let number:number;
+		const el_select:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_select == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		const list_option:NodeListOf<HTMLElement> = el_select.querySelectorAll('option');
+		number = 0x0;
+		list_option.forEach((item:HTMLElement) => {
+			if (item.getAttribute('selected') != null) {
+				item.removeAttribute("selected");
+			}
+			if (beta == false && item.getAttribute(this.SELECTOR_BETA) != null)
+				return ;
+			if (item.getAttribute(this.SELECTOR_DEFAULT) != null) {
+				item.setAttribute("selected", "");
+			}
+			number++;
+		});
+		if (beta == false)
+			el_select.setAttribute(this.SELECTOR_BETA, "");
+		else
+			el_select.removeAttribute(this.SELECTOR_BETA);
+		if (number > 0x1) {
+			el_select.title = title;
+			el_select.removeAttribute("disabled");
+			return ;
+		}
+		el_select.title = this.TABLE_NAME_UPDATE_NOT_UPDATE_SELECT_TITLE;
+		el_select.setAttribute("disabled", "");
+	}
+
+	private _update_beta_aplle(): void {
+		let beta:boolean;
+
+		const update_beta:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA);
+		if (update_beta === this.LOCAL_STORAGE_VALUE_TRUE)
+			beta = true;
+		else
+			beta = false;
+		if (this.get_update_finware_xhr == undefined) {
+			this._update_beta_aplle_select(beta, this.SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT + ' select', this.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
+			this.url_finware_new = "";
+			this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_FINWARE, this.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, (this.url_finware_new == this.url_finware_current) ? true:false);
+		}
+		this._update_beta_aplle_select(beta, this.SECTION_ID_DATA_UPDATE_INFO_BOOTLOADER_SELECT + ' select', this.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
+	}
+
+	private _update_beta_change(event:Event): void {
+		if (event.target == null)
+			return ;
+		const el_target:any = (event.target as any);
+		localStorage.setItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA, ((el_target.checked == true) ? this.LOCAL_STORAGE_VALUE_TRUE: this.LOCAL_STORAGE_VALUE_FALSE));
+		this._update_beta_aplle();
+	}
+
+	private _event_get_element(event:Event, tag:string): HTMLElement|null {
+		if (event.target == null)
+			return (null);
+		const el_target:HTMLElement = (event.target as HTMLElement);
+		try {
+			if (el_target.tagName.toLowerCase() !== tag.toLowerCase())
+				return (null);
+		} catch (error) {
+			return (null);
+		}
+		return (el_target);
+	}
+
+	private _update_finware_select_change(event:Event): void {
+		const el_target:HTMLElement|null = this._event_get_element(event, "select");
+		if (el_target == null)
+			return ;
+		this.url_finware_new = (el_target as any).value;
+		this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_FINWARE, this.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, (this.url_finware_new == this.url_finware_current) ? true:false);
+	}
+
+	private _update_bootloader_select_change(event:Event): void {
+		const el_target:HTMLElement|null = this._event_get_element(event, "select");
+		if (el_target == null)
+			return ;
+		this.url_bootloader_new = (el_target as any).value;
+		this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_BOOTLOADER, this.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE, (this.url_bootloader_new == this.url_bootloader_current) ? true:false);
+	}
+
+	private async _update_finware_apple_add(find:string, data:Uint8Array): Promise<ControllerSapiClassStatus> {
+		const el_continer:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_continer == null) {
+			this._log_error_not_find_el(find);
+			return (ControllerSapiClassStatus.UNKNOWN);
+		}
+		const el_progress:HTMLElement = document.createElement('progress');
+		const el_span:HTMLElement = document.createElement('span');
+		el_progress.setAttribute('max', '100');
+		el_continer.innerHTML = '';
+		el_continer.appendChild(el_progress);
+		el_continer.appendChild(el_span);
+		const status:ControllerSapiClassStatus = await this.razberry.updateFinware(data, (percentage:number) => {
+				el_progress.setAttribute('value', percentage.toFixed().toString());
+				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
+				if (percentage >= 100.00) {
+					this._start_update_info_create_progress(find, this.TABLE_NAME_UPDATE_WAIT_UPDATE);
+				}
+			}
+		);
+		return (status);
+	}
+
+	private async _update_finware_apple(): Promise<void> {
+		this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_FINWARE, this.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, true);
+		this._log_info_start(this.MESSAGE_UPDATE_DWNLOAD_FILE);
+		this._start_update_info_create_progress(this.SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT, this.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
+		this.get_update_finware_xhr = new XMLHttpRequest();
+		const url:string = this.URL_UPDATE_FIMWARE + this.url_finware_new;
+		this.get_update_finware_xhr.open("POST", url, true);
+		this.get_update_finware_xhr.responseType = "arraybuffer";
+		this.get_update_finware_xhr.timeout = this.ms_timeout_get_update_gbl_xhr;
+		this.get_update_finware_xhr.ontimeout = () => {
+			this.get_update_finware_xhr = undefined;
+			this._log_error_xhr_timeout(url);
+			this._log_error_faled(this.MESSAGE_UPDATE_DWNLOAD_FILE);
+			this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_FINWARE, this.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, false);
+		};
+		this.get_update_finware_xhr.onerror = () => {
+			this.get_update_finware_xhr = undefined;
+			this._log_error_xhr_error(url);
+			this._log_error_faled(this.MESSAGE_UPDATE_DWNLOAD_FILE);
+			this._aplle_common_change(this.SECTION_ID_BUTTON_UPDATE_FINWARE, this.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, false);
+		};
+		this.get_update_finware_xhr.onload = () => {
+			if (this.get_update_finware_xhr == undefined)
+				return ;
+			this._log_info_done(this.MESSAGE_UPDATE_DWNLOAD_FILE);
+			const gbl:Uint8Array = new Uint8Array(this.get_update_finware_xhr.response);
+			const fun_xhr_timer:TimerHandler = async () => {
+				this.get_update_finware_timer_id = undefined;
+				if (this._is_busy() == true) {
+					this.get_update_finware_timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_update_gbl_timer_bus);
+					return ;
+				}
+				this._log_info_start(this.MESSAGE_UPDATE_START_FINWARE);
+				const status:ControllerSapiClassStatus = await this._update_finware_apple_add(this.SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT, gbl);
+				if (status != ControllerSapiClassStatus.OK) {
+					this._log_error_faled_code(this.MESSAGE_UPDATE_START_FINWARE, status);
+					if (this.app_update_info != undefined) {
+						this._start_update_info_create_select_finware(this.app_update_info);
+						this.get_update_finware_xhr = undefined;
+						this._update_beta_aplle();
+					}
+					return ;
+				}
+				this._log_info_done(this.MESSAGE_UPDATE_START_FINWARE);
+				this._start_update();
+
+			};
+			this._start_update_info_create_progress(this.SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT, this.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
+			this.get_update_finware_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		};
+		this.get_update_finware_xhr.send();
+	}
+
+
 	private _html_event(el:HTMLElement, data:string): void {
-		const list:NodeListOf<HTMLElement> = el.querySelectorAll('[data-'+ data + ']');
+		const list:NodeListOf<HTMLElement> = el.querySelectorAll('[' + this.SELECTOR_FUNCTION + ''+ data + ']');
 		list.forEach((item:HTMLElement) => {
-			const value:string|null = item.getAttribute('data-'+ data);
+			const value:string|null = item.getAttribute(this.SELECTOR_FUNCTION + data);
 			if (value == null)
 				return ;
 			item.addEventListener(data, () => {
@@ -310,6 +580,10 @@ class ControllerUiClass {
 		return (this._create_table_element(this.SECTION_ID_DATA_LICENSE_INFO_TBODY, name, value, action, title));
 	}
 
+	private _create_table_element_update_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
+		return (this._create_table_element(this.SECTION_ID_DATA_UPDATE_INFO_TBODY, name, value, action, title));
+	}
+
 	private async _connect(): Promise<boolean> {
 		let i:number;
 
@@ -332,33 +606,45 @@ class ControllerUiClass {
 		return (false);
 	}
 
-	private _start_display(find:string, display:string):boolean {
-		const id_controller_info:HTMLElement|null = this.el_modal.querySelector(find);
-		if (id_controller_info == null) {
+	private _section_hide(find:string):boolean {
+		const el_section:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_section == null) {
 			this._log_error_not_find_el(find);
 			return (false);
 		}
-		id_controller_info.style.display = display;
+		el_section.style.display = 'none';
 		return (true);
 	}
 
-	private _start_clear(find:string):boolean {
-		const tbody:HTMLElement|null = this.el_modal.querySelector(find);
-		if (tbody == null) {
+	private _section_clear(find:string):boolean {
+		const el_section:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_section == null) {
 			this._log_error_not_find_el(find);
 			return (false);
 		}
-		tbody.innerHTML = "";
+		el_section.innerHTML = '';
 		return (true);
+	}
+
+	private _section_show(find:string): void {
+		const el_section:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_section == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		el_section.style.display = '';
+		return ;
 	}
 
 	private _get_capabilities(): boolean {
+		this._destructors_capabilities();
 		this._log_info_start(this.MESSAGE_READ_CAPABILITIES);
 		const capabilities_info:ControllerSapiClassCapabilities = this.razberry.getCapabilities();
 		if (capabilities_info.status != ControllerSapiClassStatus.OK) {
 			this._log_error_faled_code(this.MESSAGE_READ_CAPABILITIES, capabilities_info.status);
 			return (false);
 		}
+		this.capabilities_info = capabilities_info;
 		this._create_table_element_controler_info(this.TABLE_NAME_SERIAL_API_VERSION, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision, "", this.TABLE_NAME_SERIAL_API_VERSION_TITLE);
 		if (capabilities_info.VendorIDWebpage == undefined)
 			this._create_table_element_controler_info(this.TABLE_NAME_VENDOR, capabilities_info.VendorIDName, "", this.TABLE_NAME_VENDOR_TITLE);
@@ -390,8 +676,8 @@ class ControllerUiClass {
 					}
 					i++;
 				}
-				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '" data-change="_region_change(event)">' + el_str +'</select>';
-				el_button_str = '<button '+ this.SECTION_ID_BUTTON_APPLE_REGION +' data-click="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>';
+				el_str = '<select title="' + this.TABLE_NAME_REGION_SELECT_TITLE + '"' + this.SELECTOR_FUNCTION_CHANGE + '="_region_change(event)">' + el_str +'</select>';
+				el_button_str = '<button '+ this.SECTION_ID_BUTTON_APPLE_REGION + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_region_apple()" disabled type="button">' + this.TABLE_NAME_REGION_BUTTON + '</button>';
 				this._create_table_element_controler_info(this.TABLE_NAME_REGION, el_str, el_button_str, this.TABLE_NAME_REGION_TITLE);
 				return (true);
 				break ;
@@ -415,15 +701,15 @@ class ControllerUiClass {
 			return (false);
 		}
 		this.power_current = power.power_raw;
-		const el_value:string = '<input title="' + this.TABLE_NAME_POWER_SELECT_TITLE + '" type="number"'+ ' data-change="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
-		const el_action:string = '<button ' + this.SECTION_ID_BUTTON_APPLE_POWER +' data-click="_power_apple()" disabled type="button">' + this.TABLE_NAME_POWER_BUTTON + '</button>';
+		const el_value:string = '<input title="' + this.TABLE_NAME_POWER_SELECT_TITLE + '" type="number"'+ this.SELECTOR_FUNCTION_CHANGE + '="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
+		const el_action:string = '<button ' + this.SECTION_ID_BUTTON_APPLE_POWER + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_power_apple()" disabled type="button">' + this.TABLE_NAME_POWER_BUTTON + '</button>';
 		this._create_table_element_controler_info(this.TABLE_NAME_POWER, el_value, el_action, this.TABLE_NAME_POWER_TITLE);
 		this._log_info_done(this.MESSAGE_READ_POWER);
 		return (true);
 	}
 
 	private _get_controller_default(): boolean {
-		const value:string = '<button class="ZUnoRazberryModal_color_warning_info" data-click="_reset_default()" title="' + this.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE + '" type="button">' + this.TABLE_NAME_RESET_DEFAULT_BUTTON + '</button>';
+		const value:string = '<button class="ZUnoRazberryModal_color_warning_info" ' + this.SELECTOR_FUNCTION_CLICK + '="_reset_default()" title="' + this.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE + '" type="button">' + this.TABLE_NAME_RESET_DEFAULT_BUTTON + '</button>';
 		this._create_table_element_controler_info(this.TABLE_NAME_RESET_DEFAULT, "", value, this.TABLE_NAME_RESET_DEFAULT_TITLE);
 		return (true);
 	}
@@ -431,6 +717,10 @@ class ControllerUiClass {
 	private async _start_controller_info(): Promise<void> {
 		let display:boolean;
 
+		if (this._section_hide(this.SECTION_ID_DATA_CONTROLLER_INFO) == false)
+			return ;
+		if (this._section_clear(this.SECTION_ID_DATA_CONTROLLER_INFO_TBODY) == false)
+			return ;
 		display = false;
 		if (this._get_capabilities() == true)
 			display = true;
@@ -442,7 +732,7 @@ class ControllerUiClass {
 			display = true;
 		if (display == false)
 			return ;
-		this._start_display(this.SECTION_ID_DATA_CONTROLLER_INFO, "");
+		this._section_show(this.SECTION_ID_DATA_CONTROLLER_INFO);
 	}
 
 	private _get_license(): boolean {
@@ -473,26 +763,16 @@ class ControllerUiClass {
 		return (true);
 	}
 
-	private _array_to_string_hex(data:Array<number>):string {
-		let str_hex:string, i:number;
-
-		str_hex = "";
-		i = 0x0;
-		while (i < data.length) {
-			str_hex = str_hex + data[i].toString(0x10);
-			i++;
-		}
-		return (str_hex);
-	}
-
 	private _get_board_info(): boolean {
+		this._destructors_board_info();
 		this._log_info_start(this.MESSAGE_READ_BOARD_INFO);
 		const board_info:ControllerSapiClassBoardInfo = this.razberry.getBoardInfo();
 		if (board_info.status != ControllerSapiClassStatus.OK) {
 			this._log_error_faled_code(this.MESSAGE_READ_BOARD_INFO, board_info.status);
 			return (false);
 		}
-		const uuid_str_hex:string = this._array_to_string_hex(board_info.chip_uuid);
+		this.board_info = board_info;
+		const uuid_str_hex:string = arrayToStringHex(board_info.chip_uuid);
 		this.new_license_timer.uuid_hex = uuid_str_hex;
 		this._create_table_element_license_info(this.TABLE_NAME_LICENSE_UUID, uuid_str_hex, "", this.TABLE_NAME_LICENSE_UUID_TITLE);
 		const more_options_link:string = '<a target="_blank" href="'+ this.TABLE_NAME_LICENSE_MORE_OPTIONS_LINK + uuid_str_hex +'">'+ 'link' +'</a>';
@@ -595,11 +875,11 @@ class ControllerUiClass {
 	private _start_license_info(): void {
 		let display:boolean;
 
-		if (this._start_display(this.SECTION_ID_DATA_LICENSE_INFO, "none") == false)
+		if (this._section_hide(this.SECTION_ID_DATA_LICENSE_INFO) == false)
+			return ;
+		if (this._section_clear(this.SECTION_ID_DATA_LICENSE_INFO_TBODY) == false)
 			return ;
 		this._destructors_license();
-		if (this._start_clear(this.SECTION_ID_DATA_LICENSE_INFO_TBODY) == false)
-			return ;
 		display = false;
 		if (this._get_board_info() == true)
 			display = true;
@@ -608,7 +888,140 @@ class ControllerUiClass {
 		if (display == false)
 			return ;
 		this._license_timer();
-		this._start_display(this.SECTION_ID_DATA_LICENSE_INFO, "");
+		this._section_show(this.SECTION_ID_DATA_LICENSE_INFO);
+	}
+
+	private _start_update_info_create_progress(find:string, text:string): void {
+		const el_continer:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_continer == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		el_continer.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' + text +'</div>';
+	}
+
+	private _start_update_info_create_select(find:string, info:ControllerUiClassUpdateInfo, change:EventListener): void {
+		let i:number, el_option_str:string;
+
+		const el_continer:HTMLElement|null = this.el_modal.querySelector(find);
+		if (el_continer == null) {
+			this._log_error_not_find_el(find);
+			return ;
+		}
+		const el_select:HTMLElement = document.createElement("select");
+		el_continer.innerHTML = "";
+		el_continer.appendChild(el_select);
+		info.data.sort(function (a:ControllerUiClassUpdateInfoData, b:ControllerUiClassUpdateInfoData):number {
+			return (a.version - b.version);
+		});
+		i = 0x0;
+		el_option_str = '<option ' + this.SELECTOR_DEFAULT + ' value="">'+ versionNumberToString(info.version) +'</option>';
+		while (i < info.data.length) {
+			el_option_str = el_option_str + '<option ' + ((info.data[i].beta == true)? this.SELECTOR_BETA + '=""':'')  + ' value="' + info.data[i].url +'">'+ versionNumberToString(info.data[i].version) +'</option>';
+			i++;
+		}
+		el_select.innerHTML = el_option_str;
+		el_select.addEventListener("change", change);
+	}
+
+	private _start_update_info_create_select_finware(info:ControllerUiClassUpdateInfo): void {
+		const change:EventListener = (event:Event) => {
+			this._update_finware_select_change(event);
+		};
+		this._start_update_info_create_select(this.SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT, info, change);
+	}
+
+	private _start_update_info_create_select_bootloader(info:ControllerUiClassUpdateInfo): void {
+		const change:EventListener = (event:Event) => {
+			this._update_bootloader_select_change(event);
+		};
+		this._start_update_info_create_select(this.SECTION_ID_DATA_UPDATE_INFO_BOOTLOADER_SELECT, info, change);
+	}
+
+	private _start_update_info(): void {
+		let i:number, version:number;
+
+		if (this._section_hide(this.SECTION_ID_DATA_UPDATE_INFO) == false)
+			return ;
+		if (this._section_clear(this.SECTION_ID_DATA_UPDATE_INFO_TBODY) == false)
+			return ;
+		if (this.capabilities_info == undefined || this.board_info == undefined)
+			return ;
+		const app_update_info:ControllerUiClassUpdateInfo = {version:(this.capabilities_info.ApiVersion << 0x8) | this.capabilities_info.ApiRevision, data: []};
+		const bootloader_update_info:ControllerUiClassUpdateInfo = {version:this.board_info.bootloader_version, data: []};
+		this._destructors_update();
+		this._log_info_start(this.MESSAGE_UPDATE_DWNLOAD_INFO);
+		this.get_update_info_xhr = new XMLHttpRequest();
+		const url:string = this.URL_UPDATE_FIMWARE + '?vendorId=' + this.capabilities_info.VendorID.toString() + '&appVersionMajor=' + this.capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + this.capabilities_info.ApiRevision.toString() + '&bootloaderCRC=1766938484&token=all&uuid=' + arrayToStringHex(this.board_info.chip_uuid);
+		this.get_update_info_xhr.open("POST", url, true);
+		this.get_update_info_xhr.responseType = 'json';
+		this.get_update_info_xhr.timeout = this.ms_timeout_get_update_xhr;
+		this.get_update_info_xhr.ontimeout = () => {
+			this._log_error_xhr_timeout(url);
+			this._log_error_faled(this.MESSAGE_UPDATE_DWNLOAD_INFO);
+			this._start_update_info_create_select_finware(app_update_info);
+			this._start_update_info_create_select_bootloader(bootloader_update_info);
+			this.get_update_info_xhr = undefined;
+		};
+		this.get_update_info_xhr.onerror = () => {
+			this._log_error_xhr_error(url);
+			this._log_error_faled(this.MESSAGE_UPDATE_DWNLOAD_INFO);
+			this._start_update_info_create_select_finware(app_update_info);
+			this._start_update_info_create_select_bootloader(bootloader_update_info);
+			this._update_beta_aplle();
+			this.get_update_info_xhr = undefined;
+		};
+		this.get_update_info_xhr.onload = () => {
+			if (this.get_update_info_xhr == undefined)
+				return ;
+			const in_json:{data:Array<ControllerUiClassJsonUpdateInfo>} = this.get_update_info_xhr.response;
+			this.get_update_info_xhr = undefined;
+			try {
+				i = 0x0;
+				while (i < in_json.data.length) {
+					version = (Number(in_json.data[i].targetAppVersionMajor) << 0x8) | Number(in_json.data[i].targetAppVersionMinor);
+					if (in_json.data[i].type == this.TABLE_NAME_UPDATE_JSON_TYPE_FINWARE && version > app_update_info.version) {
+						const update_info_data:ControllerUiClassUpdateInfoData = {version:version, url:in_json.data[i].fileURL, beta:((in_json.data[i].enabled == this.TABLE_NAME_UPDATE_JSON_ENABLED ? false:true))};
+						app_update_info.data.push(update_info_data);
+					}
+					i++;
+				}
+			} catch (error) {
+				this._start_update_info_create_select_finware(app_update_info);
+				this._start_update_info_create_select_bootloader(bootloader_update_info);
+				this._update_beta_aplle();
+				this._log_error_xhr_invalid_data(url);
+				this._log_error_faled(this.MESSAGE_UPDATE_DWNLOAD_INFO);
+				return ;
+			}
+			const update_info_data:ControllerUiClassUpdateInfoData = {version:65756, url:"in_json.data[i].fileURL", beta:true};
+			app_update_info.data.push(update_info_data);
+			this.app_update_info = app_update_info;
+			this._start_update_info_create_select_finware(app_update_info);
+			this._start_update_info_create_select_bootloader(bootloader_update_info);
+			this._update_beta_aplle();
+			this._log_info_done(this.MESSAGE_UPDATE_DWNLOAD_INFO);
+		}
+		const update_beta:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA);
+		const el_beta_str:string = '<input '+ this.SELECTOR_FUNCTION_CHANGE + '="_update_beta_change(event)"'+ ((update_beta === this.LOCAL_STORAGE_VALUE_TRUE) ? ' checked': '') + ' type="checkbox" title="' + this.TABLE_NAME_UPDATE_BETA_SELECT_TITLE + '">';
+		this._create_table_element_update_info(this.TABLE_NAME_UPDATE_BETA, el_beta_str, "", this.TABLE_NAME_UPDATE_BETA_TITLE);
+		const el_load_str:string = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' + this.TABLE_NAME_UPDATE_DOWNLOAD_INFO +'</div>';
+		const el_action_finware:string = '<button ' + this.SECTION_ID_BUTTON_UPDATE_FINWARE + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_update_finware_apple()" disabled type="button">' + this.TABLE_NAME_UPDATE_FINWARE_BUTTON + '</button>';
+		this._create_table_element_update_info(this.TABLE_NAME_UPDATE_FINWARE, el_load_str, el_action_finware, this.TABLE_NAME_UPDATE_FINWARE_TITLE);
+		const el_action_bootloader:string = '<button ' + this.SECTION_ID_BUTTON_UPDATE_BOOTLOADER + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_power_apple()" disabled type="button">' + this.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON + '</button>';
+		this._create_table_element_update_info(this.TABLE_NAME_UPDATE_BOOTLOADER, el_load_str, el_action_bootloader, this.TABLE_NAME_UPDATE_BOOTLOADER_TITLE);
+		this.get_update_info_xhr.send();
+		this._section_show(this.SECTION_ID_DATA_UPDATE_INFO);
+	}
+
+	private async _start_update(): Promise<void> {
+		await this._start_controller_info();
+		if (this.razberry.isRazberry() == true) {
+			this._start_license_info();
+			this._start_update_info();
+		}
+		this._html_event(this.el_modal, "change");
+		this._html_event(this.el_modal, "click");
 	}
 
 	private async _start(): Promise<void> {
@@ -619,11 +1032,7 @@ class ControllerUiClass {
 			return (this._log_error(this.MESSAGE_PORT_NOT_SELECT));
 		if (await this._connect() == false)
 			return ;
-		await this._start_controller_info();
-		if (this.razberry.isRazberry() == true)
-			this._start_license_info();
-		this._html_event(this.el_modal, "change");
-		this._html_event(this.el_modal, "click");
+		await this._start_update();
 	}
 
 	constructor(el:HTMLElement) {

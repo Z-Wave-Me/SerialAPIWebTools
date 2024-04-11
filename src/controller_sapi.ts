@@ -2,7 +2,7 @@ import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
 import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd} from "./sapi";
-import {costruct_int, calcSigmaCRC16} from "./utilities";
+import {costruct_int, calcSigmaCRC16, sleep} from "./utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
 export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower};
@@ -25,6 +25,8 @@ enum ControllerSapiClassStatus
 	NOT_INIT,
 	NOT_RAZBERRY,
 	INVALID_SET,
+	WRONG_SEND_DATA_LENGHT,
+	UNKNOWN,
 }
 
 interface ControllerSapiClassCapabilities
@@ -91,6 +93,11 @@ interface ControllerSapiClassBoardInfo
 
 
 // ------------------------------------------------------------------------------------------------------
+
+interface ControllerUpdateProcess {
+	(percentage:number):void
+}
+
 interface ControllerOutData
 {
 	data:Array<number>;
@@ -111,6 +118,7 @@ enum ControllerSapiClassLockStatus
 }
 
 class ControllerSapiClass {
+	private readonly RAZ7_MAX_SEND_DATA_LENGHT													= 0xA0;
 	private readonly RAZ7_LICENSE_CMD															= 0xF5;
 	private readonly RAZ7_LICENSE_CRC															= 0x1D0F;
 	private readonly RAZ7_LICENSE_STATUS_OK														= 0x00;
@@ -478,7 +486,11 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
 		if (rerion_get.data[0x0] == 0x0)
 			return (ControllerSapiClassStatus.NOT_SET);
-		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, []);
+		return (this.softReset());
+	}
+
+	public async softReset(timeout:number = 3000): Promise<ControllerSapiClassStatus> {
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout);
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as any));
 		return (ControllerSapiClassStatus.OK);
@@ -495,6 +507,63 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_LENGTH_SEQ);
 		if (res.data[0x0] != seq)
 			return (ControllerSapiClassStatus.WRONG_SEQ);
+		return (ControllerSapiClassStatus.OK);
+	}
+
+	public async nvmWrite(addr:number, data:Uint8Array): Promise<ControllerSapiClassStatus> {
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
+		const data_addr:Array<number> = [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (data.length >> 8) & 0xFF, data.length & 0xFF];
+		if (data.length > this.RAZ7_MAX_SEND_DATA_LENGHT)
+			return (ControllerSapiClassStatus.WRONG_SEND_DATA_LENGHT);
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER, data_addr.concat(Array.from(data)));
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as any));
+		if (res.data.length < 0x1)
+			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
+		if (res.data[0x0] != 0x1)
+			return (ControllerSapiClassStatus.NOT_SET);
+		return (ControllerSapiClassStatus.OK);
+	}
+
+	private async _load_file(addr:number, data:Uint8Array, process:ControllerUpdateProcess|null): Promise<ControllerSapiClassStatus> {
+		let step:number, i:number, percentage:number;
+		step = this.getQuantumSize();
+		percentage = 0x0;
+		i = 0x0
+		while (i < data.length) {
+			if (i + step > data.length)
+				step = data.length - i;
+			percentage = (i * 100.0) / data.length;
+			if (process != null)
+				process(percentage);
+			const status:ControllerSapiClassStatus = await this.nvmWrite(addr, data.subarray(i, i + step));
+			if (status != ControllerSapiClassStatus.OK)
+				return (status);
+			i = i + step
+			addr = addr + step
+		}
+		if (process != null && percentage < 100.00)
+			process(100.00);
+		return (ControllerSapiClassStatus.OK);
+	}
+
+	public async updateFinware(data:Uint8Array, process:ControllerUpdateProcess|null): Promise<ControllerSapiClassStatus> {
+		let status:ControllerSapiClassStatus;
+
+		if (this.isRazberry() == false)
+			return (ControllerSapiClassStatus.NOT_RAZBERRY);
+		status = await this._load_file(0x3A000, data, process);
+		if (status != ControllerSapiClassStatus.OK)
+			return (status);
+		status = await this.softReset(20000);
+		if (status != ControllerSapiClassStatus.OK)
+			return (status);
+		await this._get_capabilities(this.capabilities);
+		if (this.isRazberry() == true) {
+			await this._license_get(this.license);
+			await this._get_board_info(this.board_info);
+		}
 		return (ControllerSapiClassStatus.OK);
 	}
 
@@ -536,6 +605,10 @@ class ControllerSapiClass {
 			await this._get_board_info(this.board_info);
 		}
 		return (true);
+	}
+
+	public getQuantumSize(): number {
+		return (this.RAZ7_MAX_SEND_DATA_LENGHT);
 	}
 
 	public busy(): boolean {

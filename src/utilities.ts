@@ -1,4 +1,21 @@
-export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes};
+export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString};
+
+function versionNumberToString(version:number): string {
+	const txt:string = String((version >> 24) & 0xFF).padStart(2, '0') + "." + String((version >> 16) & 0xFF).padStart(2, '0') + "." + String((version >> 0x8) & 0xFF).padStart(2, '0') + "." + String((version) & 0xFF).padStart(2, '0')
+	return (txt)
+}
+
+function arrayToStringHex(data:Array<number>):string {
+	let str_hex:string, i:number;
+
+	str_hex = "";
+	i = 0x0;
+	while (i < data.length) {
+		str_hex = str_hex + data[i].toString(0x10);
+		i++;
+	}
+	return (str_hex);
+}
 
 function hexToBytes(hex:string):Array<number>|undefined {
 	let i:number;

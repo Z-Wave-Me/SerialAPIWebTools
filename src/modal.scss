@@ -2,7 +2,7 @@ $color_error: red;
 $color_info: green;
 $color_valid: green;
 $color_invalid: red;
-$color_warning: yellow;
+$color_warning: rgb(13, 66, 238);
 
 
 .ZUnoRazberryModal
@@ -143,4 +143,26 @@ $margin_section_log_item: 0.2rem;
 	content: '✖';
 	padding-left: 0.2rem;
 	color: $color_invalid;
+}
+
+.ZUnoRazberryModalContentSection_table_load_indicate
+{
+	font-weight: bold;
+	display:inline-block;
+	font-family: monospace;
+	clip-path: inset(0 3ch 0 0);
+	animation: ZUnoRazberryModalContentSection_table_load_indicate_animation 1.5s steps(4) infinite;
+}
+
+@keyframes ZUnoRazberryModalContentSection_table_load_indicate_animation
+{
+	to
+	{
+		clip-path: inset(0 -1ch 0 0)
+	}
+}
+
+.ZUnoRazberryModalContentSection_table select[data-beta] option[data-beta]
+{
+	display: none;
 }
