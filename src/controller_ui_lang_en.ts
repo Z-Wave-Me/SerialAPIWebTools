@@ -69,6 +69,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE]: "Download file...",
 	[ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL]: "Wait bus serial...",
 	[ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE]: "Wait update...",
+	[ControllerUiLangClassId.LOG_HEADER]: "Log",
 	[ControllerUiLangClassId.LOG_DONE]: " done",
 	[ControllerUiLangClassId.LOG_FALLED]: " falled",
 	[ControllerUiLangClassId.LOG_FALLED_CODE]: " falled: {{code}}",

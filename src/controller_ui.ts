@@ -930,12 +930,10 @@ class ControllerUiClass {
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
-		const el_section_tmp:HTMLElement  = document.createElement("section");
+		this.log = new ControllerUiLogClass(this.el_section, this.locale);
+		const el_section_tmp:HTMLElement = document.createElement("section");
 		el_section_tmp.innerHTML = html_modal;
 		this.el_section.appendChild(el_section_tmp);
-		this._html_event(this.el_modal, "click");
-		const list_el_log:HTMLCollectionOf<Element> = this.el_modal.getElementsByClassName("ZUnoRazberryModalContentSectionLog_section_txt");
-		this.log = new ControllerUiLogClass(list_el_log[0x0] as HTMLElement, this.locale);
 		el.appendChild(this.el_modal);
 		this._start();
 	}

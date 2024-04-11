@@ -74,8 +74,17 @@ class ControllerUiLogClass {
 		this.error(this.locale.getLocale(ControllerUiLangClassId.LOG_XHR_INVALID_DATA).replace('{{url}}', url));
 	}
 
-	constructor(el_log:HTMLElement, locale:ControllerUiLangClass) {
-		this.el_log = el_log;
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass) {
 		this.locale = locale;
+		const el_section_log:HTMLElement = document.createElement("section");
+		el_section_log.className = "ZUnoRazberryModalContentSection_table";
+		const el_section_log_header:HTMLElement = document.createElement("h3");
+		el_section_log_header.textContent = this.locale.getLocale(ControllerUiLangClassId.LOG_HEADER)
+		el_section_log.appendChild(el_section_log_header);
+		const el_section_log_text:HTMLElement = document.createElement("section");
+		el_section_log_text.className = "ZUnoRazberryModalContentSectionLog_section_txt";
+		el_section_log.appendChild(el_section_log_text);
+		this.el_log = el_section_log_text;
+		el_section.appendChild(el_section_log);
 	}
 }
