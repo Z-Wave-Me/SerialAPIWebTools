@@ -39,7 +39,7 @@ module.exports = function(env, argv) {
 	};
 	if (argv.mode == "development")
 		config["devtool"] = 'source-map';
-	else if (argv.mode == "production")
-		config["devtool"] = 'eval';
+	else
+		config["devtool"] = false;
 	return (config);
 };
