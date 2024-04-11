@@ -859,8 +859,6 @@ class ControllerUiClass {
 				this.log.errorFalled(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO));
 				return ;
 			}
-			const update_info_data:ControllerUiClassUpdateInfoData = {version:65756, url:"in_json.data[i].fileURL", beta:true};
-			app_update_info.data.push(update_info_data);
 			this.app_update_info = app_update_info;
 			this._start_update_info_create_select_finware(app_update_info);
 			this._start_update_info_create_select_bootloader(bootloader_update_info);
