@@ -900,6 +900,7 @@ class ControllerUiClass {
 
 	private _constructor_button_create(el_section_button:HTMLElement, func:EventListener, text:string, title:string): void {
 		const el_button = document.createElement("button");
+		el_button.setAttribute("type", "button");
 		el_button.textContent = text;
 		el_button.title = title;
 		el_button.addEventListener("click", func);
