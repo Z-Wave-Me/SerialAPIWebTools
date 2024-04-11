@@ -1,7 +1,19 @@
 const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = function(env, argv) {
+	const tester_plugin_options =
+	{
+		terserOptions: { format: {comments: false,},},
+		extractComments: false
+	};
+	const tester_plugin = new TerserPlugin(tester_plugin_options);
+	const optimization =
+	{
+		minimize: true,
+		minimizer: [tester_plugin],
+	};
 	const config =
 	{
 		plugins: [new MiniCssExtractPlugin()],
@@ -39,7 +51,9 @@ module.exports = function(env, argv) {
 	};
 	if (argv.mode == "development")
 		config["devtool"] = 'source-map';
-	else
+	else {
 		config["devtool"] = false;
+		config["optimization"] = optimization;
+	}
 	return (config);
 };
