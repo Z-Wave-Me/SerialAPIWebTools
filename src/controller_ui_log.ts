@@ -76,15 +76,15 @@ class ControllerUiLogClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass) {
 		this.locale = locale;
-		const el_section_log:HTMLElement = document.createElement("section");
-		el_section_log.className = "ZUnoRazberryModalContentSection_table";
+		const el:HTMLElement = document.createElement("section");
+		el.className = "ZUnoRazberryModalContentSection_table";
 		const el_section_log_header:HTMLElement = document.createElement("h3");
 		el_section_log_header.textContent = this.locale.getLocale(ControllerUiLangClassId.LOG_HEADER)
-		el_section_log.appendChild(el_section_log_header);
-		const el_section_log_text:HTMLElement = document.createElement("section");
-		el_section_log_text.className = "ZUnoRazberryModalContentSectionLog_section_txt";
-		el_section_log.appendChild(el_section_log_text);
-		this.el_log = el_section_log_text;
-		el_section.appendChild(el_section_log);
+		el.appendChild(el_section_log_header);
+		const el_text:HTMLElement = document.createElement("section");
+		el_text.className = "ZUnoRazberryModalContentSectionLog_section_txt";
+		el.appendChild(el_text);
+		this.el_log = el_text;
+		el_section.appendChild(el);
 	}
 }
