@@ -1,5 +1,5 @@
-import {ControllerUiLangClassId} from "./controller_ui_lang_define"
-import {ControllerUiLangClass} from "./controller_ui_lang"
+import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "../lang/controller_ui_lang"
 
 export {ControllerUiLogClass};
 
@@ -30,7 +30,9 @@ class ControllerUiLogClass {
 		this._log('<div class="ZUnoRazberryModal_color_info">' + txt + "</div>");
 	}
 
-	public warning(txt:string): void {
+	public warning(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this._log('<div class="ZUnoRazberryModal_color_warning">' + txt + "</div>");
 	}
 
@@ -38,11 +40,15 @@ class ControllerUiLogClass {
 		this._log('<div class="ZUnoRazberryModal_color_error">' + txt + "</div>");
 	}
 
-	public infoStart(txt:string): void {
+	public infoStart(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this.info(txt + "...");
 	}
 
-	public infoDone(txt:string): void {
+	public infoDone(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this.info(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_DONE));
 	}
 
@@ -50,11 +56,15 @@ class ControllerUiLogClass {
 		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FALLED));
 	}
 
-	public errorFalledCode(txt:string, code:number): void {
+	public errorFalledCode(txt:string|ControllerUiLangClassId, code:number): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FALLED_CODE).replace('{{code}}', code.toString()));
 	}
 
-	public errorUnsupport(txt:string): void {
+	public errorUnsupport(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_UNSUPPORTED));
 	}
 

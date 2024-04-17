@@ -2,8 +2,8 @@ import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
 import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd} from "./sapi";
-import {costruct_int, calcSigmaCRC16} from "./utilities";
-import {controller_vendor_ids} from "./vendorIds";
+import {costruct_int, calcSigmaCRC16} from "../utilities";
+import {controller_vendor_ids} from "../vendorIds";
 
 export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower};
 

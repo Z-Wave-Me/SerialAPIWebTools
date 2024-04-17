@@ -1,12 +1,12 @@
 import {html_modal} from "./modal.js";
 
-import {ControllerUiLogClass} from "./controller_ui_log"
-
-import {ControllerUiLangClassId} from "./controller_ui_lang_define"
-import {ControllerUiLangClass} from "./controller_ui_lang"
+import {ControllerUiLogClass} from "./log/controller_ui_log"
+import {ControllerUiLangClassId} from "./lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "./lang/controller_ui_lang"
+import {ControllerUiSectionInfoClass} from "./section/controller_ui_section_info"
 
 import {sleep, hexToBytes, arrayToStringHex, versionNumberToString} from "./utilities";
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower} from "./controller_sapi";
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower} from "./sapi/controller_sapi";
 
 export {ControllerUiClass};
 
@@ -72,8 +72,6 @@ class ControllerUiClass {
 	private readonly SELECTOR_FUNCTION_CHANGE:string						= this.SELECTOR_FUNCTION + 'change';
 	private readonly SELECTOR_FUNCTION_CLICK:string							= this.SELECTOR_FUNCTION + 'click';
 
-	private readonly SECTION_ID_BUTTON_APPLE_REGION:string					= this.SELECTOR_ID + 'apple_region';
-	private readonly SECTION_ID_BUTTON_APPLE_POWER:string					= this.SELECTOR_ID + 'apple_power';
 	private readonly SECTION_ID_BUTTON_UPDATE_FINWARE:string				= this.SELECTOR_ID + 'update_finware';
 	private readonly SECTION_ID_BUTTON_UPDATE_BOOTLOADER:string				= this.SELECTOR_ID + 'update_bootloader';
 
@@ -83,8 +81,6 @@ class ControllerUiClass {
 	private readonly SECTION_ID_DATA_UPDATE_INFO_BOOTLOADER_SELECT:string	= this.SECTION_ID_DATA_UPDATE_INFO_TBODY + ' tr:nth-child(3) td:nth-child(2)';
 	private readonly SECTION_ID_DATA_LICENSE_INFO:string					= '[' + this.SELECTOR_ID + 'license_info]';
 	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string				= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
-	private readonly SECTION_ID_DATA_CONTROLLER_INFO:string					= '[' + this.SELECTOR_ID + 'controller_info]';
-	private readonly SECTION_ID_DATA_CONTROLLER_INFO_TBODY:string			= this.SECTION_ID_DATA_CONTROLLER_INFO + ' tbody';
 
 	private readonly BAUDRATE												= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number										= 250;
@@ -99,6 +95,7 @@ class ControllerUiClass {
 	private readonly log:ControllerUiLogClass;
 	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_section:HTMLElement									= document.createElement("section");
+	private readonly controller_info:ControllerUiSectionInfoClass;
 
 	private capabilities_info?:ControllerSapiClassCapabilities				= undefined;
 	private board_info?:ControllerSapiClassBoardInfo						= undefined;
@@ -106,10 +103,6 @@ class ControllerUiClass {
 	private url_finware_new:string											= "";
 	private url_bootloader_current:string									= "";
 	private url_bootloader_new:string										= "";
-	private region_current:string											= "";
-	private region_new:string												= "";
-	private power_current:number											= 0x0;
-	private power_new:number												= 0x0;
 	private new_license_timer:ControllerUiClassNewLicense					= {};
 	private get_update_info_xhr:XMLHttpRequest|undefined					= undefined;
 	private get_update_finware_xhr:XMLHttpRequest|undefined					= undefined;
@@ -182,62 +175,6 @@ class ControllerUiClass {
 		}
 		el_apple.setAttribute("title", title);
 		el_apple.removeAttribute("disabled");
-	}
-
-	private _region_change(event:Event): void {
-		if (event.target == null)
-			return ;
-		const el_target:any = (event.target as any);
-		this.region_new = (el_target.value as string);
-		this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_REGION, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE), (this.region_new == this.region_current) ? true:false);
-	}
-
-	private async _region_apple(): Promise<void> {
-		if (this._is_busy() == true)
-			return ;
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_REGION));
-		const status:ControllerSapiClassStatus = await this.razberry.setRegion(this.region_new);
-		if (status == ControllerSapiClassStatus.OK) {
-			this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_REGION));
-			this.region_current = this.region_new;
-			this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_REGION, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE), (this.region_new == this.region_current) ? true:false);
-			return ;
-		}
-		this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_REGION), status);
-	}
-
-	private _power_change(event:Event): void {
-		if (event.target == null)
-			return ;
-		const el_target:any = (event.target as any);
-		this.power_new = Number(el_target.value as string);
-		this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_POWER, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE), (this.power_new == this.power_current) ? true:false);
-	}
-
-	private async _power_apple(): Promise<void> {
-		if (this._is_busy() == true)
-			return ;
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_POWER));
-		const status:ControllerSapiClassStatus = await this.razberry.setPower(this.power_new);
-		if (status == ControllerSapiClassStatus.OK) {
-			this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_POWER));
-			this.power_current = this.power_new;
-			this._aplle_common_change(this.SECTION_ID_BUTTON_APPLE_POWER, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE), (this.power_new == this.power_current) ? true:false);
-			return ;
-		}
-		this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_POWER), status);
-	}
-
-	private async _reset_default(): Promise<void> {
-		if (this._is_busy() == true)
-			return ;
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_DEFAULT));
-		const status:ControllerSapiClassStatus = await this.razberry.setDefault();
-		if (status == ControllerSapiClassStatus.OK) {
-			this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_DEFAULT));
-			return ;
-		}
-		this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_DEFAULT), status);
 	}
 
 	private _update_beta_aplle_select(beta:boolean, find:string, title:string): void {
@@ -437,10 +374,6 @@ class ControllerUiClass {
 		return (el_tr);
 	}
 
-	private _create_table_element_controler_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
-		return (this._create_table_element(this.SECTION_ID_DATA_CONTROLLER_INFO_TBODY, name, value, action, title));
-	}
-
 	private _create_table_element_license_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
 		return (this._create_table_element(this.SECTION_ID_DATA_LICENSE_INFO_TBODY, name, value, action, title));
 	}
@@ -499,105 +432,6 @@ class ControllerUiClass {
 		}
 		el_section.style.display = '';
 		return ;
-	}
-
-	private _get_capabilities(): boolean {
-		this._destructors_capabilities();
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES));
-		const capabilities_info:ControllerSapiClassCapabilities = this.razberry.getCapabilities();
-		if (capabilities_info.status != ControllerSapiClassStatus.OK) {
-			this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES), capabilities_info.status);
-			return (false);
-		}
-		this.capabilities_info = capabilities_info;
-		this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_SERIAL_API_VERSION), capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision, "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_SERIAL_API_VERSION_TITLE));
-		if (capabilities_info.VendorIDWebpage == undefined)
-			this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR), capabilities_info.VendorIDName, "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR_TITLE));
-		else
-			this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR), '<a target="_blank" href="'+ capabilities_info.VendorIDWebpage +'">'+ capabilities_info.VendorIDName +'</a>', "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR_TITLE));
-		this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR_ID), String(capabilities_info.VendorID), "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_VENDOR_ID_TITLE));
-		this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES));
-		return (true);
-	}
-
-	private async _get_region(): Promise<boolean> {
-		let i:number, el_str:string, el_button_str:string;
-
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_REGION));
-		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
-		switch (region_info.status) {
-			case ControllerSapiClassStatus.OK:
-				this.region_current = region_info.region;
-				this.region_new = region_info.region;
-				this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_REGION));
-				i = 0x0;
-				el_str = "";
-				while (i < region_info.region_array.length) {
-					if (region_info.region_array[i] == region_info.region) {
-						el_str = el_str + '<option selected="true">'+ region_info.region_array[i] +'</option>';
-					}
-					else {
-						el_str = el_str + '<option>'+ region_info.region_array[i] +'</option>';
-					}
-					i++;
-				}
-				el_str = '<select title="' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_SELECT_TITLE) + '"' + this.SELECTOR_FUNCTION_CHANGE + '="_region_change(event)">' + el_str +'</select>';
-				el_button_str = '<button '+ this.SECTION_ID_BUTTON_APPLE_REGION + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_region_apple()" disabled type="button">' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON) + '</button>';
-				this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION), el_str, el_button_str, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_TITLE));
-				return (true);
-				break ;
-			case ControllerSapiClassStatus.UNSUPPORT_CMD:
-				this.log.errorUnsupport(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_REGION));
-				break ;
-			default:
-				this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_REGION), region_info.status);
-				break ;
-		}
-		return (false);
-	}
-
-	private async _get_power(): Promise<boolean> {
-		if (this.razberry.isRazberry() == false)
-			return (false);
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_POWER));
-		const power:ControllerSapiClassPower = await this.razberry.getPower();
-		if (power.status != ControllerSapiClassStatus.OK) {
-			this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_POWER), power.status);
-			return (false);
-		}
-		this.power_current = power.power_raw;
-		const el_value:string = '<input title="' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_SELECT_TITLE) + '" type="number"'+ this.SELECTOR_FUNCTION_CHANGE + '="_power_change(event)"' +' min="' + power.min.toString() + '" max="' + power.max.toString()+ '" step="'+ + power.step.toString() + '" value="' + power.power_raw.toString() + '"><span></span>';
-		const el_action:string = '<button ' + this.SECTION_ID_BUTTON_APPLE_POWER + ' ' + this.SELECTOR_FUNCTION_CLICK + '="_power_apple()" disabled type="button">' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON) + '</button>';
-		this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER), el_value, el_action, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_TITLE));
-		this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_POWER));
-		return (true);
-	}
-
-	private _get_controller_default(): boolean {
-		const value:string = '<button class="ZUnoRazberryModal_color_warning_info" ' + this.SELECTOR_FUNCTION_CLICK + '="_reset_default()" title="' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE) + '" type="button">' + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON) + '</button>';
-		this._create_table_element_controler_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT), "", value, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_TITLE));
-		return (true);
-	}
-
-	private async _start_controller_info(): Promise<void> {
-		let display:boolean;
-
-		if (this._section_hide(this.SECTION_ID_DATA_CONTROLLER_INFO) == false)
-			return ;
-		if (this._section_clear(this.SECTION_ID_DATA_CONTROLLER_INFO_TBODY) == false)
-			return ;
-		display = false;
-		if (this._get_capabilities() == true)
-			display = true;
-		if (await this._get_region() == true)
-			display = true;
-		if (await this._get_power() == true)
-			display = true;
-		if (this._get_controller_default() == true)
-			display = true;
-		if (display == false)
-			return ;
-		this._section_show(this.SECTION_ID_DATA_CONTROLLER_INFO);
 	}
 
 	private _get_license(): boolean {
@@ -878,13 +712,13 @@ class ControllerUiClass {
 	}
 
 	private async _start_update(): Promise<void> {
-		await this._start_controller_info();
-		if (this.razberry.isRazberry() == true) {
-			this._start_license_info();
-			this._start_update_info();
-		}
-		this._html_event(this.el_modal, "change");
-		this._html_event(this.el_modal, "click");
+		await this.controller_info.begin();
+		// if (this.razberry.isRazberry() == true) {
+		// 	this._start_license_info();
+		// 	this._start_update_info();
+		// }
+		// this._html_event(this.el_modal, "change");
+		// this._html_event(this.el_modal, "click");
 	}
 
 	private async _start(): Promise<void> {
@@ -899,8 +733,8 @@ class ControllerUiClass {
 	}
 
 	private _constructor_button_create(el_section_button:HTMLElement, func:EventListener, text:string, title:string): void {
-		const el_button = document.createElement("button");
-		el_button.setAttribute("type", "button");
+		const el_button:HTMLButtonElement = document.createElement("button");
+		el_button.type = "button";
 		el_button.textContent = text;
 		el_button.title = title;
 		el_button.addEventListener("click", func);
@@ -930,6 +764,7 @@ class ControllerUiClass {
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
 		this.log = new ControllerUiLogClass(this.el_section, this.locale);
+		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log);
 		const el_section_tmp:HTMLElement = document.createElement("section");
 		el_section_tmp.innerHTML = html_modal;
 		this.el_section.appendChild(el_section_tmp);
