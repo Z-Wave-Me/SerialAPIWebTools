@@ -204,7 +204,10 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 		return (display);
 	}
 
+	private async _end(): Promise<void> {
+	}
+
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass) {
-		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());});
+		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 	}
 }

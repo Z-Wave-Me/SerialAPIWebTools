@@ -82,6 +82,7 @@ enum ControllerUiLangClassId
 	BUTTON_CLOSE_TEXT,
 	BUTTON_CLOSE_TITLE,
 	CONTROLER_INFO_HEADER,
+	LICENSE_INFO_HEADER,
 }
 
 type ControllerUiLangClassList =

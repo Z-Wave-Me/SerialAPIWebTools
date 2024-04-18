@@ -3,10 +3,14 @@ import {ControllerUiLangClass} from "../lang/controller_ui_lang"
 import {ControllerSapiClass} from "../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../log/controller_ui_log"
 
-export {ControllerUiSectionClass, ControllerUiSectionClassBegin};
+export {ControllerUiSectionClass};
 
 interface ControllerUiSectionClassBegin {
 	(): Promise<boolean>
+}
+
+interface ControllerUiSectionClassEnd {
+	(): Promise<void>
 }
 
 class ControllerUiSectionClass {
@@ -18,6 +22,7 @@ class ControllerUiSectionClass {
 	private readonly el_section:HTMLElement;
 	private readonly el_tbody:HTMLElement;
 	private readonly begin_func:ControllerUiSectionClassBegin;
+	private readonly end_func:ControllerUiSectionClassEnd;
 
 	protected is_busy(): boolean {
 		if (this.razberry.busy() == true) {
@@ -103,13 +108,14 @@ class ControllerUiSectionClass {
 
 	public async begin(): Promise<void> {
 		this.el_section.style.display = 'none';
+		await this.end_func();
 		this.el_tbody.innerHTML = '';
 		if (await this.begin_func() == false)
 			return ;
 		this.el_section.style.display = '';
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:ControllerUiSectionClassBegin) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:ControllerUiSectionClassBegin, end_func:ControllerUiSectionClassEnd) {
 		this.locale = locale;
 		this.razberry = razberry;
 		this.log = log;
@@ -127,5 +133,6 @@ class ControllerUiSectionClass {
 		this.el_section = el;
 		this.el_tbody = el_tbody;
 		this.begin_func = begin_func;
+		this.end_func = end_func;
 	}
 }

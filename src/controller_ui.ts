@@ -4,9 +4,10 @@ import {ControllerUiLogClass} from "./log/controller_ui_log"
 import {ControllerUiLangClassId} from "./lang/controller_ui_lang_define"
 import {ControllerUiLangClass} from "./lang/controller_ui_lang"
 import {ControllerUiSectionInfoClass} from "./section/controller_ui_section_info"
+import {ControllerUiSectionLicenseClass} from "./section/controller_ui_section_license"
 
-import {sleep, hexToBytes, arrayToStringHex, versionNumberToString} from "./utilities";
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower} from "./sapi/controller_sapi";
+import {sleep, arrayToStringHex, versionNumberToString} from "./utilities";
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassBoardInfo} from "./sapi/controller_sapi";
 
 export {ControllerUiClass};
 
@@ -32,24 +33,7 @@ interface ControllerUiClassUpdateInfo
 	data:Array<ControllerUiClassUpdateInfoData>;
 }
 
-interface ControllerUiClassNewLicenseXhr
-{
-	uuid:string;
-	license:string;
-	crc:string;
-}
-
-interface ControllerUiClassNewLicense
-{
-	uuid_hex?:string;
-	crc16?:number;
-	timer_id?:number;
-	xhr?:XMLHttpRequest;
-}
-
 class ControllerUiClass {
-	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string			= "https://z-wave.me/hardware-capabilities/?uuid=";
-	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string					= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 	private readonly URL_UPDATE_FIMWARE:string								= "https://service.z-wave.me/expertui/uzb/";
 
 	private readonly NAME_APP:string										= "SerialAPIWebTools";
@@ -58,9 +42,6 @@ class ControllerUiClass {
 	private readonly LOCAL_STORAGE_KEY_UPDATE_BETA:string					= this.NAME_APP + '_update_beta';
 	private readonly LOCAL_STORAGE_VALUE_TRUE:string						= 'true';
 	private readonly LOCAL_STORAGE_VALUE_FALSE:string						= 'false';
-
-	private readonly TABLE_NAME_LICENSE_YES:string							= '<input disabled="disabled" checked type="checkbox">';
-	private readonly TABLE_NAME_LICENSE_NO:string							= '<input disabled="disabled" type="checkbox">';
 
 	private readonly TABLE_NAME_UPDATE_JSON_ENABLED:string					= "enabled";
 	private readonly TABLE_NAME_UPDATE_JSON_TYPE_FINWARE:string				= "firmware";
@@ -79,14 +60,9 @@ class ControllerUiClass {
 	private readonly SECTION_ID_DATA_UPDATE_INFO_TBODY:string				= this.SECTION_ID_DATA_UPDATE_INFO + ' tbody';
 	private readonly SECTION_ID_DATA_UPDATE_INFO_FINWARE_SELECT:string		= this.SECTION_ID_DATA_UPDATE_INFO_TBODY + ' tr:nth-child(2) td:nth-child(2)';
 	private readonly SECTION_ID_DATA_UPDATE_INFO_BOOTLOADER_SELECT:string	= this.SECTION_ID_DATA_UPDATE_INFO_TBODY + ' tr:nth-child(3) td:nth-child(2)';
-	private readonly SECTION_ID_DATA_LICENSE_INFO:string					= '[' + this.SELECTOR_ID + 'license_info]';
-	private readonly SECTION_ID_DATA_LICENSE_INFO_TBODY:string				= this.SECTION_ID_DATA_LICENSE_INFO + ' tbody';
 
 	private readonly BAUDRATE												= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number										= 250;
-	private readonly ms_timeout_get_new_license:number						= 10000;
-	private readonly ms_timeout_get_new_license_xhr:number					= 3000;
-	private readonly ms_timeout_get_new_license_port:number					= 1000;
 	private readonly ms_timeout_get_update_xhr:number						= 10000;
 	private readonly ms_timeout_get_update_gbl_xhr:number					= 30000;
 	private readonly ms_timeout_get_update_gbl_timer_bus:number				= 3000;
@@ -96,6 +72,7 @@ class ControllerUiClass {
 	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_section:HTMLElement									= document.createElement("section");
 	private readonly controller_info:ControllerUiSectionInfoClass;
+	private readonly license_info:ControllerUiSectionLicenseClass;
 
 	private capabilities_info?:ControllerSapiClassCapabilities				= undefined;
 	private board_info?:ControllerSapiClassBoardInfo						= undefined;
@@ -103,7 +80,6 @@ class ControllerUiClass {
 	private url_finware_new:string											= "";
 	private url_bootloader_current:string									= "";
 	private url_bootloader_new:string										= "";
-	private new_license_timer:ControllerUiClassNewLicense					= {};
 	private get_update_info_xhr:XMLHttpRequest|undefined					= undefined;
 	private get_update_finware_xhr:XMLHttpRequest|undefined					= undefined;
 	private get_update_finware_timer_id?:number								= undefined;
@@ -125,19 +101,6 @@ class ControllerUiClass {
 		this.app_update_info = undefined;
 	}
 
-	private _destructors_license(): void {
-		if (this.new_license_timer.timer_id != undefined) {
-			window.clearTimeout(this.new_license_timer.timer_id);
-			this.new_license_timer.timer_id = undefined;
-		}
-		if (this.new_license_timer.xhr != undefined) {
-			this.new_license_timer.xhr.abort();
-			this.new_license_timer.xhr = undefined;
-		}
-		this.new_license_timer.crc16 = undefined;
-		this.new_license_timer.uuid_hex = undefined;
-	}
-
 	private _destructors_capabilities(): void {
 		this.capabilities_info = undefined;
 	}
@@ -147,7 +110,6 @@ class ControllerUiClass {
 	}
 
 	private _destructors(): void {
-		this._destructors_license();
 		this._destructors_update();
 		this._destructors_capabilities();
 		this._destructors_board_info();
@@ -374,10 +336,6 @@ class ControllerUiClass {
 		return (el_tr);
 	}
 
-	private _create_table_element_license_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
-		return (this._create_table_element(this.SECTION_ID_DATA_LICENSE_INFO_TBODY, name, value, action, title));
-	}
-
 	private _create_table_element_update_info(name:string, value:string, action:string = "", title:string = ""): HTMLElement {
 		return (this._create_table_element(this.SECTION_ID_DATA_UPDATE_INFO_TBODY, name, value, action, title));
 	}
@@ -432,162 +390,6 @@ class ControllerUiClass {
 		}
 		el_section.style.display = '';
 		return ;
-	}
-
-	private _get_license(): boolean {
-		let key:string, flag_status:string;
-
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_LICENSE));
-		const license:ControllerSapiClassLicense = this.razberry.getLicense();
-		if (license.status != ControllerSapiClassStatus.OK) {
-			this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_LICENSE), license.status);
-			return (false);
-		}
-		if (license.vallid == true) {
-			this._create_table_element_license_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_SUBVENDOR_ID), String(license.vendor_id), "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_SUBVENDOR_ID_TITLE));
-			this._create_table_element_license_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_MAX_NODE), String(license.max_nodes), "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_MAX_NODE_TITLE));
-			this._create_table_element_license_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_SUPPORT), String(license.count_support), "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_SUPPORT_TITLE));
-			this.new_license_timer.crc16 = license.crc16;
-		}
-		else
-			this.new_license_timer.crc16 = 0x0;
-		for (key in license.flags) {
-			if (license.flags[key].active == true)
-				flag_status = this.TABLE_NAME_LICENSE_YES;
-			else
-				flag_status = this.TABLE_NAME_LICENSE_NO;
-			this._create_table_element_license_info(license.flags[key].name + ":", flag_status, "", license.flags[key].title);
-		}
-		this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_LICENSE));
-		return (true);
-	}
-
-	private _get_board_info(): boolean {
-		this._destructors_board_info();
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_BOARD_INFO));
-		const board_info:ControllerSapiClassBoardInfo = this.razberry.getBoardInfo();
-		if (board_info.status != ControllerSapiClassStatus.OK) {
-			this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_BOARD_INFO), board_info.status);
-			return (false);
-		}
-		this.board_info = board_info;
-		const uuid_str_hex:string = arrayToStringHex(board_info.chip_uuid);
-		this.new_license_timer.uuid_hex = uuid_str_hex;
-		this._create_table_element_license_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_UUID), uuid_str_hex, "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_UUID_TITLE));
-		const more_options_link:string = '<a target="_blank" href="'+ this.TABLE_NAME_LICENSE_MORE_OPTIONS_LINK + uuid_str_hex +'">'+ 'link' +'</a>';
-		this._create_table_element_license_info(this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS), more_options_link, "", this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE));
-		this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_READ_BOARD_INFO));
-		return (true);
-	}
-
-	private _license_timer_valid_data(in_json:ControllerUiClassNewLicenseXhr): boolean {
-		if (Object.hasOwn(in_json, "crc") == false || Object.hasOwn(in_json, "uuid") == false || Object.hasOwn(in_json, "license") == false)
-			return (false);
-		if (typeof (in_json.crc) != "string")
-			return (false);
-		if (typeof (in_json.license) != "string")
-			return (false);
-		if (typeof (in_json.uuid) != "string")
-			return (false);
-		return (true);
-	}
-
-	private _license_timer_get_pack(in_json:ControllerUiClassNewLicenseXhr): undefined|string {
-		if (this.new_license_timer.crc16 == undefined || this.new_license_timer.uuid_hex == undefined)
-			return (undefined);
-		if (this.new_license_timer.uuid_hex.toLowerCase() != in_json.uuid.toLowerCase())
-			return (undefined);
-		const crc16:number = Number(in_json.crc);
-		if (crc16 == 0x0)
-			return (undefined);
-		if (crc16 == this.new_license_timer.crc16)
-			return (undefined);
-		return (in_json.license);
-	}
-
-	private _license_timer(): void {
-		if (this.new_license_timer.crc16 == undefined || this.new_license_timer.uuid_hex == undefined)
-			return ;
-		this.new_license_timer.xhr = new XMLHttpRequest();
-		const url = this.TABLE_NAME_LICENSE_SERVISE_LINK + this.new_license_timer.uuid_hex;
-		const fun_xhr_timer:TimerHandler = () => {
-			this.new_license_timer.timer_id = undefined;
-			if (this.new_license_timer.xhr == undefined)
-				return ;
-			this.new_license_timer.xhr.open("POST", url, true);
-			this.new_license_timer.xhr.responseType = 'json';
-			this.new_license_timer.xhr.timeout = this.ms_timeout_get_new_license_xhr;
-			this.new_license_timer.xhr.ontimeout = () => {
-				this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-				this.log.errorXhrTimeout(url);
-			};
-			this.new_license_timer.xhr.onerror = () => {
-				this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-				this.log.errorXhrError(url);
-			};
-			this.new_license_timer.xhr.onload = () => {
-				if (this.new_license_timer.xhr == undefined)
-					return ;
-				const in_json:ControllerUiClassNewLicenseXhr = this.new_license_timer.xhr.response;
-				if (this._license_timer_valid_data(in_json) == false) {
-					this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-					this.log.errorXhrInvalidData(url);
-					return ;
-				}
-				const pack:string|undefined = this._license_timer_get_pack(in_json);
-				if (pack == undefined) {
-					this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-					return ;
-				}
-				const pack_array = hexToBytes(pack);
-				if (pack_array == undefined) {
-					this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-					this.log.errorXhrInvalidData(url);
-					return ;
-				}
-				const fun_controller_timer:TimerHandler = async () => {
-					this.new_license_timer.timer_id = undefined;
-					this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_LICENSE));
-					if (this.razberry.busy() == true) {
-						this.log.warning(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT));
-						this.new_license_timer.timer_id = window.setTimeout(fun_controller_timer, this.ms_timeout_get_new_license_port);
-						return ;
-					}
-					const status:ControllerSapiClassStatus = await this.razberry.setLicense(pack_array);
-					if (status != ControllerSapiClassStatus.OK) {
-						this.log.errorFalledCode(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_LICENSE), status);
-						this.new_license_timer.timer_id = window.setTimeout(fun_controller_timer, this.ms_timeout_get_new_license_port);
-						return ;
-					}
-					this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_LICENSE));
-					this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
-					this._start_license_info();
-				}
-				this.new_license_timer.timer_id = window.setTimeout(fun_controller_timer, 0x0);
-			};
-			this.new_license_timer.xhr.send();
-			
-		};
-		this.new_license_timer.timer_id = window.setTimeout(fun_xhr_timer, 0x0);
-	}
-
-	private _start_license_info(): void {
-		let display:boolean;
-
-		if (this._section_hide(this.SECTION_ID_DATA_LICENSE_INFO) == false)
-			return ;
-		if (this._section_clear(this.SECTION_ID_DATA_LICENSE_INFO_TBODY) == false)
-			return ;
-		this._destructors_license();
-		display = false;
-		if (this._get_board_info() == true)
-			display = true;
-		if (this._get_license() == true)
-			display = true;
-		if (display == false)
-			return ;
-		this._license_timer();
-		this._section_show(this.SECTION_ID_DATA_LICENSE_INFO);
 	}
 
 	private _start_update_info_create_progress(find:string, text:string): void {
@@ -713,8 +515,8 @@ class ControllerUiClass {
 
 	private async _start_update(): Promise<void> {
 		await this.controller_info.begin();
+		await this.license_info.begin();
 		// if (this.razberry.isRazberry() == true) {
-		// 	this._start_license_info();
 		// 	this._start_update_info();
 		// }
 		// this._html_event(this.el_modal, "change");
@@ -765,6 +567,7 @@ class ControllerUiClass {
 		this._constructor_button();
 		this.log = new ControllerUiLogClass(this.el_section, this.locale);
 		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log);
+		this.license_info = new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log);
 		const el_section_tmp:HTMLElement = document.createElement("section");
 		el_section_tmp.innerHTML = html_modal;
 		this.el_section.appendChild(el_section_tmp);
