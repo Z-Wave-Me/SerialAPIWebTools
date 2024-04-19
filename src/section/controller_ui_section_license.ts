@@ -24,8 +24,8 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 	private readonly ms_timeout_get_new_license_xhr:number					= 3000;
 	private readonly ms_timeout_get_new_license_port:number					= 1000;
 
+	private license_xhr:XMLHttpRequest										= new XMLHttpRequest();
 	private license_timer_id?:number;
-	private license_xhr?:XMLHttpRequest;
 
 	private _license_timer_valid_data(in_json:ControllerUiClassNewLicenseXhr): boolean {
 		if (Object.hasOwn(in_json, "crc") == false || Object.hasOwn(in_json, "uuid") == false || Object.hasOwn(in_json, "license") == false)
@@ -51,12 +51,9 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 	}
 
 	private _license_timer_init(uuid:string, crc16:number): void {
-		this.license_xhr = new XMLHttpRequest();
 		const url = this.TABLE_NAME_LICENSE_SERVISE_LINK + uuid;
 		const fun_xhr_timer:TimerHandler = () => {
 			this.license_timer_id = undefined;
-			if (this.license_xhr == undefined)
-				return ;
 			this.license_xhr.open("POST", url, true);
 			this.license_xhr.responseType = 'json';
 			this.license_xhr.timeout = this.ms_timeout_get_new_license_xhr;
@@ -69,8 +66,6 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 				this.log.errorXhrError(url);
 			};
 			this.license_xhr.onload = () => {
-				if (this.license_xhr == undefined)
-					return ;
 				const in_json:ControllerUiClassNewLicenseXhr = this.license_xhr.response;
 				if (this._license_timer_valid_data(in_json) == false) {
 					this.license_timer_id = window.setTimeout(fun_xhr_timer, this.ms_timeout_get_new_license);
@@ -173,10 +168,7 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 			window.clearTimeout(this.license_timer_id);
 			this.license_timer_id = undefined;
 		}
-		if (this.license_xhr != undefined) {
-			this.license_xhr.abort();
-			this.license_xhr = undefined;
-		}
+		this.license_xhr.abort();
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass) {
