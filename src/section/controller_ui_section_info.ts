@@ -14,10 +14,11 @@ interface ControllerUiSectionInfoClassReBegin {
 class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	private region_current:string											= '';
 	private region_new:string												= '';
-	private region_el_button?:HTMLButtonElement								= undefined;
 	private power_current:number											= 0x0;
 	private power_new:number												= 0x0;
-	private power_el_button?:HTMLButtonElement								= undefined;
+
+	private readonly region_el_button:HTMLButtonElement;
+	private readonly power_el_button:HTMLButtonElement;
 
 	private readonly re_begin_func:ControllerUiSectionInfoClassReBegin;
 
@@ -56,16 +57,12 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
 		if (el_target == null)
 			return ;
-		if (this.power_el_button == undefined)
-			return ;
 		this.power_new = Number(el_target.value);
 		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, (this.power_new == this.power_current) ? true:false);
 	}
 
 	private async _power_click(): Promise<void> {
 		if (this.is_busy() == true)
-			return ;
-		if (this.power_el_button == undefined)
 			return ;
 		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, true);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_POWER);
@@ -101,11 +98,6 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 		el_input.addEventListener("change", (event:Event) => {this._power_change(event);});
 		el_value.appendChild(el_input);
 		el_value.appendChild(document.createElement("span"));
-		this.power_el_button = document.createElement("button");
-		this.power_el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON);
-		this.power_el_button.addEventListener("click", () => {this._power_click();});
-		this.power_el_button.type = "button";
-		this.power_el_button.setAttribute("disabled", "");
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_POWER, ControllerUiLangClassId.TABLE_NAME_POWER_TITLE, el_value, this.power_el_button);
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_POWER);
 		return (true);
@@ -115,16 +107,12 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 		const el_target:HTMLSelectElement|null = this.event_get_element_select(event);
 		if (el_target == null)
 			return ;
-		if (this.region_el_button == undefined)
-			return ;
 		this.region_new = el_target.value;
 		this.common_button_atrr(this.region_el_button, ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE, (this.region_new == this.region_current) ? true:false);
 	}
 
 	private async _region_click(): Promise<void> {
 		if (this.is_busy() == true)
-			return ;
-		if (this.region_el_button == undefined)
 			return ;
 		this.common_button_atrr(this.region_el_button, ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE, true);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_REGION);
@@ -163,11 +151,6 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 				el_select.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_SELECT_TITLE);
 				el_select.innerHTML = el_option_str;
 				el_select.addEventListener("change", (event:Event) => {this._region_change(event);});
-				this.region_el_button = document.createElement("button");
-				this.region_el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON);
-				this.region_el_button.addEventListener("click", () => {this._region_click();});
-				this.region_el_button.type = "button";
-				this.region_el_button.setAttribute("disabled", "");
 				this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_REGION, ControllerUiLangClassId.TABLE_NAME_REGION_TITLE, el_select, this.region_el_button);
 				return (true);
 				break ;
@@ -216,10 +199,22 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	}
 
 	private async _end(): Promise<void> {
+		this.power_el_button.disabled = true;
+		this.region_el_button.disabled = true;
+	}
+
+	private _constructor_button(text:ControllerUiLangClassId, click:EventListener):HTMLButtonElement {
+		const el_button:HTMLButtonElement = document.createElement("button");
+		el_button.textContent = this.locale.getLocale(text);
+		el_button.addEventListener("click", click);
+		el_button.type = "button";
+		return (el_button);
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionInfoClassReBegin) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
+		this.region_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON, () => {this._region_click();});
 		this.re_begin_func = re_begin_func;
 	}
 }
