@@ -252,7 +252,8 @@ class ControllerUiSectionUpdateClass extends ControllerUiSectionClass {
 		const fun_xhr_timer:TimerHandler = () => {
 			this.update_info_xhr_timer_id = undefined;
 			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-			const url:string = this.URL_UPDATE_FIMWARE + '?vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + '&bootloaderCRC=1766938484&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
+			const bootloaderCRC:string = "&bootloaderCRC=" + board_info.bootloader_crc32.toString();
+			const url:string = this.URL_UPDATE_FIMWARE + '?vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + bootloaderCRC + '&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
 			this.update_info_xhr.open("POST", url, true);
 			this.update_info_xhr.responseType = 'json';
 			this.update_info_xhr.timeout = this.update_info_xhr_timeout;
