@@ -197,7 +197,7 @@ class ControllerSapiClass {
 		}
 		const serial_api_setup:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SETUP, [sub].concat(args));
 		if (serial_api_setup.status != SapiClassStatus.OK) {
-			out.status = (serial_api_setup.status as any);
+			out.status = ((serial_api_setup.status as unknown) as ControllerSapiClassStatus);
 			return (out);
 		}
 		if (serial_api_setup.data.length < 0x1) {
@@ -219,7 +219,7 @@ class ControllerSapiClass {
 	private async _get_capabilities(out:ControllerSapiClassCapabilities): Promise<void> {
 		const capabilities_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, []);
 		if (capabilities_info.status != SapiClassStatus.OK) {
-			out.status = (capabilities_info.status as any);
+			out.status = ((capabilities_info.status as unknown) as ControllerSapiClassStatus);
 			return ;
 		}
 		if (capabilities_info.data.length <= 0x8) {
@@ -247,14 +247,14 @@ class ControllerSapiClass {
 		const seq:number = this._set_seq();
 		nonse_info = await this.sapi.sendCommandUnSz(this.RAZ7_LICENSE_CMD, data.concat([seq]));
 		if (nonse_info.status != SapiClassStatus.OK)
-			return ((nonse_info.status as any));
+			return ((nonse_info.status as unknown) as ControllerSapiClassStatus);
 		if (nonse_info.data.length < 0x1)
 			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
 		if (nonse_info.data[0x0] != this.RAZ7_LICENSE_STATUS_OK)
 			return (ControllerSapiClassStatus.WRONG_OUT_STATUS);
 		nonse_info = await this.sapi.recvIncomingRequest(1000);
 		if (nonse_info.status != SapiClassStatus.OK)
-			return ((nonse_info.status as any));
+			return ((nonse_info.status as unknown) as ControllerSapiClassStatus);
 		if (nonse_info.data.length < 0x1)//0x1 seq
 			return (ControllerSapiClassStatus.WRONG_LENGTH_SEQ);
 		if (nonse_info.data[0x0] != seq)
@@ -380,7 +380,7 @@ class ControllerSapiClass {
 		}
 		const board_info:SapiClassRet = await this._readNVM(0xFFFF00, 0x31);
 		if (board_info.status != SapiClassStatus.OK) {
-			out.status = (board_info.status as any);
+			out.status = ((board_info.status as unknown) as ControllerSapiClassStatus);
 			return ;
 		}
 		const data:Array<number> = board_info.data;
@@ -500,7 +500,7 @@ class ControllerSapiClass {
 	public async softReset(timeout:number = 3000): Promise<ControllerSapiClassStatus> {
 		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout);
 		if (res.status != SapiClassStatus.OK)
-			return ((res.status as any));
+			return ((res.status as unknown) as ControllerSapiClassStatus);
 		return (ControllerSapiClassStatus.OK);
 	}
 
@@ -510,7 +510,7 @@ class ControllerSapiClass {
 		const seq:number = this._set_seq();
 		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_ZW_SET_DEFAULT, [seq]);
 		if (res.status != SapiClassStatus.OK)
-			return ((res.status as any));
+			return ((res.status as unknown) as ControllerSapiClassStatus);
 		if (res.data.length < 0x1)//0x1 seq
 			return (ControllerSapiClassStatus.WRONG_LENGTH_SEQ);
 		if (res.data[0x0] != seq)
@@ -527,7 +527,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_SEND_DATA_LENGHT);
 		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER, data_addr.concat(Array.from(data)));
 		if (res.status != SapiClassStatus.OK)
-			return ((res.status as any));
+			return ((res.status as unknown) as ControllerSapiClassStatus);
 		if (res.data.length < 0x1)
 			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
 		if (res.data[0x0] != 0x1)
