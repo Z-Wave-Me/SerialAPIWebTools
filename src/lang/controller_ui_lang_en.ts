@@ -85,4 +85,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.CONTROLER_INFO_HEADER]: "Controller Info",
 	[ControllerUiLangClassId.LICENSE_INFO_HEADER]: "License Info",
 	[ControllerUiLangClassId.UPDATE_INFO_HEADER]: "Update Info",
+	[ControllerUiLangClassId.DEFAULT_RESET_WARNING]: "The Controller Reset will delete all included devices from your network without excluding them. You will need to manually exclude and include all of them. Do you really want to do this?",
 };

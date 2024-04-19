@@ -109,7 +109,7 @@ class ControllerUiClass {
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
 		this.log = new ControllerUiLogClass(this.el_section, this.locale);
-		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log);
+		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
 		this.license_info = new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log);
 		this.update_info = new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
 		el.appendChild(this.el_modal);

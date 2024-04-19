@@ -6,6 +6,11 @@ import {ControllerUiSectionClass} from "./controller_ui_section"
 
 export {ControllerUiSectionInfoClass};
 
+interface ControllerUiSectionInfoClassReBegin {
+	(): Promise<void>
+}
+
+
 class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	private region_current:string											= '';
 	private region_new:string												= '';
@@ -14,11 +19,16 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	private power_new:number												= 0x0;
 	private power_el_button?:HTMLButtonElement								= undefined;
 
+	private readonly re_begin_func:ControllerUiSectionInfoClassReBegin;
+
 	private async _controller_default_click(event:Event): Promise<void> {
 		if (this.is_busy() == true)
 			return ;
 		const el_target:HTMLButtonElement|null = this.event_get_element_button(event);
 		if (el_target == null)
+			return ;
+		const out:boolean = window.confirm(this.locale.getLocale(ControllerUiLangClassId.DEFAULT_RESET_WARNING));
+		if (out != true)
 			return ;
 		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, true);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
@@ -26,6 +36,7 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, false);
 		if (status == ControllerSapiClassStatus.OK) {
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+			this.re_begin_func();
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
@@ -207,7 +218,8 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	private async _end(): Promise<void> {
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionInfoClassReBegin) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.re_begin_func = re_begin_func;
 	}
 }

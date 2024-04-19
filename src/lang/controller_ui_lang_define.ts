@@ -84,6 +84,7 @@ enum ControllerUiLangClassId
 	CONTROLER_INFO_HEADER,
 	LICENSE_INFO_HEADER,
 	UPDATE_INFO_HEADER,
+	DEFAULT_RESET_WARNING,
 }
 
 type ControllerUiLangClassList =

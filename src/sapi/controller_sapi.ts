@@ -419,6 +419,14 @@ class ControllerSapiClass {
 		out.lock_status_name = lock_status_name;
 	}
 
+	private async _begin():Promise<void> {
+		await this._get_capabilities(this.capabilities);
+		if (this.isRazberry() == true) {
+			await this._license_get(this.license);
+			await this._get_board_info(this.board_info);
+		}
+	}
+
 	public async getPower(): Promise<ControllerSapiClassPower> {
 		const power_get_out:ControllerSapiClassPower = {status: ControllerSapiClassStatus.OK, power_raw:0x0, step:0x1, min:1, max:247};
 		if (this.isRazberry() == false) {
@@ -507,6 +515,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_LENGTH_SEQ);
 		if (res.data[0x0] != seq)
 			return (ControllerSapiClassStatus.WRONG_SEQ);
+		await this._begin();
 		return (ControllerSapiClassStatus.OK);
 	}
 
@@ -559,11 +568,7 @@ class ControllerSapiClass {
 		status = await this.softReset(20000);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
-		await this._get_capabilities(this.capabilities);
-		if (this.isRazberry() == true) {
-			await this._license_get(this.license);
-			await this._get_board_info(this.board_info);
-		}
+		await this._begin();
 		return (ControllerSapiClassStatus.OK);
 	}
 
