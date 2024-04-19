@@ -565,7 +565,7 @@ class SapiClass {
 	}
 
 	public supported(): boolean {
-		if (!(navigator as any).serial || !(navigator as any).serial.requestPort)
+		if (!("serial" in window.navigator))
 			return (false);
 		return (true);
 	}
