@@ -153,7 +153,7 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 	}
 
 	private async _begin(): Promise<boolean> {
-		if (this.razberry.isRazberry() == false)
+		if (this.razberry.isRazberry7() == false)
 			return (false);
 		const uuid_str_hex:string|undefined = this._board_info_init();
 		const crc16:number|undefined = this._license_init();

@@ -308,7 +308,7 @@ class ControllerSapiClass {
 
 		if (this._test_cmd(this.RAZ7_LICENSE_CMD) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
-		if (this.isRazberry() == false)
+		if (this.isRazberry7() == false)
 			return (ControllerSapiClassStatus.NOT_RAZBERRY);
 		status = await this._license_get_nonce(out);
 		if (status != ControllerSapiClassStatus.OK)
@@ -421,7 +421,7 @@ class ControllerSapiClass {
 
 	private async _begin():Promise<void> {
 		await this._get_capabilities(this.capabilities);
-		if (this.isRazberry() == true) {
+		if (this.isRazberry7() == true) {
 			await this._license_get(this.license);
 			await this._get_board_info(this.board_info);
 		}
@@ -429,7 +429,7 @@ class ControllerSapiClass {
 
 	public async getPower(): Promise<ControllerSapiClassPower> {
 		const power_get_out:ControllerSapiClassPower = {status: ControllerSapiClassStatus.OK, power_raw:0x0, step:0x1, min:1, max:247};
-		if (this.isRazberry() == false) {
+		if (this.isRazberry7() == false) {
 			power_get_out.status = ControllerSapiClassStatus.NOT_RAZBERRY;
 			return (power_get_out);
 		}
@@ -451,7 +451,7 @@ class ControllerSapiClass {
 	}
 
 	public async setPower(power_raw:number): Promise<ControllerSapiClassStatus> {
-		if (this.isRazberry() == false)
+		if (this.isRazberry7() == false)
 			return (ControllerSapiClassStatus.NOT_RAZBERRY);
 		const power_set:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_TX_POWERLEVEL_SET, [power_raw, 0x0]);
 		if (power_set.status != ControllerSapiClassStatus.OK)
@@ -557,10 +557,18 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	private _isRazberry(): boolean {
+		if (this.capabilities.status != ControllerSapiClassStatus.OK)
+			return (false);
+		if (this.capabilities.VendorID == 0x0115 || this.capabilities.VendorID == 0x0147)
+			return (true);
+		return (false);
+	}
+
 	public async updateFinware(data:Uint8Array, process:ControllerUpdateProcess|null): Promise<ControllerSapiClassStatus> {
 		let status:ControllerSapiClassStatus;
 
-		if (this.isRazberry() == false)
+		if (this.isRazberry7() == false)
 			return (ControllerSapiClassStatus.NOT_RAZBERRY);
 		status = await this._load_file(0x3A000, data, process);
 		if (status != ControllerSapiClassStatus.OK)
@@ -593,10 +601,18 @@ class ControllerSapiClass {
 		return (this.capabilities);
 	}
 
-	public isRazberry(): boolean {
-		if (this.capabilities.status != ControllerSapiClassStatus.OK)
+	public isRazberry5(): boolean {
+		if (this._isRazberry() == false)
 			return (false);
-		if (this.capabilities.VendorID == 0x0115 || this.capabilities.VendorID == 0x0147)
+		if (this.capabilities.ApiVersion == 0x5)
+			return (true);
+		return (false);
+	}
+
+	public isRazberry7(): boolean {
+		if (this._isRazberry() == false)
+			return (false);
+		if (this.capabilities.ApiVersion == 0x7)
 			return (true);
 		return (false);
 	}
@@ -605,7 +621,7 @@ class ControllerSapiClass {
 		await this._get_capabilities(this.capabilities);
 		if (this.capabilities.status != ControllerSapiClassStatus.OK)
 			return (false);
-		if (this.isRazberry() == true) {
+		if (this.isRazberry7() == true) {
 			await this._license_get(this.license);
 			await this._get_board_info(this.board_info);
 		}

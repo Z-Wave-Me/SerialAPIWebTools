@@ -77,7 +77,7 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	}
 
 	private async _power_init(): Promise<boolean> {
-		if (this.razberry.isRazberry() == false)
+		if (this.razberry.isRazberry7() == false)
 			return (false);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_POWER);
 		const power:ControllerSapiClassPower = await this.razberry.getPower();
@@ -129,6 +129,8 @@ class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
 	private async _region_init(): Promise<boolean> {
 		let i:number, el_option_str:string, el_select:HTMLElement;
 
+		if (this.razberry.isRazberry5() == true)
+			return (false);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
 		switch (region_info.status) {

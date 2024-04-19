@@ -307,7 +307,7 @@ class ControllerUiSectionUpdateClass extends ControllerUiSectionClass {
 	}
 
 	private async _begin(): Promise<boolean> {
-		if (this.razberry.isRazberry() == false)
+		if (this.razberry.isRazberry7() == false)
 			return (false);
 		return (this._update_init());
 	}
