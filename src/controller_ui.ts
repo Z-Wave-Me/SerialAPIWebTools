@@ -10,7 +10,7 @@ import {ControllerUiSectionUpdateClass} from "./section/controller_ui_section_up
 import {ControllerUiDefineClass} from "./controller_ui_define"
 
 import {sleep} from "./other/utilities";
-import {ControllerSapiClass} from "./sapi/controller_sapi";
+import {ControllerSapiClass, SapiSerialOptionFilters} from "./sapi/controller_sapi";
 
 export {ControllerUiClass};
 
@@ -27,6 +27,7 @@ class ControllerUiClass {
 	private readonly controller_info:ControllerUiSectionInfoClass;
 	private readonly license_info:ControllerUiSectionLicenseClass;
 	private readonly update_info:ControllerUiSectionUpdateClass;
+	private readonly filters?:SapiSerialOptionFilters[];
 
 	private _is_busy(): boolean {
 		if (this.razberry.busy() == true) {
@@ -68,7 +69,7 @@ class ControllerUiClass {
 		if (this.razberry.supported() == false)
 			return (this.log.error(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER)));
 		this.log.info(this.VERSION_LOG);
-		if (await this.razberry.request() == false)
+		if (await this.razberry.request(this.filters) == false)
 			return (this.log.error(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT)));
 		if (await this._connect() == false)
 			return ;
@@ -104,7 +105,8 @@ class ControllerUiClass {
 		this.el_section.appendChild(el_section_button);
 	}
 
-	constructor(el:HTMLElement) {
+	constructor(el:HTMLElement, filters?:SapiSerialOptionFilters[]) {
+		this.filters = filters;
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();

@@ -1,11 +1,11 @@
 import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
-import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters} from "./sapi";
 import {costruct_int, calcSigmaCRC16} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
-export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower};
+export {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower, SapiSerialOptionFilters};
 
 enum ControllerSapiClassStatus
 {
@@ -624,8 +624,8 @@ class ControllerSapiClass {
 		return (this.sapi.supported());
 	}
 
-	public async request(): Promise<boolean> {
-		return (this.sapi.request());
+	public async request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
+		return (this.sapi.request(filters));
 	}
 
 	public async open(baudRate:number): Promise<boolean> {

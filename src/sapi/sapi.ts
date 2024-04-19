@@ -1,6 +1,12 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters};
+
+interface SapiSerialOptionFilters
+{
+	usbVendorId:number;
+	usbProductId:number;
+}
 
 interface SapiClassRet
 {
@@ -263,14 +269,13 @@ interface SapiPort
 
 interface SapiSerialOption
 {
-	usbVendorId:number;
-	usbProductId:number;
+	filters?:SapiSerialOptionFilters[];
 }
 
 
 interface SapiSerial
 {
-	requestPort(options?: SapiSerialOption[]): Promise<SapiPort>;
+	requestPort(options?: SapiSerialOption): Promise<SapiPort>;
 }
 
 interface NavigatorExtSerial extends Navigator
@@ -446,7 +451,7 @@ class SapiClass {
 		return (SapiClassStatus.OK);
 	}
 
-	private async _request(options?: SapiSerialOption[]): Promise<boolean> {
+	private async _request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
 		let port:SapiPort;
 
 		if (this.supported() == false)
@@ -455,6 +460,7 @@ class SapiClass {
 		if (this.port != undefined)
 			return (false);
 		try {
+			const options:SapiSerialOption = {filters:filters};
 			port = await nav_ext_serial.serial.requestPort(options);
 		} catch(e) {
 			return (false);
@@ -590,11 +596,11 @@ class SapiClass {
 		return (true);
 	}
 
-	public async request(options?: SapiSerialOption[]): Promise<boolean> {
+	public async request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
 		if (this.b_busy == true)
 			return (false);
 		this.b_busy = true;
-		const out:boolean = await this._request(options);
+		const out:boolean = await this._request(filters);
 		this.b_busy = false;
 		return (out);
 	}
