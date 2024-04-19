@@ -261,6 +261,23 @@ interface SapiPort
 	open(options?: SapiPortOpenOption): Promise<void>;
 }
 
+interface SapiSerialOption
+{
+	usbVendorId:number;
+	usbProductId:number;
+}
+
+
+interface SapiSerial
+{
+	requestPort(options?: SapiSerialOption[]): Promise<SapiPort>;
+}
+
+interface NavigatorExtSerial extends Navigator
+{
+	serial:SapiSerial;
+}
+
 
 class SapiClass {
 	private readonly SOF:number																			= 0x01;
@@ -429,13 +446,16 @@ class SapiClass {
 		return (SapiClassStatus.OK);
 	}
 
-	private async _request(): Promise<boolean> {
+	private async _request(options?: SapiSerialOption[]): Promise<boolean> {
 		let port:SapiPort;
 
+		if (this.supported() == false)
+			return (false);
+		const nav_ext_serial:NavigatorExtSerial = ((window.navigator as unknown) as NavigatorExtSerial);
 		if (this.port != undefined)
 			return (false);
 		try {
-			port = await (navigator as any).serial.requestPort();
+			port = await nav_ext_serial.serial.requestPort(options);
 		} catch(e) {
 			return (false);
 		}
@@ -570,11 +590,11 @@ class SapiClass {
 		return (true);
 	}
 
-	public async request(): Promise<boolean> {
+	public async request(options?: SapiSerialOption[]): Promise<boolean> {
 		if (this.b_busy == true)
 			return (false);
 		this.b_busy = true;
-		const out:boolean = await this._request();
+		const out:boolean = await this._request(options);
 		this.b_busy = false;
 		return (out);
 	}
