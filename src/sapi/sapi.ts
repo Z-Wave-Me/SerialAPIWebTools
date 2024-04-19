@@ -1,4 +1,4 @@
-import {sleep, checksum, calcSigmaCRC16} from "../utilities";
+import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
 export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd};
 

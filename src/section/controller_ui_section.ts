@@ -107,12 +107,16 @@ class ControllerUiSectionClass {
 	}
 
 	public async begin(): Promise<void> {
-		this.el_section.style.display = 'none';
-		await this.end_func();
-		this.el_tbody.innerHTML = '';
+		await this.end();
 		if (await this.begin_func() == false)
 			return ;
 		this.el_section.style.display = '';
+	}
+
+	public async end(): Promise<void> {
+		this.el_section.style.display = 'none';
+		await this.end_func();
+		this.el_tbody.innerHTML = '';
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:ControllerUiSectionClassBegin, end_func:ControllerUiSectionClassEnd) {

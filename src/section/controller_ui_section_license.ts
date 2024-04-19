@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../lang/controller_ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassLicense} from "../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../log/controller_ui_log"
 import {ControllerUiSectionClass} from "./controller_ui_section"
-import {arrayToStringHex, hexToBytes} from "../utilities";
+import {arrayToStringHex, hexToBytes} from "../other/utilities";
 
 export {ControllerUiSectionLicenseClass};
 

@@ -52,7 +52,9 @@ class ControllerUiLogClass {
 		this.info(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_DONE));
 	}
 
-	public errorFalled(txt:string): void {
+	public errorFalled(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FALLED));
 	}
 

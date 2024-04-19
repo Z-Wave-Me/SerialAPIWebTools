@@ -84,4 +84,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.BUTTON_CLOSE_TITLE]: "Closes and stops working with the com port",
 	[ControllerUiLangClassId.CONTROLER_INFO_HEADER]: "Controller Info",
 	[ControllerUiLangClassId.LICENSE_INFO_HEADER]: "License Info",
+	[ControllerUiLangClassId.UPDATE_INFO_HEADER]: "Update Info",
 };
