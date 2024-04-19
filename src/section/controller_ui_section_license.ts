@@ -24,7 +24,8 @@ class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
 	private readonly ms_timeout_get_new_license_xhr:number					= 3000;
 	private readonly ms_timeout_get_new_license_port:number					= 1000;
 
-	private license_xhr:XMLHttpRequest										= new XMLHttpRequest();
+	private readonly license_xhr:XMLHttpRequest										= new XMLHttpRequest();
+
 	private license_timer_id?:number;
 
 	private _license_timer_valid_data(in_json:ControllerUiClassNewLicenseXhr): boolean {

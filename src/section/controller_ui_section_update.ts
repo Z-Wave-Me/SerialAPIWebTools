@@ -68,12 +68,13 @@ class ControllerUiSectionUpdateClass extends ControllerUiSectionClass {
 	private readonly SELECTOR_DEFAULT:string								= 'data-default';
 	private readonly SELECTOR_BETA:string									= 'data-beta';
 
-	private finware:ControllerUiSectionUpdateInfoClass;
-	private bootloader:ControllerUiSectionUpdateInfoClass;
+	private readonly finware:ControllerUiSectionUpdateInfoClass;
+	private readonly bootloader:ControllerUiSectionUpdateInfoClass;
 
-	private update_info_xhr:XMLHttpRequest								= new XMLHttpRequest();
+	private readonly update_info_xhr:XMLHttpRequest								= new XMLHttpRequest();
+	private readonly update_finware_xhr:XMLHttpRequest							= new XMLHttpRequest();
+
 	private update_info_xhr_timer_id?:number;
-	private update_finware_xhr:XMLHttpRequest							= new XMLHttpRequest();
 	private update_finware_timer_id?:number;
 
 	private readonly re_begin_func:ControllerUiSectionUpdateClassReBegin;
