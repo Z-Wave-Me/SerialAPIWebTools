@@ -501,6 +501,7 @@ class SapiClass {
 			out.status = SapiClassStatus.PORT_NOT_OPEN;
 			return (out);
 		}
+		const wait_timeout:number = Date.now() + timeout;
 		if (await this._waitSOF(timeout) == false) {
 			out.status = SapiClassStatus.NO_SOF;
 			return (out);
@@ -511,11 +512,18 @@ class SapiClass {
 			return (out);
 		}
 		const len_data:number = buff_data[0x0];
-		buff_data = await this._read(len_data);
-		if (buff_data.length != len_data) {
-			await this._sendNack();
-			out.status = SapiClassStatus.INVALID_DATA_LEN;
-			return (out);
+		buff_data = [];
+		for (;;) {
+			const current_timeout:number = Date.now();
+			if (current_timeout >= wait_timeout) {
+				await this._sendNack();
+				out.status = SapiClassStatus.INVALID_DATA_LEN;
+				return (out);
+			}
+			const buffer:Array<number> = await this._read(len_data - buff_data.length);
+			buff_data = buff_data.concat(buffer);
+			if (buff_data.length == len_data)
+				break ;
 		}
 		if (len_data < 0x3) {
 			out.status = SapiClassStatus.WRONG_LENGHT;
