@@ -6,6 +6,7 @@ import {ControllerUiLangClass} from "./lang/controller_ui_lang"
 import {ControllerUiSectionInfoClass} from "./section/controller_ui_section_info"
 import {ControllerUiSectionLicenseClass} from "./section/controller_ui_section_license"
 import {ControllerUiSectionUpdateClass} from "./section/controller_ui_section_update"
+import {ControllerUiSectionMigrationClass} from "./section/controller_ui_section_migration"
 
 import {ControllerUiDefineClass} from "./controller_ui_define"
 
@@ -27,15 +28,8 @@ class ControllerUiClass {
 	private readonly controller_info:ControllerUiSectionInfoClass;
 	private readonly license_info:ControllerUiSectionLicenseClass;
 	private readonly update_info:ControllerUiSectionUpdateClass;
+	private readonly migration_info:ControllerUiSectionMigrationClass;
 	private readonly filters?:SapiSerialOptionFilters[];
-
-	private _is_busy(): boolean {
-		if (this.razberry.busy() == true) {
-			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
-			return (true);
-		}
-		return (false);
-	}
 
 	private async _connect(): Promise<boolean> {
 		let i:number;
@@ -63,6 +57,7 @@ class ControllerUiClass {
 		await this.controller_info.begin();
 		await this.license_info.begin();
 		await this.update_info.begin();
+		await this.migration_info.begin();
 	}
 
 	private async _start(): Promise<void> {
@@ -92,11 +87,18 @@ class ControllerUiClass {
 			navigator.clipboard.writeText(this.log.getLog());
 		};
 		const event_close:EventListener = async () => {
-			if (this._is_busy() == true)
+			if (this.controller_info.is_close() == false)
+				return ;
+			if (this.license_info.is_close() == false)
+				return ;
+			if (this.update_info.is_close() == false)
+				return ;
+			if (this.migration_info.is_close() == false)
 				return ;
 			await this.controller_info.end();
 			await this.license_info.end();
 			await this.update_info.end();
+			await this.migration_info.end();
 			await this.razberry.close();
 			this.el_modal.remove();
 		};
@@ -114,6 +116,7 @@ class ControllerUiClass {
 		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
 		this.license_info = new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log);
 		this.update_info = new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
+		this.migration_info = new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log);
 		el.appendChild(this.el_modal);
 		this._start();
 	}

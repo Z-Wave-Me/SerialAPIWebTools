@@ -1,4 +1,4 @@
-export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString};
+export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString, intToBytearrayLsbMsb, intToBytearrayMsbLsb};
 
 function versionNumberToString(version:number): string {
 	const txt:string = String((version >> 24) & 0xFF).padStart(2, '0') + "." + String((version >> 16) & 0xFF).padStart(2, '0') + "." + String((version >> 0x8) & 0xFF).padStart(2, '0') + "." + String((version) & 0xFF).padStart(2, '0')
@@ -99,4 +99,30 @@ function costruct_int(arr:Array<number>, n:number, inv:boolean = true): number {
 		i++;
 	}
 	return (val);
+}
+
+function intToBytearrayLsbMsb(data:number, size:number = 0x4):Uint8Array {
+	let i:number;
+
+	const array:Uint8Array = new Uint8Array(size);
+	i = 0x0;
+	while (i < array.length) {
+		array[data & 0xFF];
+		data = data >> 8;
+		i = i + 1;
+	}
+	return (array);
+}
+
+function intToBytearrayMsbLsb(data:number, size:number = 0x4):Uint8Array {
+	let i:number;
+
+	const array:Uint8Array = new Uint8Array(size);
+	i = 0x0;
+	while (size != 0) {
+		size--;
+		array[i] = (data >> (8 * size)) & 0xFF;
+		i++;
+	}
+	return (array);
 }

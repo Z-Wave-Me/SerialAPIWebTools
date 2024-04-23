@@ -10,7 +10,8 @@
 		<script src="build\controller_ui.js"></script>
 		<script>
 			async function controller() {
-				const test = new ControllerUiLib.ControllerUiClass(document.getElementsByTagName('body')[0x0], [{ usbVendorId: 0x10c4, usbProductId: 0xea70 }]);
+				const test = new ControllerUiLib.ControllerUiClass(document.getElementsByTagName('body')[0x0]);
+				// const test = new ControllerUiLib.ControllerUiClass(document.getElementsByTagName('body')[0x0], [{ usbVendorId: 0x10c4, usbProductId: 0xea70 }]);
 			}
 		</script>
 	</body>

@@ -1,6 +1,6 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType};
 
 interface SapiSerialOptionFilters
 {
@@ -32,6 +32,12 @@ enum SapiClassStatus
 	PORT_BUSY,
 	TIMOUT_RCV,
 	LAST_STATUS
+}
+
+enum SapiClassNodeIdBaseType
+{
+	TYPE_8_BIT = 0x1,
+	TYPE_16_BIT = 0x2,
 }
 
 enum SapiClassSerialAPISetupCmd

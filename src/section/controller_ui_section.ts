@@ -106,6 +106,12 @@ class ControllerUiSectionClass {
 		return (el_tr);
 	}
 
+	public is_close(): boolean {
+		if (this.is_busy() == true)
+			return (false);
+		return (true);
+	}
+
 	public async begin(): Promise<void> {
 		await this.end();
 		if (await this.begin_func() == false)

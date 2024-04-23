@@ -3,7 +3,7 @@ $color_info: green;
 $color_valid: green;
 $color_invalid: red;
 $color_warning: rgb(13, 66, 238);
-
+$color_question: rgb(13, 66, 238);
 
 .ZUnoRazberryModal
 {
@@ -34,6 +34,11 @@ $color_warning: rgb(13, 66, 238);
 .ZUnoRazberryModal_color_warning
 {
 	color: $color_warning;
+}
+
+.ZUnoRazberryModal_color_question
+{
+	color: $color_question;
 }
 
 .ZUnoRazberryModal > section
@@ -157,4 +162,9 @@ $margin_section_log_item: 0.2rem;
 .ZUnoRazberryModalContentSection_table select[data-beta] option[data-beta]
 {
 	display: none;
+}
+
+.ZUnoRazberryModalContentSection_migration_action_button
+{
+	margin: 0.2rem;
 }
