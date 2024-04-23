@@ -16,7 +16,7 @@ import {ControllerSapiClass, SapiSerialOptionFilters} from "./sapi/controller_sa
 export {ControllerUiClass};
 
 class ControllerUiClass {
-	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.2";
+	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.3";
 
 	private readonly BAUDRATE												= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number										= 250;
