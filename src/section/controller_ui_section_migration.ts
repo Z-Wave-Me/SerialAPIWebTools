@@ -171,7 +171,7 @@ class ControllerUiSectionMigrationClass extends ControllerUiSectionClass {
 	}
 
 	private async _click_start_stop(event:Event) {
-		let result_test_include:boolean|undefined;
+		let result_test_include:boolean|undefined, status:ControllerSapiClassStatus;
 
 		if (this.process == true)
 			return ;
@@ -220,9 +220,22 @@ class ControllerUiSectionMigrationClass extends ControllerUiSectionClass {
 			this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_SET_HOME_ID, set_home_id);
 			return ;
 		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_HOME_ID);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
+		const soft_reset:ControllerSapiClassStatus = await this.razberry.softReset();
+		if (soft_reset != ControllerSapiClassStatus.OK) {
+			this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_SOFT_RESET, soft_reset);
+			return (undefined);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_NOP);
+		status = await this.razberry.nop(home.node_id);
+		if (status != ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK) {
+			this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_NOP, status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_NOP);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
-		const status:ControllerSapiClassStatus = await this.razberry.removeFaledNode(home.node_id);
+		status = await this.razberry.removeFaledNode(home.node_id);
 		if (status != ControllerSapiClassStatus.OK) {
 			this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_REMOVE_NODE, status);
 			return ;

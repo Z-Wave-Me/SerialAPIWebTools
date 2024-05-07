@@ -117,6 +117,8 @@ enum ControllerUiLangClassId
 	MIGRATION_FINALIZE,
 	MESSAGE_SET_HOME_ID,
 	MESSAGE_REMOVE_NODE,
+	MESSAGE_SOFT_RESET,
+	MESSAGE_NOP,
 }
 
 type ControllerUiLangClassList =

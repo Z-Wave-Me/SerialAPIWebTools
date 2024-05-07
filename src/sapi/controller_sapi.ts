@@ -43,6 +43,7 @@ enum ControllerSapiClassStatus
 	WRONG_CALLBACK_LENGTH,
 	WRONG_CALLBACK_SEQ,
 	WRONG_CALLBACK_STATUS,
+	TRANSMIT_COMPLETE_NO_ACK,
 }
 
 interface ControllerSapiClassCapabilities
@@ -607,6 +608,7 @@ class ControllerSapiClass {
 		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout);
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as unknown) as ControllerSapiClassStatus);
+		await this._begin(false);
 		return (ControllerSapiClassStatus.OK);
 	}
 
@@ -652,7 +654,6 @@ class ControllerSapiClass {
 		status = await this.softReset(20000);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
-		await this._begin(false);
 		return (ControllerSapiClassStatus.OK);
 	}
 
@@ -775,6 +776,31 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	public async nop(node:number): Promise<ControllerSapiClassStatus> {
+		if (this._test_cmd(SapiClassFuncId.FUNC_ID_ZW_SEND_DATA) == false)
+			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
+		const seq:number = this._set_seq();
+		const response:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_ZW_SEND_DATA, Array.from(this._node_to_bytes(node)).concat([0x1, 0x0, 0x1, seq]));
+		if (response.status != SapiClassStatus.OK)
+			return (((response.status as unknown) as ControllerSapiClassStatus));
+		if (response.data.length < 0x1)
+			return (ControllerSapiClassStatus.WRONG_RESPONSE_LENGTH);
+		if (response.data[0x0] != 0x01)
+			return (ControllerSapiClassStatus.WRONG_RESPONSE_STATUS);
+		const callback = await this.sapi.recvIncomingRequest(1000);
+		if (callback.status != SapiClassStatus.OK)
+			return (((callback.status as unknown) as ControllerSapiClassStatus));
+		if (callback.data.length < 0x2)//0x1 seq
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_LENGTH);
+		if (callback.data[0x0] != seq)
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_SEQ);
+		if (callback.data[0x1] == 0x1)
+			return (ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK);
+		if (callback.data[0x1] != 0x0)
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_STATUS);
+		return (ControllerSapiClassStatus.OK);
+	}
+	
 	public getBoardInfo(): ControllerSapiClassBoardInfo {
 		return (this.board_info);
 	}

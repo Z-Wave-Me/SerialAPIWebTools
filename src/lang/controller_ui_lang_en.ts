@@ -118,4 +118,6 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_FINALIZE]: "Finishing touches...",
 	[ControllerUiLangClassId.MESSAGE_SET_HOME_ID]: "Set home and node id the controller",
 	[ControllerUiLangClassId.MESSAGE_REMOVE_NODE]: "Remove node the controller",
+	[ControllerUiLangClassId.MESSAGE_SOFT_RESET]: "Soft reset",
+	[ControllerUiLangClassId.MESSAGE_NOP]: "Send nop",
 };
