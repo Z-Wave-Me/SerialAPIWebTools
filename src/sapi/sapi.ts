@@ -1,6 +1,19 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType};
+
+enum SapiClassDetectType
+{
+	ZUNO,
+	RAZBERRY,
+}
+
+interface SapiClassDetect
+{
+	status:SapiClassStatus;
+	type:SapiClassDetectType;
+	baudrate:number;
+}
 
 interface SapiSerialOptionFilters
 {
@@ -29,9 +42,18 @@ enum SapiClassStatus
 	WRONG_LENGHT,
 	WRONG_CMD,
 	PORT_NOT_OPEN,
+	PORT_NOT_CLOSE,
+	PORT_NOT_REQUEST,
+	PORT_USED,
 	PORT_BUSY,
 	TIMOUT_RCV,
-	LAST_STATUS
+	SERIAL_UN_SUPPORT,
+	SERIAL_BUSY,
+	REQUEST_ONE_SHOT,
+	REQUEST_NO_SELECT,
+	ZUNO_NO_FREEZE,
+	DETECTED_UNC_COMMAND,
+	LAST_STATUS,
 }
 
 enum SapiClassNodeIdBaseType
@@ -259,6 +281,7 @@ enum SapiClassFuncId
 	FUNC_ID_PROPRIETARY_E = 0xFE,
 }
 
+// ------------------------------------------------------------------------------------------------------
 interface SapiPortOpenOption
 {
 	baudRate:number;
@@ -301,7 +324,11 @@ class SapiClass {
 
 	private readonly ADDITIONAL_SIZE:number																= 0x03;
 
+	public readonly BAUDRATE																			= [115200, 230400, 460800, 921600];
+	private readonly dtr_timeout:number																	= 250;// The time for the capacitor on the DTR line to recharge
+
 	private b_busy:boolean																				= false;
+	private state_lock:boolean																			= false;
 	private b_open:boolean																				= false;
 	private port:SapiPort|undefined																		= undefined;
 	private queue:Array<number>																			= [];
@@ -329,7 +356,7 @@ class SapiClass {
 		let out:Array<number>, i:number, rep:number, tempos:number|undefined;
 
 		rep = 0x0;
-		while (rep < 10) {
+		while (rep < 1) {
 			if (this.queue.length >= num) {
 				out = [];
 				i = 0x0;
@@ -342,7 +369,7 @@ class SapiClass {
 				}
 				return (out);
 			}
-			const value:Uint8Array = await this._readWithTimeout(100);
+			const value:Uint8Array = await this._readWithTimeout(50);
 			i = 0x0;
 			while (i < value.byteLength) {
 				this.queue.push(value[i])
@@ -375,8 +402,9 @@ class SapiClass {
 	}
 
 	private async _clear():  Promise<void> {
+		this.queue = [];
 		for (;;) {
-			const value = await this._readWithTimeout(100);
+			const value = await this._read(50);
 			if (value.length == 0x0)
 				return ;
 		}
@@ -417,12 +445,10 @@ class SapiClass {
 		while (sof_timeout > Date.now()) {
 			const sof:Array<number> = await this._read(0x1);
 			if (sof.length == 0x0) {
-				await sleep(100);
 				continue ;
 			}
 			if (sof[0x0] == this.SOF)
 				return (true);
-			await sleep(200);
 		}
 		return (false);
 	}
@@ -457,22 +483,20 @@ class SapiClass {
 		return (SapiClassStatus.OK);
 	}
 
-	private async _request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
+	private async _request(filters?:SapiSerialOptionFilters[]): Promise<SapiClassStatus> {
 		let port:SapiPort;
 
-		if (this.supported() == false)
-			return (false);
 		const nav_ext_serial:NavigatorExtSerial = ((window.navigator as unknown) as NavigatorExtSerial);
 		if (this.port != undefined)
-			return (false);
+			return (SapiClassStatus.REQUEST_ONE_SHOT);
 		try {
 			const options:SapiSerialOption = {filters:filters};
 			port = await nav_ext_serial.serial.requestPort(options);
 		} catch(e) {
-			return (false);
+			return (SapiClassStatus.REQUEST_NO_SELECT);
 		}
 		this.port = port;
-		return (true);
+		return (SapiClassStatus.OK);
 	}
 
 	private async _open(baudRate:number): Promise<boolean> {
@@ -499,6 +523,24 @@ class SapiClass {
 		return (true);
 	}
 
+	private async _recvIncomingRequest_add(wait_timeout:number, lenght:number): Promise<Array<number>> {
+		let buff_data:Array<number>;
+
+		buff_data = [];
+		for (;;) {
+			const buffer:Array<number> = await this._read(lenght - buff_data.length);
+			buff_data = buff_data.concat(buffer);
+			if (buff_data.length == lenght)
+				break ;
+			const current_timeout:number = Date.now();
+			if (current_timeout >= wait_timeout) {
+				await this._sendNack();
+				return ([]);
+			}
+		}
+		return (buff_data);
+	}
+
 	private async _recvIncomingRequest(timeout:number): Promise<SapiClassRet> {
 		let buff_data:Array<number>;
 
@@ -512,27 +554,19 @@ class SapiClass {
 			out.status = SapiClassStatus.NO_SOF;
 			return (out);
 		}
-		buff_data = await this._read(0x1);
-		if (buff_data.length == 0x0) {
+		buff_data = await this._recvIncomingRequest_add(wait_timeout, 0x1);
+		if (buff_data.length != 0x1) {
 			out.status = SapiClassStatus.NO_LENGHT;
 			return (out);
 		}
 		const len_data:number = buff_data[0x0];
-		buff_data = [];
-		for (;;) {
-			const current_timeout:number = Date.now();
-			if (current_timeout >= wait_timeout) {
-				await this._sendNack();
-				out.status = SapiClassStatus.INVALID_DATA_LEN;
-				return (out);
-			}
-			const buffer:Array<number> = await this._read(len_data - buff_data.length);
-			buff_data = buff_data.concat(buffer);
-			if (buff_data.length == len_data)
-				break ;
-		}
 		if (len_data < 0x3) {
 			out.status = SapiClassStatus.WRONG_LENGHT;
+			return (out);
+		}
+		buff_data = await this._recvIncomingRequest_add(wait_timeout, len_data);
+		if (buff_data.length != len_data) {
+			out.status = SapiClassStatus.INVALID_DATA_LEN;
 			return (out);
 		}
 		out.crc = checksum([len_data].concat(buff_data.slice(0, len_data - 0x1)));
@@ -556,13 +590,11 @@ class SapiClass {
 		return (true);
 	}
 
-	private async _sendCommandUnSz(cmd:number, args:Array<number>, retries:number, timeout:number): Promise<SapiClassRet> {
+	private async _sendCommandUnSz(cmd:number, args:Array<number>, retries:number, timeout:number, cmd_ret?:number): Promise<SapiClassRet> {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
 		out.status = await this._send_cmd(cmd, args, retries);
 		if (out.status != SapiClassStatus.OK)
 			return (out);
-		if (cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET)
-			cmd = SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED;
 		const wait_timeout:number = Date.now() + timeout;
 		for (;;) {
 			const current_timeout:number = Date.now();
@@ -571,14 +603,16 @@ class SapiClass {
 				return (out);
 			}
 			const res:SapiClassRet = await this._recvIncomingRequest(wait_timeout - current_timeout);
-			if (this._sendCommandUnSz_rcv_test(res, cmd) == true)
+			if (cmd_ret == undefined)
+				cmd_ret = cmd;
+			if (this._sendCommandUnSz_rcv_test(res, cmd_ret) == true)
 				return (res);
 		}
 	}
 
 	public async recvIncomingRequest(timeout:number): Promise<SapiClassRet> {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
-		if (this.b_busy == true) {
+		if (this.busy() == true) {
 			out.status = SapiClassStatus.PORT_BUSY;
 			return (out);
 		}
@@ -588,39 +622,50 @@ class SapiClass {
 		return (res);
 	}
 
-	public async sendCommandUnSz(cmd:number, args:Array<number>, retries:number = 0x3, timeout:number = 2000): Promise<SapiClassRet> {
+	public async sendCommandUnSz(cmd:number, args:Array<number>, retries:number = 0x3, timeout:number = 2000, cmd_ret?:number): Promise<SapiClassRet> {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
-		if (this.b_busy == true) {
+		if (this.busy() == true) {
 			out.status = SapiClassStatus.PORT_BUSY;
 			return (out);
 		}
 		this.b_busy = true;
-		const res = await this._sendCommandUnSz(cmd, args, retries, timeout);
+		const res = await this._sendCommandUnSz(cmd, args, retries, timeout, cmd_ret);
 		this.b_busy = false;
 		return (res);
 	}
 
-	public busy(): boolean {
-		return (this.b_busy);
+	public lock() {
+		this.state_lock = true;
 	}
 
-	public supported(): boolean {
+	public unlock() {
+		this.state_lock = false;
+	}
+
+	public busy(): boolean {
+		if (this.state_lock == true)
+			return (true);
+		return (this.b_busy);
+	}
+	public static supported(): boolean {
 		if (!("serial" in window.navigator))
 			return (false);
 		return (true);
 	}
 
-	public async request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
-		if (this.b_busy == true)
-			return (false);
+	public async request(filters?:SapiSerialOptionFilters[]): Promise<SapiClassStatus> {
+		if (this.busy() == true)
+			return (SapiClassStatus.SERIAL_BUSY);
+		if (SapiClass.supported() == false)
+			return (SapiClassStatus.SERIAL_UN_SUPPORT);
 		this.b_busy = true;
-		const out:boolean = await this._request(filters);
+		const out:SapiClassStatus = await this._request(filters);
 		this.b_busy = false;
 		return (out);
 	}
 
 	public async open(baudRate:number): Promise<boolean> {
-		if (this.b_busy == true)
+		if (this.busy() == true)
 			return (false);
 		this.b_busy = true;
 		const out:boolean = await this._open(baudRate);
@@ -629,10 +674,106 @@ class SapiClass {
 	}
 
 	public async close(): Promise<boolean> {
-		if (this.b_busy == true)
+		if (this.busy() == true)
 			return (false);
 		this.b_busy = true;
 		const out:boolean = await this._close();
+		this.b_busy = false;
+		return (out);
+	}
+
+	private async _open_2(baudRate:number): Promise<SapiClassStatus> {
+		if (this.port == undefined)
+			return (SapiClassStatus.PORT_NOT_REQUEST);
+		if (this.b_open == true)
+			return (SapiClassStatus.PORT_NOT_OPEN);
+		try {
+			await this.port.open({ baudRate, bufferSize: 8192 });
+		} catch(e) {
+			return (SapiClassStatus.PORT_USED);
+		}
+		this.b_open = true;
+		return (SapiClassStatus.OK);
+	}
+
+	private async _close_2(): Promise<SapiClassStatus> {
+		if (this.port == undefined)
+			return (SapiClassStatus.PORT_NOT_REQUEST);
+		if (this.b_open == false)
+			return (SapiClassStatus.PORT_NOT_CLOSE);
+		await this.port.close();
+		this.b_open = false;
+		return (SapiClassStatus.OK);
+	}
+
+	private async _detect(out:SapiClassDetect, baudrate:Array<number>): Promise<void> {
+		let i:number;
+
+		if (this.port == undefined) {
+			out.status = SapiClassStatus.PORT_NOT_REQUEST;
+			return ;
+		}
+		if (this.b_open == true) {
+			out.status = await this._close_2();
+			if (out.status != SapiClassStatus.OK)
+				return ;
+			await sleep(this.dtr_timeout);
+		}
+		const baudrate_array:Array<number> = this.BAUDRATE;
+		i = baudrate.length;
+		while (i != 0x0) {
+			i--;
+			if (this.BAUDRATE.indexOf(baudrate[i]) != -1) {
+				baudrate_array.splice(baudrate_array.indexOf(baudrate[i]), 0x1);
+				baudrate_array.unshift(baudrate[i]);
+			}
+		}
+		i = 0x0;
+		while (i < baudrate_array.length) {
+			out.baudrate = baudrate_array[i];
+			out.status = await this._open_2(baudrate_array[i]);
+			if (out.status != SapiClassStatus.OK)
+				return ;
+			const res:SapiClassRet = await this._recvIncomingRequest(300);
+			if (res.status == SapiClassStatus.OK) {
+				if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) {
+					const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
+					if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0) {
+						out.status = SapiClassStatus.ZUNO_NO_FREEZE;
+						return ;
+					}
+					out.type = SapiClassDetectType.ZUNO;
+					return ;
+				}
+				if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED) {
+					out.type = SapiClassDetectType.RAZBERRY;
+					return ;
+				}
+				out.status = SapiClassStatus.DETECTED_UNC_COMMAND;
+				return ;
+			}
+			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
+			if (capabilities_info.status == SapiClassStatus.OK) {
+				out.type = SapiClassDetectType.RAZBERRY;
+				return ;
+			}
+			out.status = await this._close_2();
+			if (out.status != SapiClassStatus.OK)
+				return ;
+			await sleep(this.dtr_timeout);
+			i++;
+		}
+	}
+
+	public async detect(baudrate:Array<number>): Promise<SapiClassDetect> {
+		const out:SapiClassDetect = {status: SapiClassStatus.OK, type: SapiClassDetectType.ZUNO, baudrate:0x0};
+	
+		if (this.busy() == true) {
+			out.status = SapiClassStatus.PORT_BUSY;
+			return (out);
+		}
+		this.b_busy = true;
+		await this._detect(out, baudrate);
 		this.b_busy = false;
 		return (out);
 	}

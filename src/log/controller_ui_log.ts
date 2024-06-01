@@ -36,7 +36,9 @@ class ControllerUiLogClass {
 		this._log('<div class="ZUnoRazberryModal_color_warning">' + txt + "</div>");
 	}
 
-	public error(txt:string): void {
+	public error(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this._log('<div class="ZUnoRazberryModal_color_error">' + txt + "</div>");
 	}
 

@@ -196,11 +196,10 @@ class ControllerSapiClass {
 		0x00:"EU", 0x01:"US", 0x02: "ANZ", 0x03:"HK", 0x05:"IN", 0x06:"IL",
 		0x07:"RU", 0x08:"CN", 0x09:"US_LR",0x20: "JP", 0x21:"KR", 0xFF:"EU"
 	};
-	private readonly sapi																		= new SapiClass();
+	private readonly sapi:SapiClass;
 	private readonly raz_key:Array<number>														= [0x86, 0x78, 0x02, 0x09, 0x8D, 0x89, 0x4D, 0x41, 0x8F, 0x3F, 0xD2, 0x04, 0x2E, 0xEC, 0xF5, 0xC4, 0x05, 0x8C, 0xB9, 0x36, 0xA9, 0xCC, 0x4B, 0x87, 0x91, 0x39, 0x36, 0xB7, 0x43, 0x18, 0x37, 0x42];
 
 	private node_base:SapiClassNodeIdBaseType													= SapiClassNodeIdBaseType.TYPE_8_BIT;
-	private state_lock:boolean																	= false;
 	private seqNo:number																		= 0x1;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
 	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[], crc16:0x0};
@@ -605,7 +604,7 @@ class ControllerSapiClass {
 	}
 
 	public async softReset(timeout:number = 3000): Promise<ControllerSapiClassStatus> {
-		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout);
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout, SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED);
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as unknown) as ControllerSapiClassStatus);
 		await this._begin(false);
@@ -847,29 +846,15 @@ class ControllerSapiClass {
 	}
 
 	public lock() {
-		this.state_lock = true;
+		return (this.sapi.lock());
 	}
 
 	public unlock() {
-		this.state_lock = false;
+		return (this.sapi.unlock());
 	}
 
 	public busy(): boolean {
-		if (this.state_lock == true)
-			return (true);
 		return (this.sapi.busy());
-	}
-
-	public supported(): boolean {
-		return (this.sapi.supported());
-	}
-
-	public async request(filters?:SapiSerialOptionFilters[]): Promise<boolean> {
-		return (this.sapi.request(filters));
-	}
-
-	public async open(baudRate:number): Promise<boolean> {
-		return (this.sapi.open(baudRate));
 	}
 
 	public async close(): Promise<boolean> {
@@ -878,5 +863,8 @@ class ControllerSapiClass {
 		this.license.status = ControllerSapiClassStatus.NOT_INIT;
 		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
 		return (this.sapi.close());
+	}
+	constructor(sapi:SapiClass) {
+		this.sapi = sapi;
 	}
 }

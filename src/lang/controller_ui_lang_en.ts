@@ -7,7 +7,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT]: "No port selected",
 	[ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER]: "Sorry, this feature is supported only on Chrome, Edge and Opera",
 	[ControllerUiLangClassId.MESSAGE_PORT_USE]: "Check yours, maybe another application is using it",
-	[ControllerUiLangClassId.MESSAGE_CONNECT]: "Connect controller",
+	[ControllerUiLangClassId.MESSAGE_CONNECT]: "Connect device",
 	[ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES]: "Read capabilities the controller",
 	[ControllerUiLangClassId.MESSAGE_READ_REGION]: "Read region the controller",
 	[ControllerUiLangClassId.MESSAGE_READ_POWER]: "Read power the controller",
@@ -120,4 +120,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_REMOVE_NODE]: "Remove node the controller",
 	[ControllerUiLangClassId.MESSAGE_SOFT_RESET]: "Soft reset",
 	[ControllerUiLangClassId.MESSAGE_NOP]: "Send nop",
+	[ControllerUiLangClassId.MESSAGE_PORT_SELECT_ERROR]: "Port selected",
 };

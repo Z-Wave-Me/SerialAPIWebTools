@@ -10,17 +10,17 @@ import {ControllerUiSectionMigrationClass} from "./section/controller_ui_section
 
 import {ControllerUiDefineClass} from "./controller_ui_define"
 
-import {sleep} from "./other/utilities";
 import {ControllerSapiClass, SapiSerialOptionFilters} from "./sapi/controller_sapi";
+import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType} from "./sapi/sapi";
 
 export {ControllerUiClass};
 
 class ControllerUiClass {
 	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.3";
 
-	private readonly BAUDRATE												= [115200, 230400, 460800, 921600];
-	private readonly dtr_timeout:number										= 250;
-	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass();
+	private readonly LOCAL_STORAGE_KEY_BAUDRATE:string						= ControllerUiDefineClass.NAME_APP + '_baudrate_cache';
+	private readonly sapi:SapiClass											= new SapiClass();
+	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
 	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
 	private readonly log:ControllerUiLogClass;
 	private readonly el_modal:HTMLElement									= document.createElement("div");
@@ -31,43 +31,67 @@ class ControllerUiClass {
 	private readonly migration_info:ControllerUiSectionMigrationClass;
 	private readonly filters?:SapiSerialOptionFilters[];
 
-	private async _connect(): Promise<boolean> {
-		let i:number;
+	private _get_baudrate_cache():Array<number> {
+		let baudrate:Array<number>, i:number;
 
-		this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_CONNECT));
+		const baudrate_str:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_BAUDRATE);
+		if (baudrate_str == null)
+			return ([]);
+		try {
+			baudrate = JSON.parse(baudrate_str);
+		} catch (error) {
+			return ([]);
+		}
+		if (Array.isArray(baudrate) == false)
+			return ([]);
 		i = 0x0;
-		while (i < this.BAUDRATE.length) {
-			if (await this.razberry.open(this.BAUDRATE[i]) == false) {
-				this.log.error(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_PORT_USE));
-				return (false);
-			}
-			if (await this.razberry.connect() == true) {
-				this.log.infoDone(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_CONNECT));
-				return (true);
-			}
-			await this.razberry.close();
-			await sleep(this.dtr_timeout);// The time for the capacitor on the DTR line to recharge
+		while (i < baudrate.length) {
+			if (this.sapi.BAUDRATE.indexOf(baudrate[i]) == -1)
+				baudrate.splice(i, 0x1);
 			i++;
 		}
-		this.log.errorFalled(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_CONNECT));
-		return (false);
+		return (baudrate);
+	}
+
+	private _set_baudrate_cache(baudrate_array:Array<number>, baudrate:number):void {
+		const i:number = baudrate_array.indexOf(baudrate);
+		if (i != -1)
+			baudrate_array.splice(i, 0x1);
+		baudrate_array.unshift(baudrate);
+		localStorage.setItem(this.LOCAL_STORAGE_KEY_BAUDRATE, JSON.stringify(baudrate_array));
 	}
 
 	private async _begin(): Promise<void> {
-		await this.controller_info.begin();
-		await this.license_info.begin();
-		await this.update_info.begin();
-		await this.migration_info.begin();
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
+		const baudrate_array:Array<number> = this._get_baudrate_cache();
+		const detect_dict:SapiClassDetect = await this.sapi.detect(baudrate_array);
+		if (detect_dict.status != SapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
+			return ;
+		}
+		this._set_baudrate_cache(baudrate_array, detect_dict.baudrate);
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		switch (detect_dict.type) {
+			case SapiClassDetectType.RAZBERRY:
+				if (await this.razberry.connect() == false)
+					return ;
+				await this.controller_info.begin();
+				await this.license_info.begin();
+				await this.update_info.begin();
+				await this.migration_info.begin();
+				break;
+		}
 	}
 
 	private async _start(): Promise<void> {
-		if (this.razberry.supported() == false)
-			return (this.log.error(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER)));
 		this.log.info(this.VERSION_LOG);
-		if (await this.razberry.request(this.filters) == false)
-			return (this.log.error(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT)));
-		if (await this._connect() == false)
-			return ;
+		const status:SapiClassStatus = await this.sapi.request(this.filters);
+		if (status == SapiClassStatus.SERIAL_UN_SUPPORT)
+			return (this.log.error(ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER));
+		if (status == SapiClassStatus.REQUEST_NO_SELECT)
+			return (this.log.error(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT));
+		if (status != SapiClassStatus.OK)
+			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT, status));
 		await this._begin();
 	}
 
