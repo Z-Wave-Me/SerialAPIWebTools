@@ -1,9 +1,9 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassLicense} from "../sapi/controller_sapi";
-import {ControllerUiLogClass} from "../log/controller_ui_log"
-import {ControllerUiSectionClass} from "./controller_ui_section"
-import {arrayToStringHex, hexToBytes} from "../other/utilities";
+import {ControllerUiLangClassId} from "../../lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "../../lang/controller_ui_lang"
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassLicense} from "../../sapi/controller_sapi";
+import {ControllerUiLogClass} from "../../log/controller_ui_log"
+import {CommonUiSectionClass} from "../common"
+import {arrayToStringHex, hexToBytes} from "../../other/utilities";
 
 export {ControllerUiSectionLicenseClass};
 
@@ -14,7 +14,7 @@ interface ControllerUiClassNewLicenseXhr
 	crc:string;
 }
 
-class ControllerUiSectionLicenseClass extends ControllerUiSectionClass {
+class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string			= "https://z-wave.me/hardware-capabilities/?uuid=";
 	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string					= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 	private readonly TABLE_NAME_LICENSE_YES:string							= '<input disabled="disabled" checked type="checkbox">';

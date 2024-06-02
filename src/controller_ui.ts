@@ -3,12 +3,12 @@ import "./other/style.scss";
 import {ControllerUiLogClass} from "./log/controller_ui_log"
 import {ControllerUiLangClassId} from "./lang/controller_ui_lang_define"
 import {ControllerUiLangClass} from "./lang/controller_ui_lang"
-import {ControllerUiSectionInfoClass} from "./section/controller_ui_section_info"
-import {ControllerUiSectionLicenseClass} from "./section/controller_ui_section_license"
-import {ControllerUiSectionUpdateClass} from "./section/controller_ui_section_update"
-import {ControllerUiSectionMigrationClass} from "./section/controller_ui_section_migration"
+import {ControllerUiSectionInfoClass} from "./section/controller/info"
+import {ControllerUiSectionLicenseClass} from "./section/controller/license"
+import {ControllerUiSectionUpdateClass} from "./section/controller/update"
+import {ControllerUiSectionMigrationClass} from "./section/controller/migration"
 
-import {ControllerUiDefineClass} from "./controller_ui_define"
+import {ControllerUiDefineClass} from "./ui_define"
 
 import {ControllerSapiClass, SapiSerialOptionFilters} from "./sapi/controller_sapi";
 import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType} from "./sapi/sapi";

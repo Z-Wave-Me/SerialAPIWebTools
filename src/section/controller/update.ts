@@ -1,11 +1,11 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassCapabilities} from "../sapi/controller_sapi";
-import {ControllerUiLogClass} from "../log/controller_ui_log"
-import {ControllerUiSectionClass} from "./controller_ui_section"
-import {arrayToStringHex, versionNumberToString} from "../other/utilities";
+import {ControllerUiLangClassId} from "../../lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "../../lang/controller_ui_lang"
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
+import {ControllerUiLogClass} from "../../log/controller_ui_log"
+import {CommonUiSectionClass} from "../common"
+import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 
-import {ControllerUiDefineClass} from "../controller_ui_define"
+import {ControllerUiDefineClass} from "../../ui_define"
 
 export {ControllerUiSectionUpdateClass};
 
@@ -49,7 +49,7 @@ interface ControllerUiSectionUpdateClassReBegin {
 }
 
 
-class ControllerUiSectionUpdateClass extends ControllerUiSectionClass {
+class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly URL_UPDATE_FIMWARE:string								= "https://service.z-wave.me/expertui/uzb/";
 
 	private readonly LOCAL_STORAGE_KEY_UPDATE_BETA:string					= ControllerUiDefineClass.NAME_APP + '_update_beta';

@@ -3,17 +3,17 @@ import {ControllerUiLangClass} from "../lang/controller_ui_lang"
 import {ControllerSapiClass} from "../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../log/controller_ui_log"
 
-export {ControllerUiSectionClass};
+export {CommonUiSectionClass};
 
-interface ControllerUiSectionClassBegin {
+interface CommonUiSectionClassBegin {
 	(): Promise<boolean>
 }
 
-interface ControllerUiSectionClassEnd {
+interface CommonUiSectionClassEnd {
 	(): Promise<void>
 }
 
-class ControllerUiSectionClass {
+class CommonUiSectionClass {
 
 	protected readonly locale:ControllerUiLangClass;
 	protected readonly razberry:ControllerSapiClass;
@@ -21,8 +21,8 @@ class ControllerUiSectionClass {
 
 	private readonly el_section:HTMLElement;
 	private readonly el_tbody:HTMLElement;
-	private readonly begin_func:ControllerUiSectionClassBegin;
-	private readonly end_func:ControllerUiSectionClassEnd;
+	private readonly begin_func:CommonUiSectionClassBegin;
+	private readonly end_func:CommonUiSectionClassEnd;
 
 	protected is_busy(): boolean {
 		if (this.razberry.busy() == true) {
@@ -125,7 +125,7 @@ class ControllerUiSectionClass {
 		this.el_tbody.innerHTML = '';
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:ControllerUiSectionClassBegin, end_func:ControllerUiSectionClassEnd) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
 		this.locale = locale;
 		this.razberry = razberry;
 		this.log = log;

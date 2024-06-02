@@ -1,8 +1,8 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
-import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassPower, ControllerSapiClassRegion, ControllerSapiClassCapabilities} from "../sapi/controller_sapi";
-import {ControllerUiLogClass} from "../log/controller_ui_log"
-import {ControllerUiSectionClass} from "./controller_ui_section"
+import {ControllerUiLangClassId} from "../../lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "../../lang/controller_ui_lang"
+import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassPower, ControllerSapiClassRegion, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
+import {ControllerUiLogClass} from "../../log/controller_ui_log"
+import {CommonUiSectionClass} from "../common"
 
 export {ControllerUiSectionInfoClass};
 
@@ -11,7 +11,7 @@ interface ControllerUiSectionInfoClassReBegin {
 }
 
 
-class ControllerUiSectionInfoClass extends ControllerUiSectionClass {
+class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 	private region_current:string											= '';
 	private region_new:string												= '';
 	private power_current:number											= 0x0;

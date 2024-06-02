@@ -1,9 +1,9 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
-import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClassStatus, ControllerSapiClasstInitData, ControllerSapiClassLearnMode} from "../sapi/controller_sapi";
-import {ControllerUiLogClass} from "../log/controller_ui_log"
-import {ControllerUiSectionClass} from "./controller_ui_section"
-import {intToBytearrayLsbMsb} from "../other/utilities";
+import {ControllerUiLangClassId} from "../../lang/controller_ui_lang_define"
+import {ControllerUiLangClass} from "../../lang/controller_ui_lang"
+import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClassStatus, ControllerSapiClasstInitData, ControllerSapiClassLearnMode} from "../../sapi/controller_sapi";
+import {ControllerUiLogClass} from "../../log/controller_ui_log"
+import {CommonUiSectionClass} from "../common"
+import {intToBytearrayLsbMsb} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -13,7 +13,7 @@ interface ControllerUiSectionMigrationClassHome
 	node_id:number;
 }
 
-class ControllerUiSectionMigrationClass extends ControllerUiSectionClass {
+class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private readonly NVM_HOMEID:number								= 0x8;
 
 	private readonly progress_timer_id_ms_period:number				= 1000;
