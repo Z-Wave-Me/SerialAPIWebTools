@@ -860,13 +860,15 @@ class ControllerSapiClass {
 		return (this.sapi.busy());
 	}
 
-	public async close(): Promise<boolean> {
+	public async close(): Promise<ControllerSapiClassStatus> {
 		this.node_base = SapiClassNodeIdBaseType.TYPE_8_BIT;
 		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
 		this.license.status = ControllerSapiClassStatus.NOT_INIT;
 		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
-		return (this.sapi.close());
+		const status:SapiClassStatus = await this.sapi.close()
+		return (((status as unknown) as ControllerSapiClassStatus));
 	}
+
 	constructor(sapi:SapiClass) {
 		this.sapi = sapi;
 	}

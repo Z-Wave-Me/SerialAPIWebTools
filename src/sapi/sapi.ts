@@ -499,28 +499,28 @@ class SapiClass {
 		return (SapiClassStatus.OK);
 	}
 
-	private async _open(baudRate:number): Promise<boolean> {
+	private async _open(baudRate:number): Promise<SapiClassStatus> {
 		if (this.port == undefined)
-			return (false);
+			return (SapiClassStatus.PORT_NOT_REQUEST);
 		if (this.b_open == true)
-			return (false);
+			return (SapiClassStatus.PORT_NOT_OPEN);
 		try {
 			await this.port.open({ baudRate, bufferSize: 8192 });
 		} catch(e) {
-			return (false);
+			return (SapiClassStatus.PORT_USED);
 		}
 		this.b_open = true;
-		return (true);
+		return (SapiClassStatus.OK);
 	}
 
-	private async _close(): Promise<boolean> {
+	private async _close(): Promise<SapiClassStatus> {
 		if (this.port == undefined)
-			return (false);
+			return (SapiClassStatus.PORT_NOT_REQUEST);
 		if (this.b_open == false)
-			return (false);
+			return (SapiClassStatus.PORT_NOT_CLOSE);
 		await this.port.close();
 		this.b_open = false;
-		return (true);
+		return (SapiClassStatus.OK);
 	}
 
 	private async _recvIncomingRequest_add(wait_timeout:number, lenght:number): Promise<Array<number>> {
@@ -654,46 +654,13 @@ class SapiClass {
 		return (out);
 	}
 
-	public async open(baudRate:number): Promise<boolean> {
+	public async close(): Promise<SapiClassStatus> {
 		if (this.busy() == true)
-			return (false);
+			return (SapiClassStatus.SERIAL_BUSY);
 		this.b_busy = true;
-		const out:boolean = await this._open(baudRate);
+		const out:SapiClassStatus = await this._close();
 		this.b_busy = false;
 		return (out);
-	}
-
-	public async close(): Promise<boolean> {
-		if (this.busy() == true)
-			return (false);
-		this.b_busy = true;
-		const out:boolean = await this._close();
-		this.b_busy = false;
-		return (out);
-	}
-
-	private async _open_2(baudRate:number): Promise<SapiClassStatus> {
-		if (this.port == undefined)
-			return (SapiClassStatus.PORT_NOT_REQUEST);
-		if (this.b_open == true)
-			return (SapiClassStatus.PORT_NOT_OPEN);
-		try {
-			await this.port.open({ baudRate, bufferSize: 8192 });
-		} catch(e) {
-			return (SapiClassStatus.PORT_USED);
-		}
-		this.b_open = true;
-		return (SapiClassStatus.OK);
-	}
-
-	private async _close_2(): Promise<SapiClassStatus> {
-		if (this.port == undefined)
-			return (SapiClassStatus.PORT_NOT_REQUEST);
-		if (this.b_open == false)
-			return (SapiClassStatus.PORT_NOT_CLOSE);
-		await this.port.close();
-		this.b_open = false;
-		return (SapiClassStatus.OK);
 	}
 
 	private async _detect(out:SapiClassDetect, baudrate:Array<number>): Promise<void> {
@@ -704,7 +671,7 @@ class SapiClass {
 			return ;
 		}
 		if (this.b_open == true) {
-			out.status = await this._close_2();
+			out.status = await this._close();
 			if (out.status != SapiClassStatus.OK)
 				return ;
 			await sleep(this.dtr_timeout);
@@ -721,7 +688,7 @@ class SapiClass {
 		i = 0x0;
 		while (i < baudrate_array.length) {
 			out.baudrate = baudrate_array[i];
-			out.status = await this._open_2(baudrate_array[i]);
+			out.status = await this._open(baudrate_array[i]);
 			if (out.status != SapiClassStatus.OK)
 				return ;
 			const res:SapiClassRet = await this._recvIncomingRequest(300);
@@ -747,7 +714,7 @@ class SapiClass {
 				out.type = SapiClassDetectType.RAZBERRY;
 				return ;
 			}
-			out.status = await this._close_2();
+			out.status = await this._close();
 			if (out.status != SapiClassStatus.OK)
 				return ;
 			await sleep(this.dtr_timeout);
