@@ -22,9 +22,9 @@ class ControllerUiClass {
 	private readonly sapi:SapiClass											= new SapiClass();
 	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
 	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
-	private readonly log:ControllerUiLogClass;
 	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_section:HTMLElement									= document.createElement("section");
+	private readonly log:ControllerUiLogClass								= new ControllerUiLogClass(this.el_section, this.locale);
 	private readonly controller:Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>			= [];
 	private readonly filters?:SapiSerialOptionFilters[];
 
@@ -146,7 +146,6 @@ class ControllerUiClass {
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
-		this.log = new ControllerUiLogClass(this.el_section, this.locale);
 		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
 		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
