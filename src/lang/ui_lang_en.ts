@@ -1,4 +1,4 @@
-import {ControllerUiLangClassList, ControllerUiLangClassId} from "./controller_ui_lang_define"
+import {ControllerUiLangClassList, ControllerUiLangClassId} from "./ui_lang_define"
 
 export {controller_lang_en};
 

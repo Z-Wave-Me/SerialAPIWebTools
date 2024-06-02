@@ -1,8 +1,8 @@
 import "./other/style.scss";
 
-import {ControllerUiLogClass} from "./log/controller_ui_log"
-import {ControllerUiLangClassId} from "./lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "./lang/controller_ui_lang"
+import {ControllerUiLogClass} from "./log/ui_log"
+import {ControllerUiLangClassId} from "./lang/ui_lang_define"
+import {ControllerUiLangClass} from "./lang/ui_lang"
 import {ControllerUiSectionInfoClass} from "./section/controller/info"
 import {ControllerUiSectionLicenseClass} from "./section/controller/license"
 import {ControllerUiSectionUpdateClass} from "./section/controller/update"

@@ -1,7 +1,7 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
+import {ControllerUiLangClassId} from "../lang/ui_lang_define"
+import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerSapiClass} from "../sapi/controller_sapi";
-import {ControllerUiLogClass} from "../log/controller_ui_log"
+import {ControllerUiLogClass} from "../log/ui_log"
 
 export {CommonUiSectionClass};
 

@@ -1,5 +1,5 @@
-import {ControllerUiLangClassId} from "../lang/controller_ui_lang_define"
-import {ControllerUiLangClass} from "../lang/controller_ui_lang"
+import {ControllerUiLangClassId} from "../lang/ui_lang_define"
+import {ControllerUiLangClass} from "../lang/ui_lang"
 
 export {ControllerUiLogClass};
 
