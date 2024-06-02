@@ -17,7 +17,7 @@ module.exports = function(env, argv) {
 	const config =
 	{
 		plugins: [new MiniCssExtractPlugin()],
-		entry: './src/controller_ui.ts',
+		entry: './src/ui.ts',
 		module: 
 		{
 			rules:
@@ -43,7 +43,7 @@ module.exports = function(env, argv) {
 		},
 		output:
 		{
-			filename: 'controller_ui.js',
+			filename: 'ui.js',
 			libraryTarget: 'umd',
 			library: 'ControllerUiLib',
 			path: path.resolve(__dirname, 'build')
