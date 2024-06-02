@@ -31,6 +31,8 @@ class ControllerUiClass {
 	private readonly migration_info:ControllerUiSectionMigrationClass;
 	private readonly filters?:SapiSerialOptionFilters[];
 
+	private device_type:SapiClassDetectType									= SapiClassDetectType.UNKNOWN;
+
 	private _get_baudrate_cache():Array<number> {
 		let baudrate:Array<number>, i:number;
 
@@ -71,7 +73,8 @@ class ControllerUiClass {
 		}
 		this._set_baudrate_cache(baudrate_array, detect_dict.baudrate);
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
-		switch (detect_dict.type) {
+		this.device_type = detect_dict.type;
+		switch (this.device_type) {
 			case SapiClassDetectType.RAZBERRY:
 				if (await this.razberry.connect() == false)
 					return ;

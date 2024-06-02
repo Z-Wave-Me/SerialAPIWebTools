@@ -4,6 +4,7 @@ export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSeri
 
 enum SapiClassDetectType
 {
+	UNKNOWN,
 	ZUNO,
 	RAZBERRY,
 }
