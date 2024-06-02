@@ -119,7 +119,7 @@ enum ControllerUiLangClassId
 	MESSAGE_REMOVE_NODE,
 	MESSAGE_SOFT_RESET,
 	MESSAGE_NOP,
-	MESSAGE_PORT_SELECT_ERROR,
+	MESSAGE_PORT_SELECT,
 }
 
 type ControllerUiLangClassList =

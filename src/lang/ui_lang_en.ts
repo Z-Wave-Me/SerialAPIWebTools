@@ -120,5 +120,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_REMOVE_NODE]: "Remove node the controller",
 	[ControllerUiLangClassId.MESSAGE_SOFT_RESET]: "Soft reset",
 	[ControllerUiLangClassId.MESSAGE_NOP]: "Send nop",
-	[ControllerUiLangClassId.MESSAGE_PORT_SELECT_ERROR]: "Port selected",
+	[ControllerUiLangClassId.MESSAGE_PORT_SELECT]: "Port selected",
 };

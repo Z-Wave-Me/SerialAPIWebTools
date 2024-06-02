@@ -16,7 +16,7 @@ import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType} from "
 export {ControllerUiClass};
 
 class ControllerUiClass {
-	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.3";
+	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.4";
 
 	private readonly LOCAL_STORAGE_KEY_BAUDRATE:string						= ControllerUiDefineClass.NAME_APP + '_baudrate_cache';
 	private readonly sapi:SapiClass											= new SapiClass();
@@ -88,13 +88,15 @@ class ControllerUiClass {
 
 	private async _start(): Promise<void> {
 		this.log.info(this.VERSION_LOG);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
 		const status:SapiClassStatus = await this.sapi.request(this.filters);
 		if (status == SapiClassStatus.SERIAL_UN_SUPPORT)
 			return (this.log.error(ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER));
 		if (status == SapiClassStatus.REQUEST_NO_SELECT)
-			return (this.log.error(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT));
+			return (this.log.error(ControllerUiLangClassId.MESSAGE_PORT_SELECT));
 		if (status != SapiClassStatus.OK)
-			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_NOT_SELECT, status));
+			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_SELECT, status));
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
 		await this._begin();
 	}
 
