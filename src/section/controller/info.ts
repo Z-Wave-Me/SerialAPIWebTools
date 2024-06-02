@@ -17,6 +17,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 	private power_current:number											= 0x0;
 	private power_new:number												= 0x0;
 
+	private readonly razberry:ControllerSapiClass;
 	private readonly region_el_button:HTMLButtonElement;
 	private readonly power_el_button:HTMLButtonElement;
 
@@ -215,6 +216,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionInfoClassReBegin) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.razberry = razberry;
 		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
 		this.region_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON, () => {this._region_click();});
 		this.re_begin_func = re_begin_func;

@@ -74,6 +74,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly update_info_xhr:XMLHttpRequest								= new XMLHttpRequest();
 	private readonly update_finware_xhr:XMLHttpRequest							= new XMLHttpRequest();
 
+	private readonly razberry:ControllerSapiClass;
 	private update_info_xhr_timer_id?:number;
 	private update_finware_timer_id?:number;
 
@@ -352,6 +353,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionUpdateClassReBegin) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.razberry = razberry;
 		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, async () => { await this._update_finware_click();},
 			(event:Event) => {this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, this.finware);});
 		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, async () => {await this._update_bootloader_click();},

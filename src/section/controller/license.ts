@@ -24,6 +24,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 	private readonly ms_timeout_get_new_license_xhr:number					= 3000;
 	private readonly ms_timeout_get_new_license_port:number					= 1000;
 
+	private readonly razberry:ControllerSapiClass;
 	private readonly license_xhr:XMLHttpRequest										= new XMLHttpRequest();
 
 	private license_timer_id?:number;
@@ -174,5 +175,6 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.LICENSE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.razberry = razberry;
 	}
 }

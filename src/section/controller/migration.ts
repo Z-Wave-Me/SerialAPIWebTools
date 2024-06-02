@@ -19,6 +19,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private readonly progress_timer_id_ms_period:number				= 1000;
 	private readonly progress_timer_id_count:number					= 30;
 	private readonly el_container:HTMLElement;
+	private readonly razberry:ControllerSapiClass;
 
 	private process:boolean											= false;
 	private progress_timer_id?:number;
@@ -275,6 +276,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.MIGRATION_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		this.razberry = razberry;
 		this.el_container = document.createElement("span");
 	}
 }
