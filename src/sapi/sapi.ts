@@ -634,17 +634,7 @@ class SapiClass {
 		return (res);
 	}
 
-	public lock() {
-		this.state_lock = true;
-	}
-
-	public unlock() {
-		this.state_lock = false;
-	}
-
 	public busy(): boolean {
-		if (this.state_lock == true)
-			return (true);
 		return (this.b_busy);
 	}
 	public static supported(): boolean {
