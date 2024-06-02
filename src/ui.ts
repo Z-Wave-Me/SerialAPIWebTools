@@ -25,10 +25,7 @@ class ControllerUiClass {
 	private readonly log:ControllerUiLogClass;
 	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_section:HTMLElement									= document.createElement("section");
-	private readonly controller_info:ControllerUiSectionInfoClass;
-	private readonly license_info:ControllerUiSectionLicenseClass;
-	private readonly update_info:ControllerUiSectionUpdateClass;
-	private readonly migration_info:ControllerUiSectionMigrationClass;
+	private readonly controller:Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>			= [];
 	private readonly filters?:SapiSerialOptionFilters[];
 
 	private device_type:SapiClassDetectType									= SapiClassDetectType.UNKNOWN;
@@ -64,6 +61,8 @@ class ControllerUiClass {
 	}
 
 	private async _begin(): Promise<void> {
+		let i:number;
+
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
 		const baudrate_array:Array<number> = this._get_baudrate_cache();
 		const detect_dict:SapiClassDetect = await this.sapi.detect(baudrate_array);
@@ -78,10 +77,11 @@ class ControllerUiClass {
 			case SapiClassDetectType.RAZBERRY:
 				if (await this.razberry.connect() == false)
 					return ;
-				await this.controller_info.begin();
-				await this.license_info.begin();
-				await this.update_info.begin();
-				await this.migration_info.begin();
+				i = 0x0;
+				while (i < this.controller.length) {
+					await this.controller[i].begin();
+					i++;
+				}
 				break;
 		}
 	}
@@ -114,19 +114,24 @@ class ControllerUiClass {
 			navigator.clipboard.writeText(this.log.getLog());
 		};
 		const event_close:EventListener = async () => {
-			if (this.controller_info.is_close() == false)
-				return ;
-			if (this.license_info.is_close() == false)
-				return ;
-			if (this.update_info.is_close() == false)
-				return ;
-			if (this.migration_info.is_close() == false)
-				return ;
-			await this.controller_info.end();
-			await this.license_info.end();
-			await this.update_info.end();
-			await this.migration_info.end();
-			await this.razberry.close();
+			let i:number;
+
+			switch (this.device_type) {
+				case SapiClassDetectType.RAZBERRY:
+					i = 0x0;
+					while (i < this.controller.length) {
+						if (this.controller[i].is_close() == false)
+							return ;
+						i++;
+					}
+					i = 0x0;
+					while (i < this.controller.length) {
+						await this.controller[i].end();
+						i++;
+					}
+					break;
+			}
+			await this.sapi.close();
 			this.el_modal.remove();
 		};
 		this._constructor_button_create(el_section_button, event_copy, this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_TEXT), this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_TITLE));
@@ -140,10 +145,10 @@ class ControllerUiClass {
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
 		this.log = new ControllerUiLogClass(this.el_section, this.locale);
-		this.controller_info = new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
-		this.license_info = new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log);
-		this.update_info = new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()});
-		this.migration_info = new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log);
+		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
+		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
+		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
+		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
 		el.appendChild(this.el_modal);
 		this._start();
 	}

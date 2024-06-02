@@ -839,6 +839,10 @@ class ControllerSapiClass {
 	}
 
 	public async connect(): Promise<boolean> {
+		this.node_base = SapiClassNodeIdBaseType.TYPE_8_BIT;
+		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
+		this.license.status = ControllerSapiClassStatus.NOT_INIT;
+		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
 		return (await this._begin(true));
 	}
 
@@ -858,15 +862,6 @@ class ControllerSapiClass {
 		if (this.state_lock == true)
 			return (true);
 		return (this.sapi.busy());
-	}
-
-	public async close(): Promise<ControllerSapiClassStatus> {
-		this.node_base = SapiClassNodeIdBaseType.TYPE_8_BIT;
-		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
-		this.license.status = ControllerSapiClassStatus.NOT_INIT;
-		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
-		const status:SapiClassStatus = await this.sapi.close()
-		return (((status as unknown) as ControllerSapiClassStatus));
 	}
 
 	constructor(sapi:SapiClass) {
