@@ -87,7 +87,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 				const fun_controller_timer:TimerHandler = async () => {
 					this.license_timer_id = undefined;
 					this.log.infoStart(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_SET_LICENSE));
-					if (this.razberry.busy() == true) {
+					if (this.razberry.is_busy() == true) {
 						this.log.warning(this.locale.getLocale(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT));
 						this.license_timer_id = window.setTimeout(fun_controller_timer, this.ms_timeout_get_new_license_port);
 						return ;

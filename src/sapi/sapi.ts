@@ -635,6 +635,20 @@ class SapiClass {
 		return (res);
 	}
 
+	public lock() {
+		this.state_lock = true;
+	}
+
+	public unlock() {
+		this.state_lock = false;
+	}
+
+	public is_busy(): boolean {
+		if (this.state_lock == true)
+			return (true);
+		return (this.busy());
+	}
+
 	public busy(): boolean {
 		return (this.b_busy);
 	}
@@ -661,6 +675,7 @@ class SapiClass {
 		this.b_busy = true;
 		const out:SapiClassStatus = await this._close();
 		this.b_busy = false;
+		this.unlock();
 		return (out);
 	}
 

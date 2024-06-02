@@ -25,7 +25,7 @@ class CommonUiSectionClass {
 	private readonly end_func:CommonUiSectionClassEnd;
 
 	protected is_busy(): boolean {
-		if (this.razberry.busy() == true) {
+		if (this.razberry.is_busy() == true) {
 			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
 			return (true);
 		}
