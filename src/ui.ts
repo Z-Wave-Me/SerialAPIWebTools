@@ -7,6 +7,7 @@ import {ControllerUiSectionInfoClass} from "./section/controller/info"
 import {ControllerUiSectionLicenseClass} from "./section/controller/license"
 import {ControllerUiSectionUpdateClass} from "./section/controller/update"
 import {ControllerUiSectionMigrationClass} from "./section/controller/migration"
+import {DetectionUiSectionClass} from "./section/detection"
 
 import {ControllerUiDefineClass} from "./ui_define"
 
@@ -18,7 +19,6 @@ export {ControllerUiClass};
 class ControllerUiClass {
 	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.4";
 
-	private readonly LOCAL_STORAGE_KEY_BAUDRATE:string						= ControllerUiDefineClass.NAME_APP + '_baudrate_cache';
 	private readonly sapi:SapiClass											= new SapiClass();
 	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
 	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
@@ -26,52 +26,28 @@ class ControllerUiClass {
 	private readonly el_section:HTMLElement									= document.createElement("section");
 	private readonly log:ControllerUiLogClass								= new ControllerUiLogClass(this.el_section, this.locale);
 	private readonly controller:Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>			= [];
+	private readonly detection:DetectionUiSectionClass;
 	private readonly filters?:SapiSerialOptionFilters[];
 
 	private device_type:SapiClassDetectType									= SapiClassDetectType.UNKNOWN;
 
-	private _get_baudrate_cache():Array<number> {
-		let baudrate:Array<number>, i:number;
-
-		const baudrate_str:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_BAUDRATE);
-		if (baudrate_str == null)
-			return ([]);
-		try {
-			baudrate = JSON.parse(baudrate_str);
-		} catch (error) {
-			return ([]);
-		}
-		if (Array.isArray(baudrate) == false)
-			return ([]);
-		i = 0x0;
-		while (i < baudrate.length) {
-			if (this.sapi.BAUDRATE.indexOf(baudrate[i]) == -1)
-				baudrate.splice(i, 0x1);
-			i++;
-		}
-		return (baudrate);
-	}
-
-	private _set_baudrate_cache(baudrate_array:Array<number>, baudrate:number):void {
-		const i:number = baudrate_array.indexOf(baudrate);
-		if (i != -1)
-			baudrate_array.splice(i, 0x1);
-		baudrate_array.unshift(baudrate);
-		localStorage.setItem(this.LOCAL_STORAGE_KEY_BAUDRATE, JSON.stringify(baudrate_array));
-	}
-
 	private async _begin(): Promise<void> {
 		let i:number;
 
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
-		const baudrate_array:Array<number> = this._get_baudrate_cache();
-		const detect_dict:SapiClassDetect = await this.sapi.detect(baudrate_array);
-		if (detect_dict.status != SapiClassStatus.OK) {
-			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
-			return ;
+		switch (this.device_type) {
+			case SapiClassDetectType.RAZBERRY:
+				i = 0x0;
+				while (i < this.controller.length) {
+					await this.controller[i].end();
+					i++;
+				}
+				break;
 		}
-		this._set_baudrate_cache(baudrate_array, detect_dict.baudrate);
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		this.device_type = SapiClassDetectType.UNKNOWN;
+		await this.detection.begin();
+		const detect_dict:SapiClassDetect|undefined = await this.detection.detection();
+		if (detect_dict == undefined)
+			return ;
 		this.device_type = detect_dict.type;
 		switch (this.device_type) {
 			case SapiClassDetectType.RAZBERRY:
@@ -93,7 +69,7 @@ class ControllerUiClass {
 		if (status == SapiClassStatus.SERIAL_UN_SUPPORT)
 			return (this.log.error(ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER));
 		if (status == SapiClassStatus.REQUEST_NO_SELECT)
-			return (this.log.error(ControllerUiLangClassId.MESSAGE_PORT_SELECT));
+			return (this.log.errorFalled(ControllerUiLangClassId.MESSAGE_PORT_SELECT));
 		if (status != SapiClassStatus.OK)
 			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_SELECT, status));
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
@@ -146,6 +122,7 @@ class ControllerUiClass {
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
+		this.detection = new DetectionUiSectionClass(this.el_section, this.locale, this.sapi, this.log, async () => {await this._begin()});
 		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
 		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));

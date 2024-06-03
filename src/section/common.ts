@@ -1,6 +1,7 @@
 import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerSapiClass} from "../sapi/controller_sapi";
+import {SapiClass} from "../sapi/sapi";
 import {ControllerUiLogClass} from "../log/ui_log"
 
 export {CommonUiSectionClass};
@@ -18,14 +19,14 @@ class CommonUiSectionClass {
 	protected readonly locale:ControllerUiLangClass;
 	protected readonly log:ControllerUiLogClass;
 
-	private readonly sapi:ControllerSapiClass;
+	private readonly management:ControllerSapiClass|SapiClass;
 	private readonly el_section:HTMLElement;
 	private readonly el_tbody:HTMLElement;
 	private readonly begin_func:CommonUiSectionClassBegin;
 	private readonly end_func:CommonUiSectionClassEnd;
 
 	protected is_busy(): boolean {
-		if (this.sapi.is_busy() == true) {
+		if (this.management.is_busy() == true) {
 			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
 			return (true);
 		}
@@ -125,9 +126,9 @@ class CommonUiSectionClass {
 		this.el_tbody.innerHTML = '';
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, sapi:ControllerSapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, management:ControllerSapiClass|SapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
 		this.locale = locale;
-		this.sapi = sapi;
+		this.management = management;
 		this.log = log;
 		const el:HTMLElement = document.createElement("section");
 		el.className = "ZUnoRazberryModalContentSection_table";

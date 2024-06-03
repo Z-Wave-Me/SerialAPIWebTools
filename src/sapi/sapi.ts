@@ -1,6 +1,11 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc};
+
+interface SapiClassDetectTypeFunc {
+	(): Promise<boolean>
+}
+
 
 enum SapiClassDetectType
 {
@@ -54,6 +59,8 @@ enum SapiClassStatus
 	REQUEST_NO_SELECT,
 	ZUNO_NO_FREEZE,
 	DETECTED_UNC_COMMAND,
+	DETECTED_NOT_FIND,
+	DETECTED_CANCEL,
 	LAST_STATUS,
 }
 
@@ -357,7 +364,7 @@ class SapiClass {
 		let out:Array<number>, i:number, rep:number, tempos:number|undefined;
 
 		rep = 0x0;
-		while (rep < 1) {
+		while (rep < 2) {
 			if (this.queue.length >= num) {
 				out = [];
 				i = 0x0;
@@ -679,8 +686,8 @@ class SapiClass {
 		return (out);
 	}
 
-	private async _detect(out:SapiClassDetect, baudrate:Array<number>): Promise<void> {
-		let i:number;
+	private async _detect(out:SapiClassDetect, baudrate:Array<number>, func:SapiClassDetectTypeFunc|null): Promise<void> {
+		let i:number, res:SapiClassRet;
 
 		if (this.port == undefined) {
 			out.status = SapiClassStatus.PORT_NOT_REQUEST;
@@ -707,7 +714,15 @@ class SapiClass {
 			out.status = await this._open(baudrate_array[i]);
 			if (out.status != SapiClassStatus.OK)
 				return ;
-			const res:SapiClassRet = await this._recvIncomingRequest(300);
+			res = await this._recvIncomingRequest(300);
+			if (res.status != SapiClassStatus.OK && func != null) {
+				await this._clear();
+				if (await func() == false) {
+					out.status = SapiClassStatus.DETECTED_CANCEL;
+					return ;
+				}
+				res = await this._recvIncomingRequest(2000);
+			}
 			if (res.status == SapiClassStatus.OK) {
 				if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) {
 					const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
@@ -736,9 +751,10 @@ class SapiClass {
 			await sleep(this.dtr_timeout);
 			i++;
 		}
+		out.status = SapiClassStatus.DETECTED_NOT_FIND;
 	}
 
-	public async detect(baudrate:Array<number>): Promise<SapiClassDetect> {
+	public async detect(baudrate:Array<number>, func:SapiClassDetectTypeFunc|null): Promise<SapiClassDetect> {
 		const out:SapiClassDetect = {status: SapiClassStatus.OK, type: SapiClassDetectType.ZUNO, baudrate:0x0};
 	
 		if (this.busy() == true) {
@@ -746,7 +762,7 @@ class SapiClass {
 			return (out);
 		}
 		this.b_busy = true;
-		await this._detect(out, baudrate);
+		await this._detect(out, baudrate, func);
 		this.b_busy = false;
 		return (out);
 	}
