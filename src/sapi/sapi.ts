@@ -322,6 +322,8 @@ interface NavigatorExtSerial extends Navigator
 
 
 class SapiClass {
+	private readonly MAX_SEND_DATA_LENGHT																= 0xA0;
+
 	private readonly SOF:number																			= 0x01;
 	private readonly ACK:number																			= 0x06;
 	private readonly NAK:number																			= 0x15;
@@ -714,7 +716,7 @@ class SapiClass {
 			out.status = await this._open(baudrate_array[i]);
 			if (out.status != SapiClassStatus.OK)
 				return ;
-			res = await this._recvIncomingRequest(300);
+			res = await this._recvIncomingRequest(600);
 			if (res.status != SapiClassStatus.OK && func != null) {
 				await this._clear();
 				if (await func() == false) {
@@ -765,6 +767,10 @@ class SapiClass {
 		await this._detect(out, baudrate, func);
 		this.b_busy = false;
 		return (out);
+	}
+
+	public getQuantumSize(): number {
+		return (this.MAX_SEND_DATA_LENGHT);
 	}
 
 	constructor() {

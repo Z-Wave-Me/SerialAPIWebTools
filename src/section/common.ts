@@ -1,6 +1,7 @@
 import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerSapiClass} from "../sapi/controller_sapi";
+import {ZunoSapiClass} from "../sapi/zuno_sapi";
 import {SapiClass} from "../sapi/sapi";
 import {ControllerUiLogClass} from "../log/ui_log"
 
@@ -19,7 +20,7 @@ class CommonUiSectionClass {
 	protected readonly locale:ControllerUiLangClass;
 	protected readonly log:ControllerUiLogClass;
 
-	private readonly management:ControllerSapiClass|SapiClass;
+	private readonly management:ControllerSapiClass|ZunoSapiClass|SapiClass;
 	private readonly el_section:HTMLElement;
 	private readonly el_tbody:HTMLElement;
 	private readonly begin_func:CommonUiSectionClassBegin;
@@ -126,7 +127,7 @@ class CommonUiSectionClass {
 		this.el_tbody.innerHTML = '';
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, management:ControllerSapiClass|SapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, management:ControllerSapiClass|ZunoSapiClass|SapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
 		this.locale = locale;
 		this.management = management;
 		this.log = log;

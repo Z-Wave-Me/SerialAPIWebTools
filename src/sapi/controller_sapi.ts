@@ -5,7 +5,7 @@ import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSeri
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
-export {ControllerSapiClassLearnMode, ControllerSapiClasstInitData, ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower, SapiSerialOptionFilters, ControllerSapiClasstNetworkIDs};
+export {ControllerSapiClassLearnMode, ControllerSapiClasstInitData, ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower, ControllerSapiClasstNetworkIDs};
 
 interface ControllerSapiClassLearnMode
 {
@@ -153,7 +153,6 @@ enum ControllerSapiClassLearMode
 }
 
 class ControllerSapiClass {
-	private readonly RAZ7_MAX_SEND_DATA_LENGHT													= 0xA0;
 	private readonly RAZ7_LICENSE_CMD															= 0xF5;
 	private readonly RAZ7_LICENSE_CRC															= 0x1D0F;
 	private readonly RAZ7_LICENSE_STATUS_OK														= 0x00;
@@ -457,10 +456,10 @@ class ControllerSapiClass {
 		out.lock_status_name = lock_status_name;
 	}
 
-	private async _begin(test:boolean):Promise<boolean> {
+	private async _begin(test:boolean):Promise<void> {
 		await this._get_capabilities(this.capabilities);
 		if (test == true && this.capabilities.status != ControllerSapiClassStatus.OK)
-			return (false);
+			return ;
 		const node_base_type:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_NODEID_BASETYPE_SET, [SapiClassNodeIdBaseType.TYPE_16_BIT]);
 		if (node_base_type.data.length < 0x1 || node_base_type.data[0x0] == 0x0)
 			this.node_base = SapiClassNodeIdBaseType.TYPE_8_BIT;
@@ -470,7 +469,7 @@ class ControllerSapiClass {
 			await this._license_get(this.license);
 			await this._get_board_info(this.board_info);
 		}
-		return (true);
+		return ;
 	}
 
 	private _node_to_bytes(node:number): Uint8Array {
@@ -630,7 +629,7 @@ class ControllerSapiClass {
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
 		const data_addr:Array<number> = [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (data.length >> 8) & 0xFF, data.length & 0xFF];
-		if (data.length > this.RAZ7_MAX_SEND_DATA_LENGHT)
+		if (data.length > this.getQuantumSize())
 			return (ControllerSapiClassStatus.WRONG_SEND_DATA_LENGHT);
 		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER, data_addr.concat(Array.from(data)));
 		if (res.status != SapiClassStatus.OK)
@@ -837,16 +836,16 @@ class ControllerSapiClass {
 		return (false);
 	}
 
-	public async connect(): Promise<boolean> {
+	public async connect(): Promise<void> {
 		this.node_base = SapiClassNodeIdBaseType.TYPE_8_BIT;
 		this.capabilities.status = ControllerSapiClassStatus.NOT_INIT;
 		this.license.status = ControllerSapiClassStatus.NOT_INIT;
 		this.board_info.status = ControllerSapiClassStatus.NOT_INIT;
-		return (await this._begin(true));
+		await this._begin(true);
 	}
 
 	public getQuantumSize(): number {
-		return (this.RAZ7_MAX_SEND_DATA_LENGHT);
+		return (this.sapi.getQuantumSize());
 	}
 
 	public lock() {

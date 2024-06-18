@@ -8,40 +8,62 @@ import {ControllerUiSectionLicenseClass} from "./section/controller/license"
 import {ControllerUiSectionUpdateClass} from "./section/controller/update"
 import {ControllerUiSectionMigrationClass} from "./section/controller/migration"
 import {DetectionUiSectionClass} from "./section/detection"
+import {SlaveUiSectionInfoClass} from "./section/slave/info"
 
 import {ControllerUiDefineClass} from "./ui_define"
 
-import {ControllerSapiClass, SapiSerialOptionFilters} from "./sapi/controller_sapi";
-import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType} from "./sapi/sapi";
+import {ControllerSapiClass} from "./sapi/controller_sapi";
+import {ZunoSapiClass} from "./sapi/zuno_sapi";
+import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType, SapiSerialOptionFilters} from "./sapi/sapi";
 
 export {ControllerUiClass};
+
+type controller_array_type = Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>;
+type slave_array_type = Array<SlaveUiSectionInfoClass>;
+type all_array_type = controller_array_type|slave_array_type;
 
 class ControllerUiClass {
 	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.4";
 
 	private readonly sapi:SapiClass											= new SapiClass();
 	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
+	private readonly zuno:ZunoSapiClass										= new ZunoSapiClass(this.sapi);
 	private readonly locale:ControllerUiLangClass							= new ControllerUiLangClass();
 	private readonly el_modal:HTMLElement									= document.createElement("div");
 	private readonly el_section:HTMLElement									= document.createElement("section");
 	private readonly log:ControllerUiLogClass								= new ControllerUiLogClass(this.el_section, this.locale);
-	private readonly controller:Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>			= [];
+	private readonly controller:controller_array_type						= [];
+	private readonly slave:slave_array_type									= [];
 	private readonly detection:DetectionUiSectionClass;
 	private readonly filters?:SapiSerialOptionFilters[];
 
 	private device_type:SapiClassDetectType									= SapiClassDetectType.UNKNOWN;
 
-	private async _begin(): Promise<void> {
-		let i:number;
-
+	private _get_all_array_type():all_array_type {
+		let out:all_array_type;
+	
 		switch (this.device_type) {
 			case SapiClassDetectType.RAZBERRY:
-				i = 0x0;
-				while (i < this.controller.length) {
-					await this.controller[i].end();
-					i++;
-				}
+				out = this.controller;
 				break;
+			case SapiClassDetectType.ZUNO:
+				out = this.slave;
+				break ;
+			default:
+				out = [];
+				break ;
+		}
+		return (out);
+	}
+
+	private async _begin(): Promise<void> {
+		let i:number, array_type:all_array_type;
+
+		array_type = this._get_all_array_type();
+		i = 0x0;
+		while (i < array_type.length) {
+			await array_type[i].end();
+			i++;
 		}
 		this.device_type = SapiClassDetectType.UNKNOWN;
 		await this.detection.begin();
@@ -50,15 +72,18 @@ class ControllerUiClass {
 			return ;
 		this.device_type = detect_dict.type;
 		switch (this.device_type) {
-			case SapiClassDetectType.RAZBERRY:
-				if (await this.razberry.connect() == false)
-					return ;
-				i = 0x0;
-				while (i < this.controller.length) {
-					await this.controller[i].begin();
-					i++;
-				}
+			case SapiClassDetectType.ZUNO:
+				await this.zuno.connect();
 				break;
+			case SapiClassDetectType.RAZBERRY:
+				await this.razberry.connect();
+				break;
+		}
+		array_type = this._get_all_array_type();
+		i = 0x0;
+		while (i < array_type.length) {
+			await array_type[i].begin();
+			i++;
 		}
 	}
 
@@ -94,20 +119,12 @@ class ControllerUiClass {
 		const event_close:EventListener = async () => {
 			let i:number;
 
-			switch (this.device_type) {
-				case SapiClassDetectType.RAZBERRY:
-					i = 0x0;
-					while (i < this.controller.length) {
-						if (this.controller[i].is_close() == false)
-							return ;
-						i++;
-					}
-					i = 0x0;
-					while (i < this.controller.length) {
-						await this.controller[i].end();
-						i++;
-					}
-					break;
+			const array_type:all_array_type = this._get_all_array_type();
+			i = 0x0;
+			while (i < array_type.length) {
+				if (array_type[i].is_close() == false)
+					return ;
+				i++;
 			}
 			await this.sapi.close();
 			this.el_modal.remove();
