@@ -716,7 +716,7 @@ class SapiClass {
 			out.status = await this._open(baudrate_array[i]);
 			if (out.status != SapiClassStatus.OK)
 				return ;
-			res = await this._recvIncomingRequest(600);
+			res = await this._recvIncomingRequest(1000);
 			if (res.status != SapiClassStatus.OK && func != null) {
 				await this._clear();
 				if (await func() == false) {

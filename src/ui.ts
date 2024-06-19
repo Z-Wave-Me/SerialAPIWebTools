@@ -144,6 +144,7 @@ class ControllerUiClass {
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
 		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
 		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
+		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, async () => {await this._begin()}));
 		el.appendChild(this.el_modal);
 		this._start();
 	}

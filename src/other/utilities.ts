@@ -1,11 +1,32 @@
-export {sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString, intToBytearrayLsbMsb, intToBytearrayMsbLsb};
+export {	sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString, intToBytearrayLsbMsb, intToBytearrayMsbLsb, versionNumberToStringSlave, numberToStringHex, conv2Decimal, toString,
+			conv2DecimalPadding
+};
+
+function toString(array:Array<number>): string {
+	let result:string;
+
+	result = "";
+	for (let i = 0; i < array.length; i++) {
+		result += String.fromCharCode(array[i]);
+	}
+	return result;
+}
+
+function numberToStringHex(num:number): string {
+	return (((num >> 24) & 0xFF).toString(0x10).padStart(2, '0') + ((num >> 16) & 0xFF).toString(0x10).padStart(2, '0') + ((num >> 8) & 0xFF).toString(0x10).padStart(2, '0') + ((num) & 0xFF).toString(0x10).padStart(2, '0'));
+}
 
 function versionNumberToString(version:number): string {
 	const txt:string = String((version >> 24) & 0xFF).padStart(2, '0') + "." + String((version >> 16) & 0xFF).padStart(2, '0') + "." + String((version >> 0x8) & 0xFF).padStart(2, '0') + "." + String((version) & 0xFF).padStart(2, '0')
 	return (txt)
 }
 
-function arrayToStringHex(data:Array<number>):string {
+function versionNumberToStringSlave(version:number): string {
+	const txt:string = String((version >> 24) & 0xFF).padStart(2, '0') + "." + String((version >> 16) & 0xFF).padStart(2, '0') + "." + String((version) & 0xFFFF)
+	return (txt)
+}
+
+function arrayToStringHex(data:Array<number>|Uint8Array):string {
 	let str_hex:string, i:number;
 
 	str_hex = "";
@@ -126,3 +147,30 @@ function intToBytearrayMsbLsb(data:number, size:number = 0x4):Uint8Array {
 	}
 	return (array);
 }
+
+function conv2DecimalPadding(num:number, max:number): string {
+	let num_str = num.toString(0xA);
+
+	while (num_str.length < max)
+		num_str = '0' + num_str;
+	return (num_str);
+}
+
+
+function conv2Decimal(buff:Uint8Array, separator:string = "-"): string {
+	let i:number, text:string, v:number;
+
+	text = "";
+	i = 0x0;
+	while (i < (buff.length / 2)) {
+		v = buff[ (i * 2)];
+		v <<= 8;
+		v += buff[ (i * 2) + 1];
+		if(i != 0)
+			text += separator;
+		text += conv2DecimalPadding(v, 5);
+		i = i + 1;
+	}
+	return (text)
+}
+
