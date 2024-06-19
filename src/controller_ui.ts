@@ -23,7 +23,7 @@ type slave_array_type = Array<SlaveUiSectionInfoClass>;
 type all_array_type = controller_array_type|slave_array_type;
 
 class ControllerUiClass {
-	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.4";
+	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.5";
 
 	private readonly sapi:SapiClass											= new SapiClass();
 	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
