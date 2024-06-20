@@ -62,7 +62,7 @@ function sleep(ms:number):Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function checksum(data:Array<number>):number {
+function checksum(data:Array<number>|Uint8Array):number {
 	let ret = 0xff;
 	let i = 0x0;
 
