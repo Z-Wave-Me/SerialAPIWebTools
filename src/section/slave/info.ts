@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassRegion, ZunoSapiClassPower} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {versionNumberToStringSlave, arrayToStringHex, numberToStringHex, conv2Decimal} from "../../other/utilities";
+import {versionNumberToStringSlave, arrayToStringHex, numberToStringHex, conv2Decimal, sleep} from "../../other/utilities";
 import { QRCode, QRCodeOption, QRErrorCorrectLevel } from "./../../qr_code/qrcode";
 import {ControllerUiDefineClassReBeginFunc} from "../../ui_define"
 
@@ -172,6 +172,38 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		return (true);
 	}
 
+	private async _controller_default_click(event:Event): Promise<void> {
+		if (this.is_busy() == true)
+			return ;
+		const el_target:HTMLButtonElement|null = this.event_get_element_button(event);
+		if (el_target == null)
+			return ;
+		const out:boolean = window.confirm(this.locale.getLocale(ControllerUiLangClassId.SLAVE_DEFAULT_RESET_WARNING));
+		if (out != true)
+			return ;
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, true);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+		const status:ZunoSapiClassStatus = await this.zuno.setDefault();
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, false);
+		if (status == ZunoSapiClassStatus.OK) {
+			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+			await sleep(1000);
+			this.re_begin_func(true);
+			return ;
+		}
+		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
+	}
+
+	private _controller_default_init(): boolean {
+		const el_button:HTMLButtonElement = document.createElement("button");
+		el_button.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE);
+		el_button.type = "button";
+		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON);
+		el_button.addEventListener("click", (event:Event) => {this._controller_default_click(event);});
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_TITLE, "", el_button);
+		return (true);
+	}
+
 	private async _begin(): Promise<boolean> {
 		let display:boolean;
 
@@ -181,6 +213,8 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		if (await this._region_init() == true)
 			display = true;
 		if (await this._power_init() == true)
+			display = true;
+		if (this._controller_default_init() == true)
 			display = true;
 		return (display);
 	}

@@ -287,6 +287,14 @@ class ZunoSapiClass {
 		return (await this._apply_param(raw));
 	}
 
+	public async setDefault(): Promise<ZunoSapiClassStatus> {
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x5])
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+
 	public getQuantumSize(): number {
 		return (this.sapi.getQuantumSize());
 	}

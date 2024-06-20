@@ -152,4 +152,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.TABLE_NAME_QR_CODE]: "QR-Code:",
 	[ControllerUiLangClassId.TABLE_NAME_QR_CODE_TITLE]: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	[ControllerUiLangClassId.SLAVE_MESSAGE_FREZEE_ERROR]: "Failed to pause slave",
+	[ControllerUiLangClassId.SLAVE_DEFAULT_RESET_WARNING]: "Do you really want to do this?",
 };

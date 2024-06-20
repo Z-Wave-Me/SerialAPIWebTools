@@ -682,6 +682,7 @@ class SapiClass {
 		if (this.busy() == true)
 			return (SapiClassStatus.SERIAL_BUSY);
 		this.b_busy = true;
+		await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 0x2, 500);
 		const out:SapiClassStatus = await this._close();
 		this.b_busy = false;
 		this.unlock();
