@@ -56,7 +56,7 @@ class ControllerUiClass {
 		return (out);
 	}
 
-	private async _begin(): Promise<void> {
+	private async _begin(detection:boolean): Promise<void> {
 		let i:number, array_type:all_array_type;
 
 		array_type = this._get_all_array_type();
@@ -65,12 +65,14 @@ class ControllerUiClass {
 			await array_type[i].end();
 			i++;
 		}
-		this.device_type = SapiClassDetectType.UNKNOWN;
-		await this.detection.begin();
-		const detect_dict:SapiClassDetect|undefined = await this.detection.detection();
-		if (detect_dict == undefined)
-			return ;
-		this.device_type = detect_dict.type;
+		if (detection == true) {
+			this.device_type = SapiClassDetectType.UNKNOWN;
+			await this.detection.begin();
+			const detect_dict:SapiClassDetect|undefined = await this.detection.detection();
+			if (detect_dict == undefined)
+				return ;
+			this.device_type = detect_dict.type;
+		}
 		switch (this.device_type) {
 			case SapiClassDetectType.ZUNO:
 				await this.zuno.connect();
@@ -98,7 +100,7 @@ class ControllerUiClass {
 		if (status != SapiClassStatus.OK)
 			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_SELECT, status));
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
-		await this._begin();
+		await this._begin(true);
 	}
 
 	private _constructor_button_create(el_section_button:HTMLElement, func:EventListener, text:string, title:string): void {
@@ -139,12 +141,12 @@ class ControllerUiClass {
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
-		this.detection = new DetectionUiSectionClass(this.el_section, this.locale, this.sapi, this.log, async () => {await this._begin()});
-		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
+		this.detection = new DetectionUiSectionClass(this.el_section, this.locale, this.sapi, this.log, async (detection:boolean) => {await this._begin(detection)});
+		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
-		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._begin()}));
+		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
-		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, async () => {await this._begin()}));
+		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		el.appendChild(this.el_modal);
 		this._start();
 	}

@@ -3,13 +3,9 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassPower, ControllerSapiClassRegion, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
+import {ControllerUiDefineClassReBeginFunc} from "../../ui_define"
 
 export {ControllerUiSectionInfoClass};
-
-interface ControllerUiSectionInfoClassReBegin {
-	(): Promise<void>
-}
-
 
 class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 	private region_current:string											= '';
@@ -21,7 +17,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 	private readonly region_el_button:HTMLButtonElement;
 	private readonly power_el_button:HTMLButtonElement;
 
-	private readonly re_begin_func:ControllerUiSectionInfoClassReBegin;
+	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
 	private async _controller_default_click(event:Event): Promise<void> {
 		if (this.is_busy() == true)
@@ -38,7 +34,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, false);
 		if (status == ControllerSapiClassStatus.OK) {
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
-			this.re_begin_func();
+			this.re_begin_func(false);
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
@@ -214,7 +210,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 		return (el_button);
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionInfoClassReBegin) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.razberry = razberry;
 		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});

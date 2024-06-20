@@ -5,7 +5,7 @@ import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 
-import {ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "../../ui_define"
 
 export {ControllerUiSectionUpdateClass};
 
@@ -44,11 +44,6 @@ interface ControllerUiSectionUpdateInfoClass
 	el_button:HTMLButtonElement;
 }
 
-interface ControllerUiSectionUpdateClassReBegin {
-	(): Promise<void>
-}
-
-
 class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly URL_UPDATE_FIMWARE:string								= "https://service.z-wave.me/expertui/uzb/";
 
@@ -78,7 +73,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private update_info_xhr_timer_id?:number;
 	private update_finware_timer_id?:number;
 
-	private readonly re_begin_func:ControllerUiSectionUpdateClassReBegin;
+	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
 	private _update_change(event:Event, title:ControllerUiLangClassId, info:ControllerUiSectionUpdateInfoClass): void {
 		const el_target:HTMLSelectElement|null = this.event_get_element_select(event);
@@ -149,7 +144,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 						return ;
 					}
 					this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
-					this.re_begin_func();
+					this.re_begin_func(false);
 					return ;
 	
 				};
@@ -351,7 +346,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		return (info);
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiSectionUpdateClassReBegin) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.razberry = razberry;
 		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, async () => { await this._update_finware_click();},

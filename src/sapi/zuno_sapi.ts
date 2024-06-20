@@ -2,13 +2,23 @@
 import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding} from "../other/utilities";
 
-export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo};
+export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion};
+
+interface ZunoSapiClassRegion
+{
+	status:ZunoSapiClassStatus;
+	region:string;
+	region_array:string[];
+}
 
 enum ZunoSapiClassStatus
 {
 	OK = SapiClassStatus.OK,
 	NOT_INIT = SapiClassStatus.LAST_STATUS,
 	WRONG_LENGTH_CMD,
+	WRONG_STATUS,
+	NO_FREEZE,
+	INVALID_ARG,
 }
 
 interface ZunoSapiClassBoardInfoZwDataProt
@@ -53,45 +63,29 @@ interface ZunoSapiClassBoardInfo
 
 // ------------------------------------------------------------------------------------------------------
 
-interface FreqTableProt {
-	name: string;
-	id: number;
-}
-
-
 class ZunoSapiClass {
 	private readonly sapi:SapiClass;
+
+	private readonly region_array:string[]														=
+	[
+		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
+	];
+	private readonly region_string_to_number: {[key:string]: number}							=
+	{
+		"EU": 0x00, "US": 0x01, "ANZ": 0x02, "HK": 0x03, "IN": 0x05, "IL": 0x06,
+		"RU": 0x07, "CN": 0x08, "US_LR": 0x09, "JP": 0x20, "KR": 0x21
+	};
+	private readonly region_number_to_string: {[key:number]: string}							=
+	{
+		0x00:"EU", 0x01:"US", 0x02: "ANZ", 0x03:"HK", 0x05:"IN", 0x06:"IL",
+		0x07:"RU", 0x08:"CN", 0x09:"US_LR",0x20: "JP", 0x21:"KR"
+	};
+
+
 	private board_info:ZunoSapiClassBoardInfo												= {	status:ZunoSapiClassStatus.NOT_INIT, version:0x0, build_number:0x0, build_ts:0x0, hw_rev:0x0, code_size:0x0, ram_size:0x0,
 																								dbg_lock:0x0, custom_code_offset:0x30000, chip_uuid: new Uint8Array(), s2_pub: new Uint8Array()};
 	private param_info:ZunoSapiClassParamInfo												= {	status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, freq_str:"", bLR:false, raw:[]};
 
-	private readonly FREQ_TABLE_U7:FreqTableProt[]									=
-	[
-		{ name: "EU",id: 0x00},
-		{ name: "US",id: 0x01},
-		{ name: "ANZ",id: 0x02},
-		{ name: "HK",id: 0x03},
-		// { name: "MY",id: 0x04},
-		{ name: "IN",id: 0x05},
-		{ name: "IL",id: 0x06},
-		{ name: "RU",id: 0x07},
-		{ name: "CN",id: 0x08},
-		{ name: "US_LR",id: 0x09},
-		// { name: "US_LR_BK",id: 0x0A},
-		{ name: "JP",id: 0x20},
-		{ name: "KR",id: 0x21},
-		// { name: "FK",id: 0xFE},
-	];
-
-	private _freq_int_to_str(val:number): string {
-		let i = 0x0;
-		while (i < this.FREQ_TABLE_U7.length) {
-			if (this.FREQ_TABLE_U7[i].id == val)
-				return (this.FREQ_TABLE_U7[i].name);
-			i++;
-		}
-		return ("UNK");
-	}
 
 	private async compile_zwave_qrcode(product_data:ZunoSapiClassBoardInfoZwDataProt, dsk:Uint8Array, version:number): Promise<string> {
 		let protocol_map:number, text:string;
@@ -120,7 +114,15 @@ class ZunoSapiClass {
 		return (await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_READ_LONG_BUFFER, [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (size >> 8) & 0xFF, size & 0xFF]));
 	}
 
+	private async _writeNVM(addr:number, buff:Array<number>): Promise<SapiClassRet> {
+		const size = buff.length;
+		const data_addr = [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (size >> 8) & 0xFF, size & 0xFF];
+		return (await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_NVM_EXT_WRITE_LONG_BUFFER, data_addr.concat(buff)));
+	}
+
 	private async _get_param_info(out:ZunoSapiClassParamInfo): Promise<void> {
+		let freq_str:string|undefined;
+
 		out.status = ZunoSapiClassStatus.NOT_INIT;
 		const param_info:SapiClassRet = await this._readNVM(0xFFE000, 0x09);
 		if (param_info.status != SapiClassStatus.OK) {
@@ -132,10 +134,14 @@ class ZunoSapiClass {
 			out.status = ZunoSapiClassStatus.WRONG_LENGTH_CMD;
 			return ;
 		}
+		out.status = ZunoSapiClassStatus.OK;
 		out.raw = param;
 		out.freq_i = param_info.data[1];
-		out.freq_str = this._freq_int_to_str(out.freq_i);
-		if ((out.freq_str == "US_LR") || (out.freq_str == "US") || (out.freq_str == "US_LR_BK"))
+		freq_str = this.region_number_to_string[out.freq_i];
+		if (freq_str == undefined)
+			freq_str = "UNKNOWN";
+		out.freq_str = freq_str;
+		if ((freq_str == "US_LR") || (freq_str == "US") || (freq_str == "US_LR_BK"))
 			out.bLR = true;
 	}
 
@@ -210,6 +216,44 @@ class ZunoSapiClass {
 
 	public getBoardInfo(): ZunoSapiClassBoardInfo {
 		return (this.board_info);
+	}
+
+	public getRegion(): ZunoSapiClassRegion {
+		const out:ZunoSapiClassRegion = {
+			status:this.param_info.status, 
+			region:this.param_info.freq_str, 
+			region_array:this.region_array};
+		return (out);
+	}
+
+	private async _apply_param(raw:Array<number>): Promise<ZunoSapiClassStatus> {
+		const res:SapiClassRet = await this._writeNVM(0xFFE000, raw);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		if (res.data.length < 0x1)
+			return (ZunoSapiClassStatus.WRONG_LENGTH_CMD);
+		if (res.data[0x0] != 0x1)
+			return (ZunoSapiClassStatus.WRONG_STATUS);
+		const soft_reset:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [])
+		if (soft_reset.status != SapiClassStatus.OK)
+			return ((soft_reset.status as unknown) as ZunoSapiClassStatus);
+		const freeze_zuno_info:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
+		if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0)
+			return (ZunoSapiClassStatus.NO_FREEZE);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	public async setRegion(region:string): Promise<ZunoSapiClassStatus> {
+		const freq_i:number|undefined = this.region_string_to_number[region];
+		if (freq_i == undefined)
+			return (ZunoSapiClassStatus.INVALID_ARG);
+		if (this.param_info.status != ZunoSapiClassStatus.OK)
+			return (this.param_info.status);
+		const raw:Array<number> =  this.param_info.raw;
+		raw[0x1] = freq_i;
+		if (raw.length > 0x8)
+			raw[0x8] = freq_i;
+		return (await this._apply_param(raw));
 	}
 
 

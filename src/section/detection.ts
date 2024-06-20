@@ -4,18 +4,13 @@ import {SapiClass, SapiClassDetect, SapiClassStatus, SapiClassDetectTypeFunc} fr
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionClass} from "./common"
 
-import {ControllerUiDefineClass} from "../ui_define"
+import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "../ui_define"
 
 export {DetectionUiSectionClass};
 
-interface DetectionControllerUiClassReBegin {
-	(): Promise<void>
-}
-
-
 class DetectionUiSectionClass extends CommonUiSectionClass {
 	private readonly sapi:SapiClass;
-	private readonly re_begin_func:DetectionControllerUiClassReBegin;
+	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
 	private readonly el_container:HTMLElement								= document.createElement("span");
 	private readonly LOCAL_STORAGE_KEY_BAUDRATE:string						= ControllerUiDefineClass.NAME_APP + '_baudrate_cache';
@@ -109,7 +104,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	private async _click_re_sync(event:Event) {
 		if (this.is_busy() == true)
 			return ;
-		this.re_begin_func();
+		this.re_begin_func(true);
 	}
 
 	private _constructor_struct_end(): void {
@@ -160,7 +155,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 		this.el_container.innerHTML = "";
 	}
 
-	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, sapi:SapiClass, log:ControllerUiLogClass, re_begin_func:DetectionControllerUiClassReBegin) {
+	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, sapi:SapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, sapi, log, ControllerUiLangClassId.DETECTION_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.sapi = sapi;
 		this.re_begin_func = re_begin_func;

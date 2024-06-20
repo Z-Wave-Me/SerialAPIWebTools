@@ -1,7 +1,7 @@
 import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
-import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType} from "./sapi";
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
