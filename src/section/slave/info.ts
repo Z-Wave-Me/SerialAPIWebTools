@@ -1,6 +1,6 @@
 import {ControllerUiLangClassId} from "../../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../../lang/ui_lang"
-import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassRegion} from "../../sapi/zuno_sapi";
+import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassRegion, ZunoSapiClassPower} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {versionNumberToStringSlave, arrayToStringHex, numberToStringHex, conv2Decimal} from "../../other/utilities";
@@ -16,9 +16,17 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	private power_new:number												= 0x0;
 
 	private readonly region_el_button:HTMLButtonElement;
-	// private readonly power_el_button:HTMLButtonElement;
+	private readonly power_el_button:HTMLButtonElement;
 	private readonly zuno:ZunoSapiClass;
 	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
+
+	private _not_freeze(status:ZunoSapiClassStatus, title:ControllerUiLangClassId) {
+		this.log.errorFalledCode(title, status);
+		if (status != ZunoSapiClassStatus.NO_FREEZE)
+			return ;
+		this.log.errorFalled(ControllerUiLangClassId.SLAVE_MESSAGE_FREZEE_ERROR);
+		this.re_begin_func(true);
+	}
 
 	private _board_info(): boolean {
 		let dsk:string;
@@ -82,10 +90,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_REGION, status);
 		this.common_button_atrr(this.region_el_button, ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE, false);
-		if (status == ZunoSapiClassStatus.NO_FREEZE) {
-			this.log.errorFalled(ControllerUiLangClassId.SLAVE_MESSAGE_FREZEE_ERROR);
-			this.re_begin_func(true);
-		}
+		this._not_freeze(status, ControllerUiLangClassId.MESSAGE_SET_REGION);
 	}
 
 	private async _region_init(): Promise<boolean> {
@@ -119,6 +124,54 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		return (true);
 	}
 
+	private _power_change(event:Event): void {
+		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
+		if (el_target == null)
+			return ;
+		this.power_new = Number(el_target.value);
+		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, (this.power_new == this.power_current) ? true:false);
+	}
+
+	private async _power_click(): Promise<void> {
+		if (this.is_busy() == true)
+			return ;
+		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, true);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_POWER);
+		const status:ZunoSapiClassStatus = await this.zuno.setPower(this.power_new);
+		if (status == ZunoSapiClassStatus.OK) {
+			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_POWER);
+			this.power_current = this.power_new;
+			return ;
+		}
+		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, false);
+		this._not_freeze(status, ControllerUiLangClassId.MESSAGE_SET_POWER);
+	}
+
+	private async _power_init(): Promise<boolean> {
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_POWER);
+		const power:ZunoSapiClassPower = this.zuno.getPower();
+		if (power.status != ZunoSapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_POWER, power.status);
+			return (false);
+		}
+		this.power_new = power.power_raw;
+		this.power_current = power.power_raw;
+		const el_value:HTMLElement = document.createElement("span");
+		const el_input:HTMLInputElement = document.createElement("input");
+		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_SELECT_TITLE);
+		el_input.type = "number";
+		el_input.min = power.min.toString();
+		el_input.max = power.max.toString();
+		el_input.step = power.step.toString();
+		el_input.value = power.power_raw.toString();
+		el_input.addEventListener("change", (event:Event) => {this._power_change(event);});
+		el_value.appendChild(el_input);
+		el_value.appendChild(document.createElement("span"));
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_POWER, ControllerUiLangClassId.TABLE_NAME_POWER_TITLE, el_value, this.power_el_button);
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_POWER);
+		return (true);
+	}
+
 	private async _begin(): Promise<boolean> {
 		let display:boolean;
 
@@ -126,6 +179,8 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		if (this._board_info() == true)
 			display = true;
 		if (await this._region_init() == true)
+			display = true;
+		if (await this._power_init() == true)
 			display = true;
 		return (display);
 	}
@@ -146,7 +201,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		super(el_section, locale, zuno, log, ControllerUiLangClassId.SLAVE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.zuno = zuno;
 		this.re_begin_func = re_begin_func;
-		// this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
+		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
 		this.region_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON, () => {this._region_click();});
 	}
 }

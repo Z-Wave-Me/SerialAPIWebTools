@@ -2,7 +2,17 @@
 import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding} from "../other/utilities";
 
-export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion};
+export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower};
+
+interface ZunoSapiClassPower
+{
+	status:ZunoSapiClassStatus;
+	power_raw:number;
+	step:number;
+	min:number;
+	max:number;
+}
+
 
 interface ZunoSapiClassRegion
 {
@@ -39,6 +49,7 @@ interface ZunoSapiClassParamInfo
 	raw:Array<number>;
 	freq_i:number;
 	freq_str:string;
+	main_pow:number;
 	bLR:boolean;
 }
 
@@ -84,7 +95,7 @@ class ZunoSapiClass {
 
 	private board_info:ZunoSapiClassBoardInfo												= {	status:ZunoSapiClassStatus.NOT_INIT, version:0x0, build_number:0x0, build_ts:0x0, hw_rev:0x0, code_size:0x0, ram_size:0x0,
 																								dbg_lock:0x0, custom_code_offset:0x30000, chip_uuid: new Uint8Array(), s2_pub: new Uint8Array()};
-	private param_info:ZunoSapiClassParamInfo												= {	status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, freq_str:"", bLR:false, raw:[]};
+	private param_info:ZunoSapiClassParamInfo												= {	status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, freq_str:"", bLR:false, raw:[], main_pow:0x0};
 
 
 	private async compile_zwave_qrcode(product_data:ZunoSapiClassBoardInfoZwDataProt, dsk:Uint8Array, version:number): Promise<string> {
@@ -130,7 +141,7 @@ class ZunoSapiClass {
 			return ;
 		}
 		const param:Array<number> = param_info.data;
-		if (param.length < 0x2) {
+		if (param.length < 0x3) {
 			out.status = ZunoSapiClassStatus.WRONG_LENGTH_CMD;
 			return ;
 		}
@@ -143,6 +154,7 @@ class ZunoSapiClass {
 		out.freq_str = freq_str;
 		if ((freq_str == "US_LR") || (freq_str == "US") || (freq_str == "US_LR_BK"))
 			out.bLR = true;
+		out.main_pow = param_info.data[2];
 	}
 
 	private async _get_board_info(out:ZunoSapiClassBoardInfo): Promise<void> {
@@ -214,18 +226,6 @@ class ZunoSapiClass {
 		}
 	}
 
-	public getBoardInfo(): ZunoSapiClassBoardInfo {
-		return (this.board_info);
-	}
-
-	public getRegion(): ZunoSapiClassRegion {
-		const out:ZunoSapiClassRegion = {
-			status:this.param_info.status, 
-			region:this.param_info.freq_str, 
-			region_array:this.region_array};
-		return (out);
-	}
-
 	private async _apply_param(raw:Array<number>): Promise<ZunoSapiClassStatus> {
 		const res:SapiClassRet = await this._writeNVM(0xFFE000, raw);
 		if (res.status != SapiClassStatus.OK)
@@ -243,6 +243,18 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
+	public getBoardInfo(): ZunoSapiClassBoardInfo {
+		return (this.board_info);
+	}
+
+	public getRegion(): ZunoSapiClassRegion {
+		const out:ZunoSapiClassRegion = {
+			status:this.param_info.status, 
+			region:this.param_info.freq_str, 
+			region_array:this.region_array};
+		return (out);
+	}
+
 	public async setRegion(region:string): Promise<ZunoSapiClassStatus> {
 		const freq_i:number|undefined = this.region_string_to_number[region];
 		if (freq_i == undefined)
@@ -256,6 +268,24 @@ class ZunoSapiClass {
 		return (await this._apply_param(raw));
 	}
 
+	public getPower(): ZunoSapiClassPower {
+		const out:ZunoSapiClassPower = {
+			status:this.param_info.status,
+			power_raw:this.param_info.main_pow,
+			step:0x1,
+			min:1,
+			max:247,
+		};
+		return (out);
+	}
+
+	public async setPower(power:number): Promise<ZunoSapiClassStatus> {
+		if (this.param_info.status != ZunoSapiClassStatus.OK)
+			return (this.param_info.status);
+		const raw:Array<number> =  this.param_info.raw;
+		raw[0x2] = power;
+		return (await this._apply_param(raw));
+	}
 
 	public getQuantumSize(): number {
 		return (this.sapi.getQuantumSize());
