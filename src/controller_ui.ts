@@ -9,6 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./section/controller/update"
 import {ControllerUiSectionMigrationClass} from "./section/controller/migration"
 import {DetectionUiSectionClass} from "./section/detection"
 import {SlaveUiSectionInfoClass} from "./section/slave/info"
+import {SlaveUiSectionLicenseClass} from "./section/slave/license"
 
 import {ControllerUiDefineClass} from "./ui_define"
 
@@ -19,7 +20,7 @@ import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType, SapiSe
 export {ControllerUiClass};
 
 type controller_array_type = Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>;
-type slave_array_type = Array<SlaveUiSectionInfoClass>;
+type slave_array_type = Array<SlaveUiSectionInfoClass|SlaveUiSectionLicenseClass>;
 type all_array_type = controller_array_type|slave_array_type;
 
 class ControllerUiClass {
@@ -147,6 +148,7 @@ class ControllerUiClass {
 		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
 		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
+		this.slave.push(new SlaveUiSectionLicenseClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		el.appendChild(this.el_modal);
 		this._start();
 	}

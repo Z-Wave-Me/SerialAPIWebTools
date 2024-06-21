@@ -63,10 +63,19 @@ interface ZunoSapiClassBoardInfoProduction
 	prod_valid:boolean;
 }
 
+interface ZunoSapiClassLicenseFlag
+{
+	name:string;
+	title:string;
+	active:boolean;
+}
+
+
 interface ZunoSapiClassBoardInfoLicense
 {
 	lic_subvendor:number;
-	lic_flags:Uint8Array;
+	lic_flags_raw:Uint8Array;
+	lic_flags:{[key:number]: ZunoSapiClassLicenseFlag};
 }
 
 interface ZunoSapiClassBoardInfoChip
@@ -103,11 +112,24 @@ interface ZunoSapiClassBoardInfo
 }
 
 // ------------------------------------------------------------------------------------------------------
-
 class ZunoSapiClass {
+	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
+	{
+		0x00: {name:"Pti", title: "Provides Packet Trace Interface (PTI) capabilities. Turns ZUno to advanced sniffer.", active:false},
+		0x01: {name:"Key dump", title: "Enables Z-Wave network key dump using Z-Uno.", active:false},
+		0x02: {name:"Custom vendor", title: "Use custom vendor code intead of 0115 (ZME)", active:false},
+		0x03: {name:"Modem", title: "ZUno works as direct transmitter.", active:false},
+		0x04: {name:"Max power", title: "User is able to use the maximum power of radio amplifier.", active:false},
+		0x05: {name:"Long Range", title: "Enables Z-Wave LongRange technology support.", active:false},
+	};
+	
 	private readonly sapi:SapiClass;
 
 	private readonly region_array:string[]														=
+	[
+		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "JP", "KR"
+	];
+	private readonly region_array_full:string[]														=
 	[
 		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
 	];
@@ -204,7 +226,7 @@ class ZunoSapiClass {
 	}
 
 	private async _get_board_info(): Promise<void> {
-		let code_sz_shift:number, shift_smrt:number, bLR:boolean;
+		let code_sz_shift:number, shift_smrt:number, bLR:boolean, byte_i:number, bit_i:number;
 	
 		this.board_info = this._get_board_info_default();
 		const out:ZunoSapiClassBoardInfo = this.board_info;
@@ -291,8 +313,21 @@ class ZunoSapiClass {
 		out.license =
 		{
 			lic_subvendor: costruct_int(info.slice(offset_license, offset_license + 0x2), 0x2, false),
-			lic_flags: new Uint8Array(info.slice(offset_license + 0x2, offset_license + 0x2 + 0x8)),
+			lic_flags_raw: new Uint8Array(info.slice(offset_license + 0x2, offset_license + 0x2 + 0x8)),
+			lic_flags: this.license_flags,
 		};
+		byte_i = 0x0;
+		while (byte_i < out.license.lic_flags_raw.length) {
+			bit_i = 0x0;
+			while (bit_i < 0x8) {
+				if ((out.license.lic_flags_raw[byte_i] & (0x1 << bit_i)) != 0x0) {
+					if (out.license.lic_flags[byte_i * 0x8 + bit_i] != undefined)
+						out.license.lic_flags[byte_i * 0x8 + bit_i].active = true;
+				}
+				bit_i++;
+			}
+			byte_i++;
+		}
 		const offset_power:number = offset_license + 0xA;
 		if (info.length < (offset_power + 0x1))
 			return ;
@@ -335,10 +370,17 @@ class ZunoSapiClass {
 	}
 
 	public getRegion(): ZunoSapiClassRegion {
+		let region_array:string[];
+
+		region_array = this.region_array;
+		if (this.board_info.status == ZunoSapiClassStatus.OK && this.board_info.license != undefined) {
+			if (this.board_info.license.lic_flags[0x05] != undefined && this.board_info.license.lic_flags[0x05].active == true)
+				region_array = this.region_array_full;
+		}
 		const out:ZunoSapiClassRegion = {
 			status:this.param_info.status, 
 			region:this.param_info.freq_str, 
-			region_array:this.region_array};
+			region_array:region_array};
 		return (out);
 	}
 
@@ -361,7 +403,7 @@ class ZunoSapiClass {
 			power_raw:this.param_info.main_pow,
 			step:0x1,
 			min:1,
-			max:247,
+			max:this.board_info.max_default_power,
 		};
 		return (out);
 	}
