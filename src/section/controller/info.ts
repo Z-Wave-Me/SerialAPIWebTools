@@ -172,6 +172,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES, capabilities_info.status);
 			return (false);
 		}
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_TYPE, ControllerUiLangClassId.TABLE_NAME_TYPE_TITLE, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER), "");
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_SERIAL_API_VERSION, ControllerUiLangClassId.TABLE_NAME_SERIAL_API_VERSION_TITLE, capabilities_info.ApiVersion + "." + capabilities_info.ApiRevision, "");
 		value = capabilities_info.VendorIDName;
 		if (capabilities_info.VendorIDWebpage != undefined)
@@ -211,7 +212,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
-		super(el_section, locale, razberry, log, ControllerUiLangClassId.CONTROLER_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		super(el_section, locale, razberry, log, ControllerUiLangClassId.BOARD_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.razberry = razberry;
 		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
 		this.region_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON, () => {this._region_click();});

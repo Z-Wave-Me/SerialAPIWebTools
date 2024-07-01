@@ -37,6 +37,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 			this.log.errorFalledCode(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
 			return (false);
 		}
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_TYPE, ControllerUiLangClassId.TABLE_NAME_TYPE_TITLE, this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE), "");
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_VERSION, ControllerUiLangClassId.TABLE_NAME_VERSION_TITLE, versionNumberToStringSlave(board_info.version), "");
 		const build_data_time:Date = new Date(board_info.build_ts * 1000);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_BUILD_TIME_STAMP, ControllerUiLangClassId.TABLE_NAME_BUILD_TIME_STAMP_TITLE, build_data_time.toLocaleString(), "");
@@ -232,7 +233,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, zuno:ZunoSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
-		super(el_section, locale, zuno, log, ControllerUiLangClassId.SLAVE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
+		super(el_section, locale, zuno, log, ControllerUiLangClassId.BOARD_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.zuno = zuno;
 		this.re_begin_func = re_begin_func;
 		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
