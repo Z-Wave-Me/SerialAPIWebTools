@@ -58,7 +58,6 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	}
 
 	private _update_finware_click(): void {
-		const url:string = this.update.URL_UPDATE + this.update.finware.url_new;
 		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
 			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
 				ok:false,
@@ -70,7 +69,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 				out.ok = true;
 			return (out);
 		};
-		this.update.finware_download_xhr(url, (): boolean => {return(this.is_busy());}, process, this.re_begin_func);
+		this.update.finware_download_xhr((): boolean => {return(this.is_busy());}, process, this.re_begin_func);
 	}
 	
 	private _update_beta_change_all_select(beta:boolean, el_select:HTMLSelectElement, title:ControllerUiLangClassId): void {
@@ -173,7 +172,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		const app_update_info:ControllerUiClassUpdateInfo = {version:(capabilities_info.ApiVersion << 0x8) | capabilities_info.ApiRevision, data: []};
 		const bootloader_update_info:ControllerUiClassUpdateInfo = {version:board_info.bootloader_version, data: []};
 		const bootloaderCRC:string = "&bootloaderCRC=" + board_info.bootloader_crc32.toString();
-		const url:string = this.update.URL_UPDATE + 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + bootloaderCRC + '&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
+		const url:string = this.update.URL_UPDATE_LIST + 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + bootloaderCRC + '&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
 		const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
 			i = 0x0;
 			while (i < response.data.length) {

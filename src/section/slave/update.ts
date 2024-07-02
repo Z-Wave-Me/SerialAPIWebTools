@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton} from "../update"
+import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut} from "../update"
 import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave} from "../../other/utilities";
 import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
 
@@ -33,6 +33,19 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	}
 
 	private _update_finware_click(): void {
+		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
+			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
+				ok:false,
+				code:0x0
+			};
+			// const status:ControllerSapiClassStatus = await this._update_finware_click_add(gbl);
+			// out.code = status;
+			// if (status == ControllerSapiClassStatus.OK)
+			// 	out.ok = true;
+			console.log(gbl.length);
+			return (out);
+		};
+		this.update.finware_download_xhr((): boolean => {return(this.is_busy());}, process, this.re_begin_func);
 	}
 
 	private _update_init_set_select(paket:UpdateUiSectionClassButton, info:SlaveUiClassUpdateInfo, title:ControllerUiLangClassId): void {
@@ -71,7 +84,7 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.update.bootloader.el_span, this.update.bootloader.el_button);
 		const app_update_info:SlaveUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), data: []};
 		const bootloader_update_info:SlaveUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), data: []};
-		const url:string = this.update.URL_UPDATE + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
+		const url:string = this.update.URL_UPDATE_LIST + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
 							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + this.update.fw_family_zuno.toString()
 							+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
 							+ arrayToStringHex(board_info.chip_uuid) + '&token=internal';

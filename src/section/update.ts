@@ -10,7 +10,7 @@ type UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJ
 type UpdateUiSectionClassXhrInfoOnloadEnd = () => void;
 type UpdateUiSectionClassXhrFinwareBusy = () => boolean;
 type UpdateUiSectionClassXhrFinwareProcess = (data:Uint8Array) => Promise<UpdateUiSectionClassXhrFinwareProcessOut>;
-type UpdateUiSectionClassButtonClick = () => void;
+type UpdateUiSectionClassButtonClick =  () => void;
 
 interface UpdateUiSectionClassXhrFinwareProcessOut
 {
@@ -44,7 +44,8 @@ interface UpdateUiSectionClassButton
 
 
 class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
-	readonly URL_UPDATE:string									= "https://service.z-wave.me/expertui/uzb/?";
+	readonly URL_UPDATE:string									= "https://service.z-wave.me/expertui/uzb/";
+	readonly URL_UPDATE_LIST:string								= this.URL_UPDATE + "?";
 	readonly URL_LICENSE_MORE_OPTIONS:string					= "https://z-wave.me/hardware-capabilities/?uuid=";
 	readonly URL_LICENSE_SERVISE:string							= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 
@@ -149,10 +150,11 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
 	}
 
-	private _download_xhr_start(paket:UpdateUiSectionClassButton, url:string, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
+	private _download_xhr_start(paket:UpdateUiSectionClassButton, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
 		this.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
 		this.common_button_atrr(paket.el_button, '', true);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+		const url:string = this.URL_UPDATE + paket.url_new;
 		const fun_xhr_timer:TimerHandler = () => {
 			this.finware_timer_id = undefined;
 			this.finware_xhr.open("POST", url, true);
@@ -199,8 +201,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.finware_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
 	}
 
-	finware_download_xhr(url:string, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
-		this._download_xhr_start(this.finware, url, busy, process, re_begin_func);
+	finware_download_xhr(busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
+		this._download_xhr_start(this.finware, busy, process, re_begin_func);
 	}
 
 	private _constructor_struct(button_text:ControllerUiLangClassId, click:UpdateUiSectionClassButtonClick, change:EventListener):UpdateUiSectionClassButton {
