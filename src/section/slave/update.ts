@@ -29,10 +29,10 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 
 	private readonly update:UpdateUiSectionClass;
 
-	private async _update_bootloader_click(): Promise<void> {
+	private _update_bootloader_click(): void {
 	}
 
-	private async _update_finware_click(): Promise<void> {
+	private _update_finware_click(): void {
 	}
 
 	private _update_init_set_select(paket:UpdateUiSectionClassButton, info:SlaveUiClassUpdateInfo, title:ControllerUiLangClassId): void {
@@ -67,56 +67,53 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
-		const app_update_info:SlaveUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), data: []};
-		const bootloader_update_info:SlaveUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), data: []};
-		const fun_xhr_timer:TimerHandler = () => {
-			const url:string = this.update.URL_UPDATE + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
-								+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + this.update.fw_family_zuno.toString()
-								+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
-								+ arrayToStringHex(board_info.chip_uuid) + '&token=internal';
-			const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
-				i = 0x0;
-				const razberry_data:Array<SlaveUiClassUpdateInfoData> = [];
-				while (i < response.data.length) {
-					if (response.data[i].type == this.update.JSON_UPDATE_TYPE_FINWARE) {
-						switch (Number(response.data[i].target_fw_family)) {
-							case this.update.fw_family_zuno:
-								version = (Number(response.data[i].targetAppVersionMajor) << 0x10) | Number(response.data[i].targetAppVersionMinor);
-								if (version > app_update_info.version) {
-									version_name = versionNumberToStringSlave(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
-									app_update_info.data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
-								}
-								break ;
-							case this.update.fw_family_razberry:
-								version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
-								version_name = versionNumberToString(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
-								razberry_data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
-								break ;
-						}
-					}
-					i++;
-				}
-				app_update_info.data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
-					return (a.version - b.version);
-				});
-				razberry_data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
-					return (a.version - b.version);
-				});
-				i = 0x0;
-				while ( i < razberry_data.length) {
-					app_update_info.data.push(razberry_data[i]);
-					i++;
-				}
-			};
-			const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
-				this._update_init_set_select(this.update.finware, app_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
-				this._update_init_set_select(this.update.bootloader, bootloader_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
-			};
-			this.update.info_xhr_start(fun_xhr_timer, url, process, end);
-		};
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.update.finware.el_span,  this.update.finware.el_button);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.update.bootloader.el_span, this.update.bootloader.el_button);
-		this.update.info_xhr_begin(fun_xhr_timer);
+		const app_update_info:SlaveUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), data: []};
+		const bootloader_update_info:SlaveUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), data: []};
+		const url:string = this.update.URL_UPDATE + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
+							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + this.update.fw_family_zuno.toString()
+							+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
+							+ arrayToStringHex(board_info.chip_uuid) + '&token=internal';
+		const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
+			i = 0x0;
+			const razberry_data:Array<SlaveUiClassUpdateInfoData> = [];
+			while (i < response.data.length) {
+				if (response.data[i].type == this.update.JSON_UPDATE_TYPE_FINWARE) {
+					switch (Number(response.data[i].target_fw_family)) {
+						case this.update.fw_family_zuno:
+							version = (Number(response.data[i].targetAppVersionMajor) << 0x10) | Number(response.data[i].targetAppVersionMinor);
+							if (version > app_update_info.version) {
+								version_name = versionNumberToStringSlave(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
+								app_update_info.data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
+							}
+							break ;
+						case this.update.fw_family_razberry:
+							version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
+							version_name = versionNumberToString(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
+							razberry_data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
+							break ;
+					}
+				}
+				i++;
+			}
+			app_update_info.data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
+				return (a.version - b.version);
+			});
+			razberry_data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
+				return (a.version - b.version);
+			});
+			i = 0x0;
+			while ( i < razberry_data.length) {
+				app_update_info.data.push(razberry_data[i]);
+				i++;
+			}
+		};
+		const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
+			this._update_init_set_select(this.update.finware, app_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
+			this._update_init_set_select(this.update.bootloader, bootloader_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
+		};
+		this.update.info_download_xhr(url, process, end);
 		return (true);
 	}
 
@@ -131,7 +128,7 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, zuno:ZunoSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, zuno, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.zuno = zuno;
-		this.update = new UpdateUiSectionClass(log, locale, async () => { await this._update_finware_click();}, async () => {await this._update_bootloader_click();});
+		this.update = new UpdateUiSectionClass(log, locale, () => { this._update_finware_click();}, () => {this._update_bootloader_click();});
 		this.re_begin_func = re_begin_func;
 	}
 }

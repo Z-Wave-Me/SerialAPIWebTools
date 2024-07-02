@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton} from "../update"
+import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut} from "../update"
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 
 import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "../../ui_define"
@@ -35,7 +35,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 
 	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
-	private async _update_bootloader_click(): Promise<void> {
+	private _update_bootloader_click(): void {
 	}
 
 	private async _update_finware_click_add(data:Uint8Array): Promise<ControllerSapiClassStatus> {
@@ -57,55 +57,20 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		return (status);
 	}
 
-	private async _update_finware_click(): Promise<void> {
-		this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
-		this.common_button_atrr(this.update.finware.el_button, '', true);
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+	private _update_finware_click(): void {
 		const url:string = this.update.URL_UPDATE + this.update.finware.url_new;
-		const fun_xhr_timer:TimerHandler = () => {
-			this.update.finware_timer_id = undefined;
-			this.update.finware_xhr.open("POST", url, true);
-			this.update.finware_xhr.responseType = "arraybuffer";
-			this.update.finware_xhr.timeout = this.update.finware_xhr_timout;
-			this.update.finware_xhr.ontimeout = () => {
-				this.log.errorXhrTimeout(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				this.update.finware_timer_id = window.setTimeout(fun_xhr_timer, this.update.finware_xhr_timer_timout);
+		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
+			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
+				ok:false,
+				code:0x0
 			};
-			this.update.finware_xhr.onerror = () => {
-				this.log.errorXhrError(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				this.update.finware_timer_id = window.setTimeout(fun_xhr_timer, this.update.finware_xhr_timer_timout);
-			};
-			this.update.finware_xhr.onload = () => {
-				this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				const gbl:Uint8Array = new Uint8Array(this.update.finware_xhr.response);
-				const fun_bus_timer:TimerHandler = async () => {
-					this.update.finware_timer_id = undefined;
-					if (this.is_busy() == true) {
-						this.update.finware_timer_id = window.setTimeout(fun_bus_timer, this.update.bus_timout);
-						return ;
-					}
-					this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
-					const status:ControllerSapiClassStatus = await this._update_finware_click_add(gbl);
-					if (status != ControllerSapiClassStatus.OK) {
-						this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE, status);
-						this.update.finware.el_span.innerHTML = "";
-						this.update.finware.el_span.appendChild(this.update.finware.el_select);
-						this.common_button_atrr(this.update.finware.el_button, '', false);
-						return ;
-					}
-					this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
-					this.re_begin_func(false);
-					return ;
-	
-				};
-				this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
-				this.update.finware_timer_id = window.setTimeout(fun_bus_timer, 0x0);
-			};
-			this.update.finware_xhr.send();
+			const status:ControllerSapiClassStatus = await this._update_finware_click_add(gbl);
+			out.code = status;
+			if (status == ControllerSapiClassStatus.OK)
+				out.ok = true;
+			return (out);
 		};
-		this.update.finware_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		this.update.finware_download_xhr(url, (): boolean => {return(this.is_busy());}, process, this.re_begin_func);
 	}
 	
 	private _update_beta_change_all_select(beta:boolean, el_select:HTMLSelectElement, title:ControllerUiLangClassId): void {
@@ -195,29 +160,6 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES);
-		const app_update_info:ControllerUiClassUpdateInfo = {version:(capabilities_info.ApiVersion << 0x8) | capabilities_info.ApiRevision, data: []};
-		const bootloader_update_info:ControllerUiClassUpdateInfo = {version:board_info.bootloader_version, data: []};
-		const fun_xhr_timer:TimerHandler = () => {
-			const bootloaderCRC:string = "&bootloaderCRC=" + board_info.bootloader_crc32.toString();
-			const url:string = this.update.URL_UPDATE + 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + bootloaderCRC + '&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
-			const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
-				i = 0x0;
-				while (i < response.data.length) {
-					version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
-					if (response.data[i].type == this.update.JSON_UPDATE_TYPE_FINWARE && version > app_update_info.version) {
-						const update_info_data:ControllerUiClassUpdateInfoData = {version:version, url:response.data[i].fileURL, beta:((response.data[i].enabled == this.update.JSON_UPDATE_ENABLED ? false:true))};
-						app_update_info.data.push(update_info_data);
-					}
-					i++;
-				}
-			};
-			const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
-				this._update_init_set_select(this.update.finware, app_update_info);
-				this._update_init_set_select(this.update.bootloader, bootloader_update_info);
-				this._update_beta_change_all();
-			};
-			this.update.info_xhr_start(fun_xhr_timer, url, process, end);
-		};
 		const update_beta:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA);
 		const el_input:HTMLInputElement = document.createElement("input");
 		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_SELECT_TITLE);
@@ -228,7 +170,27 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.update.finware.el_span,  this.update.finware.el_button);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.update.bootloader.el_span, this.update.bootloader.el_button);
-		this.update.info_xhr_begin(fun_xhr_timer);
+		const app_update_info:ControllerUiClassUpdateInfo = {version:(capabilities_info.ApiVersion << 0x8) | capabilities_info.ApiRevision, data: []};
+		const bootloader_update_info:ControllerUiClassUpdateInfo = {version:board_info.bootloader_version, data: []};
+		const bootloaderCRC:string = "&bootloaderCRC=" + board_info.bootloader_crc32.toString();
+		const url:string = this.update.URL_UPDATE + 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() + bootloaderCRC + '&token=all&uuid=' + arrayToStringHex(board_info.chip_uuid);
+		const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
+			i = 0x0;
+			while (i < response.data.length) {
+				version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
+				if (response.data[i].type == this.update.JSON_UPDATE_TYPE_FINWARE && version > app_update_info.version) {
+					const update_info_data:ControllerUiClassUpdateInfoData = {version:version, url:response.data[i].fileURL, beta:((response.data[i].enabled == this.update.JSON_UPDATE_ENABLED ? false:true))};
+					app_update_info.data.push(update_info_data);
+				}
+				i++;
+			}
+		};
+		const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
+			this._update_init_set_select(this.update.finware, app_update_info);
+			this._update_init_set_select(this.update.bootloader, bootloader_update_info);
+			this._update_beta_change_all();
+		};
+		this.update.info_download_xhr(url, process, end);
 		return (true);
 	}
 
@@ -244,7 +206,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
-		this.update = new UpdateUiSectionClass(log, locale, async () => { await this._update_finware_click();}, async () => {await this._update_bootloader_click();});
+		this.update = new UpdateUiSectionClass(log, locale, () => { this._update_finware_click();}, () => {this._update_bootloader_click();});
 		this.razberry = razberry;
 		this.re_begin_func = re_begin_func;
 	}

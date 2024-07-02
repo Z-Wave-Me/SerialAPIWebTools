@@ -2,12 +2,21 @@ import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionHtmlClass} from "./common"
+import { ControllerUiDefineClassReBeginFunc} from "../ui_define"
 
-export {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton};
+export {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut};
 
 type UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => void;
 type UpdateUiSectionClassXhrInfoOnloadEnd = () => void;
-type UpdateUiSectionClassButtonClick = () => Promise<void>;
+type UpdateUiSectionClassXhrFinwareBusy = () => boolean;
+type UpdateUiSectionClassXhrFinwareProcess = (data:Uint8Array) => Promise<UpdateUiSectionClassXhrFinwareProcessOut>;
+type UpdateUiSectionClassButtonClick = () => void;
+
+interface UpdateUiSectionClassXhrFinwareProcessOut
+{
+	ok:boolean;
+	code:number;
+}
 
 interface UpdateUiSectionClassJson
 {
@@ -106,41 +115,94 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		}
 	}
 
-	info_xhr_start(fun_xhr_timer:TimerHandler, url:string, process:UpdateUiSectionClassXhrInfoOnloadProcess, end:UpdateUiSectionClassXhrInfoOnloadEnd): void {
-		this.info_xhr_timer_id = undefined;
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-		this.info_xhr.open("POST", url, true);
-		this.info_xhr.responseType = 'json';
-		this.info_xhr.timeout = this.info_xhr_timeout;
-		this.info_xhr.ontimeout = () => {
-			this.log.errorXhrTimeout(url);
-			this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-			this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-		};
-		this.info_xhr.onerror = () => {
-			this.log.errorXhrError(url);
-			this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-			this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-		};
-		this.info_xhr.onload = () => {
-			try {
-				process(this.info_xhr.response);
-			} catch (error) {
-				this.log.errorXhrInvalidData(url);
+	info_download_xhr(url:string, process:UpdateUiSectionClassXhrInfoOnloadProcess, end:UpdateUiSectionClassXhrInfoOnloadEnd): void {
+		const fun_xhr_timer:TimerHandler = () => {
+			this.info_xhr_timer_id = undefined;
+			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+			this.info_xhr.open("POST", url, true);
+			this.info_xhr.responseType = 'json';
+			this.info_xhr.timeout = this.info_xhr_timeout;
+			this.info_xhr.ontimeout = () => {
+				this.log.errorXhrTimeout(url);
 				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
 				this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-				return ;
-			}
-			end();
-			this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+			};
+			this.info_xhr.onerror = () => {
+				this.log.errorXhrError(url);
+				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+				this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
+			};
+			this.info_xhr.onload = () => {
+				try {
+					process(this.info_xhr.response);
+				} catch (error) {
+					this.log.errorXhrInvalidData(url);
+					this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
+					return ;
+				}
+				end();
+				this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+			};
+			this.info_xhr.send();
 		};
-		this.info_xhr.send();
-	}
-
-	info_xhr_begin(fun_xhr_timer:TimerHandler): void {
 		this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
 	}
- 
+
+	private _download_xhr_start(paket:UpdateUiSectionClassButton, url:string, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
+		this.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
+		this.common_button_atrr(paket.el_button, '', true);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+		const fun_xhr_timer:TimerHandler = () => {
+			this.finware_timer_id = undefined;
+			this.finware_xhr.open("POST", url, true);
+			this.finware_xhr.responseType = "arraybuffer";
+			this.finware_xhr.timeout = this.finware_xhr_timout;
+			this.finware_xhr.ontimeout = () => {
+				this.log.errorXhrTimeout(url);
+				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+				this.finware_timer_id = window.setTimeout(fun_xhr_timer, this.finware_xhr_timer_timout);
+			};
+			this.finware_xhr.onerror = () => {
+				this.log.errorXhrError(url);
+				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+				this.finware_timer_id = window.setTimeout(fun_xhr_timer, this.finware_xhr_timer_timout);
+			};
+			this.finware_xhr.onload = () => {
+				this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+				const gbl:Uint8Array = new Uint8Array(this.finware_xhr.response);
+				const fun_bus_timer:TimerHandler = async () => {
+					this.finware_timer_id = undefined;
+					if (busy() == true) {
+						this.finware_timer_id = window.setTimeout(fun_bus_timer, this.bus_timout);
+						return ;
+					}
+					this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
+					const status:UpdateUiSectionClassXhrFinwareProcessOut = await process(gbl);
+					if (status.ok == false) {
+						this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE, status.code);
+						paket.el_span.innerHTML = "";
+						paket.el_span.appendChild(paket.el_select);
+						this.common_button_atrr(paket.el_button, '', false);
+						return ;
+					}
+					this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
+					re_begin_func(false);
+					return ;
+
+				};
+				this.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
+				this.finware_timer_id = window.setTimeout(fun_bus_timer, 0x0);
+			};
+			this.finware_xhr.send();
+		};
+		this.finware_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+	}
+
+	finware_download_xhr(url:string, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
+		this._download_xhr_start(this.finware, url, busy, process, re_begin_func);
+	}
+
 	private _constructor_struct(button_text:ControllerUiLangClassId, click:UpdateUiSectionClassButtonClick, change:EventListener):UpdateUiSectionClassButton {
 		const el_span:HTMLSpanElement = document.createElement("span");
 		const el_button:HTMLButtonElement = document.createElement("button");
