@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassButtonClick} from "../update"
+import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton} from "../update"
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 
 import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "../../ui_define"
@@ -28,7 +28,6 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly LOCAL_STORAGE_VALUE_TRUE:string						= 'true';
 	private readonly LOCAL_STORAGE_VALUE_FALSE:string						= 'false';
 
-	private readonly SELECTOR_DEFAULT:string								= 'data-default';
 	private readonly SELECTOR_BETA:string									= 'data-beta';
 
 	private readonly update:UpdateUiSectionClass;
@@ -120,7 +119,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			}
 			if (beta == false && item.getAttribute(this.SELECTOR_BETA) != null)
 				return ;
-			if (item.getAttribute(this.SELECTOR_DEFAULT) != null) {
+			if (item.getAttribute(this.update.SELECTOR_DEFAULT) != null) {
 				item.setAttribute("selected", "");
 			}
 			number++;
@@ -171,7 +170,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			return (a.version - b.version);
 		});
 		i = 0x0;
-		el_option_str = '<option ' + this.SELECTOR_DEFAULT + ' value="">'+ versionNumberToString(info.version) +'</option>';
+		el_option_str = '<option ' + this.update.SELECTOR_DEFAULT + ' value="">'+ versionNumberToString(info.version) +'</option>';
 		while (i < info.data.length) {
 			el_option_str = el_option_str + '<option ' + ((info.data[i].beta == true)? this.SELECTOR_BETA + '=""':'')  + ' value="' + info.data[i].url +'">'+ versionNumberToString(info.data[i].version) +'</option>';
 			i++;

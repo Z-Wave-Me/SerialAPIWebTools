@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionHtmlClass} from "./common"
 
-export {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassButtonClick};
+export {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton};
 
 type UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => void;
 type UpdateUiSectionClassXhrInfoOnloadEnd = () => void;
@@ -16,6 +16,7 @@ interface UpdateUiSectionClassJson
 	fileURL:string;
 	enabled:string;
 	type:string;
+	target_fw_family:string;
 }
 
 interface UpdateUiSectionClassJsonInfo
@@ -40,6 +41,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 
 	readonly JSON_UPDATE_ENABLED:string							= "enabled";
 	readonly JSON_UPDATE_TYPE_FINWARE:string					= "firmware";
+
+	readonly SELECTOR_DEFAULT:string							= 'data-default';
 
 	readonly fw_family_razberry:number							= 0x0;
 	readonly fw_family_zuno:number								= 0x1;
