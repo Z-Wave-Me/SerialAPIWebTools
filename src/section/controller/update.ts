@@ -31,21 +31,10 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly SELECTOR_DEFAULT:string								= 'data-default';
 	private readonly SELECTOR_BETA:string									= 'data-beta';
 
-	private readonly finware:UpdateUiSectionClassButton;
-	private readonly bootloader:UpdateUiSectionClassButton;
-
 	private readonly update:UpdateUiSectionClass;
 	private readonly razberry:ControllerSapiClass;
 
 	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
-
-	private _update_change(event:Event, title:ControllerUiLangClassId, info:UpdateUiSectionClassButton): void {
-		const el_target:HTMLSelectElement|null = this.event_get_element_select(event);
-		if (el_target == null)
-			return ;
-		info.url_new = el_target.value;
-		this.common_button_atrr(info.el_button, title, (info.url_new == info.url_current) ? true:false);
-	}
 
 	private async _update_bootloader_click(): Promise<void> {
 	}
@@ -54,15 +43,15 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		const el_progress:HTMLElement = document.createElement('progress');
 		const el_span:HTMLElement = document.createElement('span');
 		el_progress.setAttribute('max', '100');
-		this.finware.el_span.innerHTML = '';
-		this.finware.el_span.appendChild(el_progress);
-		this.finware.el_span.appendChild(el_span);
+		this.update.finware.el_span.innerHTML = '';
+		this.update.finware.el_span.appendChild(el_progress);
+		this.update.finware.el_span.appendChild(el_span);
 		el_progress.setAttribute('value', "66");
 		const status:ControllerSapiClassStatus = await this.razberry.updateFinware(data, (percentage:number) => {
 				el_progress.setAttribute('value', percentage.toFixed().toString());
 				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
 				if (percentage >= 100.00) {
-					this._constructor_struct_progress(this.finware, ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
+					this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
 				}
 			}
 		);
@@ -70,10 +59,10 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 	}
 
 	private async _update_finware_click(): Promise<void> {
-		this._constructor_struct_progress(this.finware, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
-		this.common_button_atrr(this.finware.el_button, '', true);
+		this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
+		this.common_button_atrr(this.update.finware.el_button, '', true);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-		const url:string = this.update.URL_UPDATE + this.finware.url_new;
+		const url:string = this.update.URL_UPDATE + this.update.finware.url_new;
 		const fun_xhr_timer:TimerHandler = () => {
 			this.update.finware_timer_id = undefined;
 			this.update.finware_xhr.open("POST", url, true);
@@ -102,9 +91,9 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 					const status:ControllerSapiClassStatus = await this._update_finware_click_add(gbl);
 					if (status != ControllerSapiClassStatus.OK) {
 						this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE, status);
-						this.finware.el_span.innerHTML = "";
-						this.finware.el_span.appendChild(this.finware.el_select);
-						this.common_button_atrr(this.finware.el_button, '', false);
+						this.update.finware.el_span.innerHTML = "";
+						this.update.finware.el_span.appendChild(this.update.finware.el_select);
+						this.common_button_atrr(this.update.finware.el_button, '', false);
 						return ;
 					}
 					this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
@@ -112,7 +101,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 					return ;
 	
 				};
-				this._constructor_struct_progress(this.finware, ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
+				this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
 				this.update.finware_timer_id = window.setTimeout(fun_bus_timer, 0x0);
 			};
 			this.update.finware_xhr.send();
@@ -157,12 +146,12 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			beta = true;
 		else
 			beta = false;
-		this._update_beta_change_all_select(beta, this.finware.el_select, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
-		this.finware.url_new = "";
-		this.common_button_atrr(this.finware.el_button, '', true);
-		this._update_beta_change_all_select(beta, this.bootloader.el_select, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
-		this.bootloader.url_new = "";
-		this.common_button_atrr(this.bootloader.el_button, '', true);
+		this._update_beta_change_all_select(beta, this.update.finware.el_select, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
+		this.update.finware.url_new = "";
+		this.common_button_atrr(this.update.finware.el_button, '', true);
+		this._update_beta_change_all_select(beta, this.update.bootloader.el_select, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
+		this.update.bootloader.url_new = "";
+		this.common_button_atrr(this.update.bootloader.el_button, '', true);
 	}
 
 	private _update_beta_change(event:Event): void {
@@ -224,8 +213,8 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 				}
 			};
 			const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
-				this._update_init_set_select(this.finware, app_update_info);
-				this._update_init_set_select(this.bootloader, bootloader_update_info);
+				this._update_init_set_select(this.update.finware, app_update_info);
+				this._update_init_set_select(this.update.bootloader, bootloader_update_info);
 				this._update_beta_change_all();
 			};
 			this.update.info_xhr_start(fun_xhr_timer, url, process, end);
@@ -238,8 +227,8 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			el_input.checked = true;
 		el_input.addEventListener("change", (event:Event) => {this._update_beta_change(event);});
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
-		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.finware.el_span,  this.finware.el_button);
-		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.bootloader.el_span, this.bootloader.el_button);
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.update.finware.el_span,  this.update.finware.el_button);
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.update.bootloader.el_span, this.update.bootloader.el_button);
 		this.update.info_xhr_begin(fun_xhr_timer);
 		return (true);
 	}
@@ -250,43 +239,14 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		return (this._update_init());
 	}
 
-	private _end_struct(info:UpdateUiSectionClassButton) {
-		info.url_current = "";
-		info.url_new = "";
-		info.el_button.disabled = true;
-		this._constructor_struct_progress(info, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
-	}
-
 	private async _end(): Promise<void> {
-		this._end_struct(this.finware);
-		this._end_struct(this.bootloader);
 		this.update.end();
-	}
-
-	private _constructor_struct_progress(info:UpdateUiSectionClassButton, text:ControllerUiLangClassId): void {
-		info.el_span.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
-	}
-
-	private _constructor_struct(button_text:ControllerUiLangClassId, click:UpdateUiSectionClassButtonClick, change:EventListener):UpdateUiSectionClassButton {
-		const el_span:HTMLSpanElement = document.createElement("span");
-		const el_button:HTMLButtonElement = document.createElement("button");
-		el_button.textContent = this.locale.getLocale(button_text);
-		el_button.addEventListener("click", click);
-		el_button.type = "button";
-		const el_select:HTMLSelectElement = document.createElement("select");
-		el_select.addEventListener("change", change);
-		const info:UpdateUiSectionClassButton = {url_current:'', url_new:'', el_span:el_span, el_button:el_button, el_select:el_select};
-		return (info);
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, razberry:ControllerSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.update = new UpdateUiSectionClass(log, locale, async () => { await this._update_finware_click();}, async () => {await this._update_bootloader_click();});
 		this.razberry = razberry;
-		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, async () => { await this._update_finware_click();},
-			(event:Event) => {this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, this.finware);});
-		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, async () => {await this._update_bootloader_click();},
-			(event:Event) =>{ this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE, this.bootloader);});
 		this.re_begin_func = re_begin_func;
 	}
 }

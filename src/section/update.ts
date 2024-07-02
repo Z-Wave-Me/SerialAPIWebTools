@@ -1,6 +1,7 @@
 import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
+import {CommonUiSectionHtmlClass} from "./common"
 
 export {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassButtonClick};
 
@@ -32,7 +33,7 @@ interface UpdateUiSectionClassButton
 }
 
 
-class UpdateUiSectionClass {
+class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 	readonly URL_UPDATE:string									= "https://service.z-wave.me/expertui/uzb/?";
 	readonly URL_LICENSE_MORE_OPTIONS:string					= "https://z-wave.me/hardware-capabilities/?uuid=";
 	readonly URL_LICENSE_SERVISE:string							= "https://service.z-wave.me/hardware/capabilities/?uuid=";
@@ -56,12 +57,40 @@ class UpdateUiSectionClass {
 	finware_timer_id?:number;
 
 	private readonly log:ControllerUiLogClass;
-	private readonly locale:ControllerUiLangClass;
 
-	// private readonly finware:UpdateUiSectionClassButton;
-	// private readonly bootloader:UpdateUiSectionClassButton;
+	readonly finware:UpdateUiSectionClassButton;
+	readonly bootloader:UpdateUiSectionClassButton;
+
+	private _update_change(event:Event, title:ControllerUiLangClassId, info:UpdateUiSectionClassButton): void {
+		const el_target:HTMLSelectElement|null = this.event_get_element_select(event);
+		if (el_target == null)
+			return ;
+		info.url_new = el_target.value;
+		this.common_button_atrr(info.el_button, title, (info.url_new == info.url_current) ? true:false);
+	}
+
+	private _progress(info:UpdateUiSectionClassButton, text:ControllerUiLangClassId): void {
+		info.el_span.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
+	}
+
+	progress_finware(text:ControllerUiLangClassId): void {
+		this._progress(this.finware, text);
+	}
+
+	progress_bootloader(text:ControllerUiLangClassId): void {
+		this._progress(this.bootloader, text);
+	}
+
+	private _end_struct(info:UpdateUiSectionClassButton) {
+		info.url_current = "";
+		info.url_new = "";
+		info.el_button.disabled = true;
+		this._progress(info, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
+	}
 
 	end(): void {
+		this._end_struct(this.finware);
+		this._end_struct(this.bootloader);
 		this.info_xhr.abort();
 		if (this.info_xhr_timer_id != undefined) {
 			window.clearTimeout(this.info_xhr_timer_id);
@@ -122,7 +151,11 @@ class UpdateUiSectionClass {
 	}
 
 	constructor(log:ControllerUiLogClass, locale:ControllerUiLangClass, finware_click:UpdateUiSectionClassButtonClick, bootloader_click:UpdateUiSectionClassButtonClick) {
+		super(locale);
 		this.log = log;
-		this.locale = locale;
+		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, finware_click,
+			(event:Event) => {this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, this.finware);});
+		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, bootloader_click,
+			(event:Event) =>{ this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE, this.bootloader);});
 	}
 }

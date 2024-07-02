@@ -5,7 +5,7 @@ import {ZunoSapiClass} from "../sapi/zuno_sapi";
 import {SapiClass} from "../sapi/sapi";
 import {ControllerUiLogClass} from "../log/ui_log"
 
-export {CommonUiSectionClass};
+export {CommonUiSectionClass, CommonUiSectionHtmlClass};
 
 interface CommonUiSectionClassBegin {
 	(): Promise<boolean>
@@ -15,26 +15,8 @@ interface CommonUiSectionClassEnd {
 	(): Promise<void>
 }
 
-class CommonUiSectionClass {
+class CommonUiSectionHtmlClass {
 	protected readonly locale:ControllerUiLangClass;
-	protected readonly log:ControllerUiLogClass;
-
-	protected readonly URL_LICENSE_MORE_OPTIONS:string					= "https://z-wave.me/hardware-capabilities/?uuid=";
-	protected readonly URL_LICENSE_SERVISE:string						= "https://service.z-wave.me/hardware/capabilities/?uuid=";
-
-	private readonly management:ControllerSapiClass|ZunoSapiClass|SapiClass;
-	private readonly el_section:HTMLElement;
-	private readonly el_tbody:HTMLElement;
-	private readonly begin_func:CommonUiSectionClassBegin;
-	private readonly end_func:CommonUiSectionClassEnd;
-
-	protected is_busy(): boolean {
-		if (this.management.is_busy() == true) {
-			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
-			return (true);
-		}
-		return (false);
-	}
 
 	protected common_button_atrr(el_button:HTMLButtonElement, title:string|ControllerUiLangClassId, hide:boolean): void {
 		if (hide == true) {
@@ -82,6 +64,30 @@ class CommonUiSectionClass {
 		return ((event.target as HTMLButtonElement));
 	}
 
+	constructor(locale:ControllerUiLangClass) {
+		this.locale = locale;
+	}
+}
+
+class CommonUiSectionClass extends CommonUiSectionHtmlClass {
+	protected readonly log:ControllerUiLogClass;
+
+	protected readonly URL_LICENSE_MORE_OPTIONS:string					= "https://z-wave.me/hardware-capabilities/?uuid=";
+	protected readonly URL_LICENSE_SERVISE:string						= "https://service.z-wave.me/hardware/capabilities/?uuid=";
+
+	private readonly management:ControllerSapiClass|ZunoSapiClass|SapiClass;
+	private readonly el_section:HTMLElement;
+	private readonly el_tbody:HTMLElement;
+	private readonly begin_func:CommonUiSectionClassBegin;
+	private readonly end_func:CommonUiSectionClassEnd;
+
+	protected is_busy(): boolean {
+		if (this.management.is_busy() == true) {
+			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
+			return (true);
+		}
+		return (false);
+	}
 	protected create_tr_el(name:string|ControllerUiLangClassId, title:string|ControllerUiLangClassId, value:string|HTMLElement, action:string|HTMLElement): HTMLElement {
 		const el_tr: HTMLElement = document.createElement("tr");
 		const el_td_1: HTMLElement = document.createElement("td");
@@ -130,7 +136,7 @@ class CommonUiSectionClass {
 	}
 
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, management:ControllerSapiClass|ZunoSapiClass|SapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
-		this.locale = locale;
+		super(locale);
 		this.management = management;
 		this.log = log;
 		const el:HTMLElement = document.createElement("section");
