@@ -1,6 +1,7 @@
 
 import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
+import {HardwareChipClass} from "../hardware/chip"
 
 export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower};
 
@@ -97,18 +98,19 @@ interface ZunoSapiClassBoardInfo
 	ram_size:number
 	custom_code_offset:number;
 	boot_offset:number;
+	boot_version:number;
 	chip_uuid:Uint8Array;
 	s2_pub:Uint8Array;
 	max_default_power:number;
 	ext_nvm:number;
+	dbg_lock:number;
+	chip:ZunoSapiClassBoardInfoChip;
 	zwdata?:ZunoSapiClassBoardInfoZwDataProt,
 	smart_qr?:string;
-	dbg_lock:number;
 	home_id?:number;
 	node_id?:number;
 	product?:ZunoSapiClassBoardInfoProduction;
 	license?:ZunoSapiClassBoardInfoLicense;
-	chip?:ZunoSapiClassBoardInfoChip;
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -160,7 +162,7 @@ class ZunoSapiClass {
 		const board_info:ZunoSapiClassBoardInfo												=
 		{	
 			status:ZunoSapiClassStatus.NOT_INIT, version:0x0, build_number:0x0, build_ts:0x0, hw_rev:0x0, code_size:0x0, ram_size:0x0, dbg_lock:0x0, custom_code_offset:0x30000, chip_uuid: new Uint8Array(), s2_pub: new Uint8Array(),
-			boot_offset:0x3a000, max_default_power:50, ext_nvm:0x0
+			boot_offset:0x3a000, boot_version: 0x01090001, max_default_power:50, ext_nvm:0x0, chip : {chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x8E19CC54, se_version:0x0}
 		};
 		return (board_info);
 	}

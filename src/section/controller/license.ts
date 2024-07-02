@@ -15,8 +15,6 @@ interface ControllerUiClassNewLicenseXhr
 }
 
 class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
-	private readonly TABLE_NAME_LICENSE_MORE_OPTIONS_LINK:string			= "https://z-wave.me/hardware-capabilities/?uuid=";
-	private readonly TABLE_NAME_LICENSE_SERVISE_LINK:string					= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 	private readonly TABLE_NAME_LICENSE_YES:string							= '<input disabled="disabled" checked type="checkbox">';
 	private readonly TABLE_NAME_LICENSE_NO:string							= '<input disabled="disabled" type="checkbox">';
 
@@ -53,7 +51,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 	}
 
 	private _license_timer_init(uuid:string, crc16:number): void {
-		const url = this.TABLE_NAME_LICENSE_SERVISE_LINK + uuid;
+		const url = this.URL_LICENSE_SERVISE + uuid;
 		const fun_xhr_timer:TimerHandler = () => {
 			this.license_timer_id = undefined;
 			this.license_xhr.open("POST", url, true);
@@ -147,7 +145,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 		}
 		const uuid_str_hex:string = arrayToStringHex(board_info.chip_uuid);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_LICENSE_UUID, ControllerUiLangClassId.TABLE_NAME_LICENSE_UUID_TITLE, uuid_str_hex, "");
-		const more_options_link:string = '<a target="_blank" href="'+ this.TABLE_NAME_LICENSE_MORE_OPTIONS_LINK + uuid_str_hex +'">'+ 'link' +'</a>';
+		const more_options_link:string = '<a target="_blank" href="'+ this.URL_LICENSE_MORE_OPTIONS + uuid_str_hex +'">'+ 'link' +'</a>';
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS, ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE, more_options_link, "");
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_BOARD_INFO);
 		return (uuid_str_hex);

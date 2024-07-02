@@ -16,9 +16,11 @@ interface CommonUiSectionClassEnd {
 }
 
 class CommonUiSectionClass {
-
 	protected readonly locale:ControllerUiLangClass;
 	protected readonly log:ControllerUiLogClass;
+
+	protected readonly URL_LICENSE_MORE_OPTIONS:string					= "https://z-wave.me/hardware-capabilities/?uuid=";
+	protected readonly URL_LICENSE_SERVISE:string						= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 
 	private readonly management:ControllerSapiClass|ZunoSapiClass|SapiClass;
 	private readonly el_section:HTMLElement;

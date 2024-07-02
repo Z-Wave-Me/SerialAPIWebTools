@@ -10,6 +10,7 @@ import {ControllerUiSectionMigrationClass} from "./section/controller/migration"
 import {DetectionUiSectionClass} from "./section/detection"
 import {SlaveUiSectionInfoClass} from "./section/slave/info"
 import {SlaveUiSectionLicenseClass} from "./section/slave/license"
+import {SlaveUiSectionUpdateClass} from "./section/slave/update"
 
 import {ControllerUiDefineClass} from "./ui_define"
 
@@ -20,12 +21,10 @@ import {SapiClass, SapiClassStatus, SapiClassDetect, SapiClassDetectType, SapiSe
 export {ControllerUiClass};
 
 type controller_array_type = Array<ControllerUiSectionInfoClass|ControllerUiSectionLicenseClass|ControllerUiSectionUpdateClass|ControllerUiSectionMigrationClass>;
-type slave_array_type = Array<SlaveUiSectionInfoClass|SlaveUiSectionLicenseClass>;
+type slave_array_type = Array<SlaveUiSectionInfoClass|SlaveUiSectionLicenseClass|SlaveUiSectionUpdateClass>;
 type all_array_type = controller_array_type|slave_array_type;
 
 class ControllerUiClass {
-	private readonly VERSION_LOG											= ControllerUiDefineClass.NAME_APP + " 0.0.5";
-
 	private readonly sapi:SapiClass											= new SapiClass();
 	private readonly razberry:ControllerSapiClass							= new ControllerSapiClass(this.sapi);
 	private readonly zuno:ZunoSapiClass										= new ZunoSapiClass(this.sapi);
@@ -91,7 +90,7 @@ class ControllerUiClass {
 	}
 
 	private async _start(): Promise<void> {
-		this.log.info(this.VERSION_LOG);
+		this.log.info(ControllerUiDefineClass.NAME_APP_VERSION_FULL);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
 		const status:SapiClassStatus = await this.sapi.request(this.filters);
 		if (status == SapiClassStatus.SERIAL_UN_SUPPORT)
@@ -149,6 +148,7 @@ class ControllerUiClass {
 		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
 		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		this.slave.push(new SlaveUiSectionLicenseClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
+		this.slave.push(new SlaveUiSectionUpdateClass(this.el_section, this.locale, this.zuno, this.log, async (detection:boolean) => {await this._begin(detection)}));
 		el.appendChild(this.el_modal);
 		this._start();
 	}
