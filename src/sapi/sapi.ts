@@ -710,6 +710,11 @@ class SapiClass {
 
 	private async _detect_rcv(res:SapiClassRet, out:SapiClassDetectWait): Promise<void> {
 		if (res.status != SapiClassStatus.OK) {
+			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
+			if (capabilities_info.status == SapiClassStatus.OK) {
+				out.type = SapiClassDetectType.RAZBERRY;
+				return ;
+			}
 			out.status = SapiClassStatus.UPDATE_PROCESS;
 			return ;
 		}
@@ -718,17 +723,6 @@ class SapiClass {
 			if (res.data.length < 0x2) {
 				out.status = SapiClassStatus.ZUNO_START_WRONG_LENG;
 				return ;
-			}
-			if (res.data[0x1] != 0x1) {
-				out.status = SapiClassStatus.ZUNO_START_WRONG_DATA;
-				return ;
-			}
-			if (res.data[0x0] == 0x4) {
-				res = await this._recvIncomingRequest(20000);
-				if (res.status != SapiClassStatus.OK) {
-					out.status = SapiClassStatus.UPDATE_STEP_FAILL;
-					return ;
-				}
 			}
 			if (res.data[0x0] != 0xFF) {
 				out.status = SapiClassStatus.ZUNO_START_WRONG_FRAME;
@@ -747,6 +741,18 @@ class SapiClass {
 			return ;
 		}
 		out.status = SapiClassStatus.DETECTED_UNC_COMMAND;
+	}
+
+	private async _detect_update(res:SapiClassRet): Promise<SapiClassStatus> {
+		if (res.status != SapiClassStatus.OK)
+			return (SapiClassStatus.UPDATE_PROCESS);
+		if (res.cmd != SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET)
+			return (SapiClassStatus.DETECTED_UNC_COMMAND);
+		if (res.data.length < 0x2)
+			return (SapiClassStatus.ZUNO_START_WRONG_LENG);
+		if (res.data[0x0] != 0x4 && res.data[0x1] != 0x1)
+			return (SapiClassStatus.ZUNO_START_WRONG_DATA);
+		return (SapiClassStatus.OK);
 	}
 
 	private async _detect(out:SapiClassDetect, baudrate:Array<number>, func:SapiClassDetectTypeFunc|null): Promise<void> {
@@ -786,19 +792,14 @@ class SapiClass {
 				}
 				res = await this._recvIncomingRequest(2000);
 			}
-			if (res.status == SapiClassStatus.OK) {
-				const wait:SapiClassDetectWait = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN};
-				await this._detect_rcv(res, wait);
-				if (wait.status == SapiClassStatus.OK) {
-					out.type = wait.type;
-					return ;
-				}
-				out.status = wait.status;
+			const wait:SapiClassDetectWait = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN};
+			await this._detect_rcv(res, wait);
+			if (wait.status == SapiClassStatus.OK) {
+				out.type = wait.type;
 				return ;
 			}
-			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
-			if (capabilities_info.status == SapiClassStatus.OK) {
-				out.type = SapiClassDetectType.RAZBERRY;
+			if (wait.status != SapiClassStatus.UPDATE_PROCESS) {
+				out.status = wait.status;
 				return ;
 			}
 			out.status = await this._close();
@@ -837,6 +838,13 @@ class SapiClass {
 	private async _update_wait(timeout:number, out:SapiClassDetectWait): Promise<void> {
 		const wait_timeout:number = Date.now() + timeout;
 
+		while (wait_timeout > Date.now()) {
+			const res:SapiClassRet = await this._recvIncomingRequest(1000);
+			out.status = await this._detect_update(res);
+			if (out.status == SapiClassStatus.UPDATE_PROCESS)
+				continue ;
+			break ;
+		}
 		while (wait_timeout > Date.now()) {
 			const res:SapiClassRet = await this._recvIncomingRequest(1000);
 			await this._detect_rcv(res, out);
