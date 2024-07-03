@@ -30,6 +30,7 @@ enum ZunoSapiClassStatus
 	WRONG_STATUS,
 	NO_FREEZE,
 	INVALID_ARG,
+	UN_SUPPORT,
 }
 
 interface ZunoSapiClassBoardInfoZwDataProt
@@ -408,22 +409,39 @@ class ZunoSapiClass {
 		return (this.board_info);
 	}
 
-	public getRegion(): ZunoSapiClassRegion {
-		let region_array:string[];
+	private _isSupportRegionAndPower():ZunoSapiClassStatus {
+		if (this.param_info.status != ZunoSapiClassStatus.OK)
+			return (this.param_info.status);
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info.build_number < 0x3080517)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		return (ZunoSapiClassStatus.OK)
+	}
 
-		region_array = this.region_array;
-		if (this.board_info.status == ZunoSapiClassStatus.OK && this.board_info.license != undefined) {
+	public isSupportResetDefaul():ZunoSapiClassStatus {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info.version < 0x3080517)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		return (ZunoSapiClassStatus.OK)
+	}
+
+	public getRegion(): ZunoSapiClassRegion {
+		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:this.param_info.freq_str, region_array:this.region_array};
+		if (out.status != ZunoSapiClassStatus.OK)
+			return (out);
+		if (this.board_info.license != undefined) {
 			if (this.board_info.license.lic_flags[0x05] != undefined && this.board_info.license.lic_flags[0x05].active == true)
-				region_array = this.region_array_full;
+				out.region_array = this.region_array_full;
 		}
-		const out:ZunoSapiClassRegion = {
-			status:this.param_info.status, 
-			region:this.param_info.freq_str, 
-			region_array:region_array};
 		return (out);
 	}
 
 	public async setRegion(region:string): Promise<ZunoSapiClassStatus> {
+		const status:ZunoSapiClassStatus = this._isSupportRegionAndPower();
+		if (status != ZunoSapiClassStatus.OK)
+			return (status);
 		const freq_i:number|undefined = this.region_string_to_number[region];
 		if (freq_i == undefined)
 			return (ZunoSapiClassStatus.INVALID_ARG);
@@ -438,18 +456,21 @@ class ZunoSapiClass {
 
 	public getPower(): ZunoSapiClassPower {
 		const out:ZunoSapiClassPower = {
-			status:this.param_info.status,
+			status:this._isSupportRegionAndPower(),
 			power_raw:this.param_info.main_pow,
 			step:0x1,
 			min:1,
 			max:this.board_info.max_default_power,
 		};
+		if (out.status != ZunoSapiClassStatus.OK)
+			return (out);
 		return (out);
 	}
 
 	public async setPower(power:number): Promise<ZunoSapiClassStatus> {
-		if (this.param_info.status != ZunoSapiClassStatus.OK)
-			return (this.param_info.status);
+		const status:ZunoSapiClassStatus = this._isSupportRegionAndPower();
+		if (status != ZunoSapiClassStatus.OK)
+			return (status);
 		const raw:Array<number> =  this.param_info.raw;
 		raw[0x2] = power;
 		return (await this._apply_param(raw));
