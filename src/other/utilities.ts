@@ -119,6 +119,7 @@ function costruct_int(arr:Array<number>, n:number, inv:boolean = true): number {
 			val += arr[indx];
 		i++;
 	}
+	val = val >>> 0x0;//The only JavaScript operator that works using unsigned 32-bit integers is >>>. You can exploit this to convert a signed-integer-in-Number you've been working on with the other bitwise operators to an unsigned-integer-in-Number:
 	return (val);
 }
 
