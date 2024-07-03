@@ -339,9 +339,8 @@ class ZunoSapiClass {
 		if (info.length < (offset_ext_nvm + 0x2))
 			return ;
 		out.ext_nvm =  costruct_int(info.slice(offset_ext_nvm, offset_ext_nvm + 0x2), 0x2, false);
-		out.boot_offset = 0xA10000
 		if (out.ext_nvm >= 512)
-			out.boot_offset = out.boot_offset + ((out.ext_nvm - 512) << 10);
+			out.boot_offset = 0xA10000 + ((out.ext_nvm - 512) << 10);
 		const offset_chip:number = offset_ext_nvm + 0x2;
 		if (info.length < (offset_chip + 0xA))
 			return ;
