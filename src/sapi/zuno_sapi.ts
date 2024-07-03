@@ -1,5 +1,5 @@
 
-import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
@@ -112,8 +112,9 @@ interface ZunoSapiClassBoardInfo
 	product?:ZunoSapiClassBoardInfoProduction;
 	license?:ZunoSapiClassBoardInfoLicense;
 }
-
 // ------------------------------------------------------------------------------------------------------
+type SlaveUpdateProcess = (percentage:number) => void;
+
 class ZunoSapiClass {
 	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
 	{
@@ -367,6 +368,40 @@ class ZunoSapiClass {
 		const freeze_zuno_info:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
 		if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0)
 			return (ZunoSapiClassStatus.NO_FREEZE);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	private async _load_file(addr:number, data:Uint8Array, process:SlaveUpdateProcess|null): Promise<ZunoSapiClassStatus> {
+		let step:number, i:number, percentage:number;
+		step = this.getQuantumSize();
+		percentage = 0x0;
+		i = 0x0
+		while (i < data.length) {
+			if (i + step > data.length)
+				step = data.length - i;
+			percentage = (i * 100.0) / data.length;
+			if (process != null)
+				process(percentage);
+			const status:SapiClassRet = await this._writeNVM(addr, Array.from(data.subarray(i, i + step)));
+			if (status.status != SapiClassStatus.OK)
+				return ((status.status as unknown) as ZunoSapiClassStatus);
+			i = i + step
+			addr = addr + step
+		}
+		if (process != null && percentage < 100.00)
+			process(100.00);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	public async updateFinware(data:Uint8Array, process:SlaveUpdateProcess|null): Promise<ZunoSapiClassStatus> {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		const status:ZunoSapiClassStatus = await this._load_file(this.board_info.boot_offset, data, process);
+		if (status != ZunoSapiClassStatus.OK)
+			return (status);
+		const res:SapiClassDetectWait = await this.sapi.update(this.board_info.boot_offset, 20000);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
 		return (ZunoSapiClassStatus.OK);
 	}
 

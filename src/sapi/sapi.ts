@@ -1,6 +1,6 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc, SapiClassDetectWait};
 
 interface SapiClassDetectTypeFunc {
 	(): Promise<boolean>
@@ -9,9 +9,9 @@ interface SapiClassDetectTypeFunc {
 
 enum SapiClassDetectType
 {
-	UNKNOWN,
-	ZUNO,
 	RAZBERRY,
+	ZUNO,
+	UNKNOWN,
 }
 
 interface SapiClassDetect
@@ -19,6 +19,12 @@ interface SapiClassDetect
 	status:SapiClassStatus;
 	type:SapiClassDetectType;
 	baudrate:number;
+}
+
+interface SapiClassDetectWait
+{
+	status:SapiClassStatus;
+	type:SapiClassDetectType;
 }
 
 interface SapiSerialOptionFilters
@@ -58,9 +64,16 @@ enum SapiClassStatus
 	REQUEST_ONE_SHOT,
 	REQUEST_NO_SELECT,
 	ZUNO_NO_FREEZE,
+	ZUNO_START_WRONG_LENG,
+	ZUNO_START_WRONG_DATA,
+	ZUNO_START_WRONG_FRAME,
 	DETECTED_UNC_COMMAND,
 	DETECTED_NOT_FIND,
 	DETECTED_CANCEL,
+	UPDATE_UNK,
+	UPDATE_TIMOUT,
+	UPDATE_PROCESS,
+	UPDATE_STEP_FAILL,
 	LAST_STATUS,
 }
 
@@ -342,6 +355,7 @@ class SapiClass {
 	private b_open:boolean																				= false;
 	private port:SapiPort|undefined																		= undefined;
 	private queue:Array<number>																			= [];
+	private detect_type:SapiClassDetectType																= SapiClassDetectType.UNKNOWN;
 
 	private async _readWithTimeout(timeout:number): Promise<Uint8Array> {
 		let out:Uint8Array;
@@ -685,8 +699,54 @@ class SapiClass {
 		await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 0x2, 500);
 		const out:SapiClassStatus = await this._close();
 		this.b_busy = false;
+		this.detect_type = SapiClassDetectType.UNKNOWN;
 		this.unlock();
 		return (out);
+	}
+
+	public type(): SapiClassDetectType {
+		return (this.detect_type);
+	}
+
+	private async _detect_rcv(res:SapiClassRet, out:SapiClassDetectWait): Promise<void> {
+		if (res.status != SapiClassStatus.OK) {
+			out.status = SapiClassStatus.UPDATE_PROCESS;
+			return ;
+		}
+		out.status = SapiClassStatus.OK;
+		if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) {
+			if (res.data.length < 0x2) {
+				out.status = SapiClassStatus.ZUNO_START_WRONG_LENG;
+				return ;
+			}
+			if (res.data[0x1] != 0x1) {
+				out.status = SapiClassStatus.ZUNO_START_WRONG_DATA;
+				return ;
+			}
+			if (res.data[0x0] == 0x4) {
+				res = await this._recvIncomingRequest(20000);
+				if (res.status != SapiClassStatus.OK) {
+					out.status = SapiClassStatus.UPDATE_STEP_FAILL;
+					return ;
+				}
+			}
+			if (res.data[0x0] != 0xFF) {
+				out.status = SapiClassStatus.ZUNO_START_WRONG_FRAME;
+				return ;
+			}
+			const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
+			if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0) {
+				out.status = SapiClassStatus.ZUNO_NO_FREEZE;
+				return ;
+			}
+			out.type = SapiClassDetectType.ZUNO;
+			return ;
+		}
+		if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED) {
+			out.type = SapiClassDetectType.RAZBERRY;
+			return ;
+		}
+		out.status = SapiClassStatus.DETECTED_UNC_COMMAND;
 	}
 
 	private async _detect(out:SapiClassDetect, baudrate:Array<number>, func:SapiClassDetectTypeFunc|null): Promise<void> {
@@ -727,20 +787,13 @@ class SapiClass {
 				res = await this._recvIncomingRequest(2000);
 			}
 			if (res.status == SapiClassStatus.OK) {
-				if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) {
-					const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
-					if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0) {
-						out.status = SapiClassStatus.ZUNO_NO_FREEZE;
-						return ;
-					}
-					out.type = SapiClassDetectType.ZUNO;
+				const wait:SapiClassDetectWait = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN};
+				await this._detect_rcv(res, wait);
+				if (wait.status == SapiClassStatus.OK) {
+					out.type = wait.type;
 					return ;
 				}
-				if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED) {
-					out.type = SapiClassDetectType.RAZBERRY;
-					return ;
-				}
-				out.status = SapiClassStatus.DETECTED_UNC_COMMAND;
+				out.status = wait.status;
 				return ;
 			}
 			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
@@ -765,13 +818,59 @@ class SapiClass {
 			return (out);
 		}
 		this.b_busy = true;
+		this.detect_type = SapiClassDetectType.UNKNOWN;
 		await this._detect(out, baudrate, func);
+		this.detect_type = out.type;
 		this.b_busy = false;
 		return (out);
 	}
 
 	public getQuantumSize(): number {
 		return (this.MAX_SEND_DATA_LENGHT);
+	}
+
+	private async _checkBootImage(addr:number): Promise<void> {
+		const data_addr:Array<number> = [(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF];
+		await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x04].concat(data_addr), 3, 100);
+	}
+
+	private async _update_wait(timeout:number, out:SapiClassDetectWait): Promise<void> {
+		const wait_timeout:number = Date.now() + timeout;
+
+		while (wait_timeout > Date.now()) {
+			const res:SapiClassRet = await this._recvIncomingRequest(1000);
+			await this._detect_rcv(res, out);
+			if (out.status == SapiClassStatus.UPDATE_PROCESS)
+				continue ;
+			this.detect_type = out.type;
+			return ;
+		}
+		out.status = SapiClassStatus.UPDATE_TIMOUT;
+	}
+
+	private async _update(addr:number, timeout:number, out:SapiClassDetectWait): Promise<void> {
+		switch (this.detect_type) {
+			case SapiClassDetectType.ZUNO:
+				await this._checkBootImage(addr);
+				await this._update_wait(timeout, out);
+				break ;
+			default:
+				out.status = SapiClassStatus.UPDATE_UNK;
+				break ;
+		}
+	}
+
+	public async update(addr:number, timeout:number): Promise<SapiClassDetectWait> {
+		const out:SapiClassDetectWait = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN};
+
+		if (this.busy() == true) {
+			out.status = SapiClassStatus.PORT_BUSY;
+			return (out);
+		}
+		this.b_busy = true;
+		await this._update(addr, timeout, out);
+		this.b_busy = false;
+		return (out);
 	}
 
 	constructor() {

@@ -32,17 +32,36 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	private _update_bootloader_click(): void {
 	}
 
+	private async _update_finware_click_add(data:Uint8Array): Promise<ZunoSapiClassStatus> {
+		const el_progress:HTMLElement = document.createElement('progress');
+		const el_span:HTMLElement = document.createElement('span');
+		el_progress.setAttribute('max', '100');
+		this.update.finware.el_span.innerHTML = '';
+		this.update.finware.el_span.appendChild(el_progress);
+		this.update.finware.el_span.appendChild(el_span);
+		el_progress.setAttribute('value', "66");
+		const status:ZunoSapiClassStatus = await this.zuno.updateFinware(data, (percentage:number) => {
+				el_progress.setAttribute('value', percentage.toFixed().toString());
+				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
+				if (percentage >= 100.00) {
+					this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
+				}
+			}
+		);
+		return (status);
+	}
+
+
 	private _update_finware_click(): void {
 		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
 			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
 				ok:false,
 				code:0x0
 			};
-			// const status:ControllerSapiClassStatus = await this._update_finware_click_add(gbl);
-			// out.code = status;
-			// if (status == ControllerSapiClassStatus.OK)
-			// 	out.ok = true;
-			console.log(gbl.length);
+			const status:ZunoSapiClassStatus = await this._update_finware_click_add(gbl);
+			out.code = status;
+			if (status == ZunoSapiClassStatus.OK)
+				out.ok = true;
 			return (out);
 		};
 		this.update.finware_download_xhr((): boolean => {return(this.is_busy());}, process, this.re_begin_func);
