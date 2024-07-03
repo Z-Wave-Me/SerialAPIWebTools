@@ -77,7 +77,7 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		const url:string = this.update.URL_UPDATE_LIST + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
 							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.ZUNO.toString()
 							+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
-							+ arrayToStringHex(board_info.chip_uuid) + '&token=internal';
+							+ arrayToStringHex(board_info.chip_uuid) + '&token=all';//'&token=internal'
 		const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
 			i = 0x0;
 			const razberry_data:Array<PaketUiClassUpdateInfoData> = [];
