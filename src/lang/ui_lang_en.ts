@@ -156,4 +156,6 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.TABLE_NAME_TYPE_TITLE]: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 	[ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER]: "Controller",
 	[ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE]: "Slave",
+	[ControllerUiLangClassId.ERROR_ARGUMENT_FOR_UPDATE_SELECT]: "error arg for update select",
+	[ControllerUiLangClassId.ERROR_ARGUMENT_FIND_TYPE]: "error arg find type",
 };

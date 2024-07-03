@@ -21,12 +21,14 @@ class SlaveUiSectionLicenseClass extends CommonUiSectionClass {
 			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_LICENSE, board_info.status);
 			return (false);
 		}
+		if (board_info.license == undefined) {
+			this.log.errorUnsupport(ControllerUiLangClassId.MESSAGE_READ_LICENSE);
+			return (false);
+		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_LICENSE);
 		const uuid_str_hex:string = arrayToStringHex(board_info.chip_uuid);
 		const more_options_link:string = '<a target="_blank" href="'+ this.URL_LICENSE_MORE_OPTIONS + uuid_str_hex +'">'+ 'link' +'</a>';
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS, ControllerUiLangClassId.TABLE_NAME_LICENSE_MORE_OPTIONS_TITLE, more_options_link, "");
-		if (board_info.license == undefined)
-			return (true);
 		for (key in board_info.license.lic_flags) {
 			if (board_info.license.lic_flags[key].active == true)
 				flag_status = TABLE_NAME_LICENSE_YES;

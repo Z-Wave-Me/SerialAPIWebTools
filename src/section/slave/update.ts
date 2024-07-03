@@ -3,25 +3,17 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut} from "../update"
+import {
+	UpdateUiSectionClass, UpdateUiSectionClassXhrInfoOnloadProcess, UpdateUiSectionClassXhrInfoOnloadEnd, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut,
+	PaketUiClassUpdateInfo, PaketUiClassUpdateInfoData
+} from "../update"
+
 import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave} from "../../other/utilities";
 import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
+import {SapiClassDetectType} from "./../../sapi/sapi";
 
 export {SlaveUiSectionUpdateClass};
 
-interface SlaveUiClassUpdateInfoData
-{
-	version:number;
-	version_name:string;
-	url:string;
-}
-
-interface SlaveUiClassUpdateInfo
-{
-	version:number;
-	version_name:string;
-	data:Array<SlaveUiClassUpdateInfoData>;
-}
 
 class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly zuno:ZunoSapiClass;
@@ -32,7 +24,7 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	private _update_bootloader_click(): void {
 	}
 
-	private async _update_finware_click_add(data:Uint8Array): Promise<ZunoSapiClassStatus> {
+	private async _update_finware_click_add(data:Uint8Array, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
 		const el_progress:HTMLElement = document.createElement('progress');
 		const el_span:HTMLElement = document.createElement('span');
 		el_progress.setAttribute('max', '100');
@@ -46,47 +38,24 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 				if (percentage >= 100.00) {
 					this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
 				}
-			}
+			}, target_type
 		);
 		return (status);
 	}
 
-
 	private _update_finware_click(): void {
-		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
+		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
 			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
 				ok:false,
 				code:0x0
 			};
-			const status:ZunoSapiClassStatus = await this._update_finware_click_add(gbl);
+			const status:ZunoSapiClassStatus = await this._update_finware_click_add(gbl, target_type);
 			out.code = status;
 			if (status == ZunoSapiClassStatus.OK)
 				out.ok = true;
 			return (out);
 		};
 		this.update.finware_download_xhr((): boolean => {return(this.is_busy());}, process, this.re_begin_func);
-	}
-
-	private _update_init_set_select(paket:UpdateUiSectionClassButton, info:SlaveUiClassUpdateInfo, title:ControllerUiLangClassId): void {
-		let i:number, el_option_str:string;
-
-		paket.el_span.innerHTML = "";
-		paket.el_span.appendChild(paket.el_select);
-		i = 0x0;
-		el_option_str = '<option ' + this.update.SELECTOR_DEFAULT + ' value="">'+ info.version_name +'</option>';
-		while (i < info.data.length) {
-			el_option_str = el_option_str + '<option ' + ' value="' + info.data[i].url +'">'+ info.data[i].version_name +'</option>';
-			i++;
-		}
-		paket.el_select.innerHTML = el_option_str;
-		this.common_button_atrr(paket.el_button, '', true);
-		if (info.data.length != 0x0) {
-			paket.el_select.title = this.locale.getLocale(title);
-			return ;
-		}
-		paket.el_select.innerHTML = el_option_str;
-		paket.el_select.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_NOT_UPDATE_SELECT_TITLE);
-		paket.el_select.disabled = true;
 	}
 
 	private _update_init(): boolean {
@@ -101,38 +70,40 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.update.finware.el_span,  this.update.finware.el_button);
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.update.bootloader.el_span, this.update.bootloader.el_button);
-		const app_update_info:SlaveUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), data: []};
-		const bootloader_update_info:SlaveUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), data: []};
+		const app_update_info:PaketUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), type:SapiClassDetectType.ZUNO, data: []};
+		const bootloader_update_info:PaketUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), type:SapiClassDetectType.UNKNOWN, data: []};
+		this.update.finware.info = app_update_info;
+		this.update.bootloader.info = bootloader_update_info;
 		const url:string = this.update.URL_UPDATE_LIST + 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
-							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + this.update.fw_family_zuno.toString()
+							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.ZUNO.toString()
 							+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
 							+ arrayToStringHex(board_info.chip_uuid) + '&token=internal';
 		const process: UpdateUiSectionClassXhrInfoOnloadProcess = (response: UpdateUiSectionClassJsonInfo) => {
 			i = 0x0;
-			const razberry_data:Array<SlaveUiClassUpdateInfoData> = [];
+			const razberry_data:Array<PaketUiClassUpdateInfoData> = [];
 			while (i < response.data.length) {
 				if (response.data[i].type == this.update.JSON_UPDATE_TYPE_FINWARE) {
 					switch (Number(response.data[i].target_fw_family)) {
-						case this.update.fw_family_zuno:
+						case SapiClassDetectType.ZUNO:
 							version = (Number(response.data[i].targetAppVersionMajor) << 0x10) | Number(response.data[i].targetAppVersionMinor);
 							if (version > app_update_info.version) {
 								version_name = versionNumberToStringSlave(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
-								app_update_info.data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
+								app_update_info.data.push({version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.ZUNO});
 							}
 							break ;
-						case this.update.fw_family_razberry:
+						case SapiClassDetectType.RAZBERRY:
 							version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
 							version_name = versionNumberToString(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
-							razberry_data.push({version:version, version_name:version_name, url:response.data[i].fileURL});
+							razberry_data.push({version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.RAZBERRY});
 							break ;
 					}
 				}
 				i++;
 			}
-			app_update_info.data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
+			app_update_info.data.sort(function (a:PaketUiClassUpdateInfoData, b:PaketUiClassUpdateInfoData):number {
 				return (a.version - b.version);
 			});
-			razberry_data.sort(function (a:SlaveUiClassUpdateInfoData, b:SlaveUiClassUpdateInfoData):number {
+			razberry_data.sort(function (a:PaketUiClassUpdateInfoData, b:PaketUiClassUpdateInfoData):number {
 				return (a.version - b.version);
 			});
 			i = 0x0;
@@ -142,8 +113,8 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 			}
 		};
 		const end: UpdateUiSectionClassXhrInfoOnloadEnd = () => {
-			this._update_init_set_select(this.update.finware, app_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_SELECT_TITLE);
-			this._update_init_set_select(this.update.bootloader, bootloader_update_info, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
+			this.update.init_select_finware();
+			this.update.init_select_bootloader();
 		};
 		this.update.info_download_xhr(url, process, end);
 		return (true);

@@ -37,10 +37,12 @@ class ControllerUiClass {
 	private readonly detection:DetectionUiSectionClass;
 	private readonly filters?:SapiSerialOptionFilters[];
 
+	private detect_type:SapiClassDetectType									= SapiClassDetectType.UNKNOWN;
+
 	private _get_all_array_type():all_array_type {
 		let out:all_array_type;
 	
-		switch (this.sapi.type()) {
+		switch (this.detect_type) {
 			case SapiClassDetectType.RAZBERRY:
 				out = this.controller;
 				break;
@@ -64,12 +66,13 @@ class ControllerUiClass {
 			i++;
 		}
 		if (detection == true) {
-				await this.detection.begin();
+			await this.detection.begin();
 			const detect_dict:SapiClassDetect|undefined = await this.detection.detection();
 			if (detect_dict == undefined)
 				return ;
 		}
-		switch (this.sapi.type()) {
+		this.detect_type = this.sapi.type();
+		switch (this.detect_type) {
 			case SapiClassDetectType.ZUNO:
 				await this.zuno.connect();
 				break;

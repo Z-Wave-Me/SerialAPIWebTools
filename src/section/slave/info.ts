@@ -94,11 +94,11 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		this._not_freeze(status, ControllerUiLangClassId.MESSAGE_SET_REGION);
 	}
 
-	private async _region_init(): Promise<boolean> {
+	private _region_init(): boolean {
 		let i:number, el_option_str:string;
 
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
-		const region_info:ZunoSapiClassRegion = await this.zuno.getRegion();
+		const region_info:ZunoSapiClassRegion = this.zuno.getRegion();
 		if (region_info.status != ZunoSapiClassStatus.OK) {
 			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
 			return (false);
@@ -214,7 +214,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		display = false;
 		if (this._board_info() == true)
 			display = true;
-		if (await this._region_init() == true)
+		if (this._region_init() == true)
 			display = true;
 		if (await this._power_init() == true)
 			display = true;

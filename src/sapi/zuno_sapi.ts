@@ -1,5 +1,5 @@
 
-import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
@@ -393,13 +393,13 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
-	public async updateFinware(data:Uint8Array, process:SlaveUpdateProcess|null): Promise<ZunoSapiClassStatus> {
+	public async updateFinware(data:Uint8Array, process:SlaveUpdateProcess|null, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
 		if (this.board_info.status != ZunoSapiClassStatus.OK)
 			return (this.board_info.status);
 		const status:ZunoSapiClassStatus = await this._load_file(this.board_info.boot_offset, data, process);
 		if (status != ZunoSapiClassStatus.OK)
 			return (status);
-		const res:SapiClassDetectWait = await this.sapi.update(this.board_info.boot_offset, 20000);
+		const res:SapiClassDetectWait = await this.sapi.update(this.board_info.boot_offset, target_type);
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as unknown) as ZunoSapiClassStatus);
 		return (ZunoSapiClassStatus.OK);
