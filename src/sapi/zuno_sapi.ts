@@ -414,7 +414,7 @@ class ZunoSapiClass {
 			return (this.param_info.status);
 		if (this.board_info.status != ZunoSapiClassStatus.OK)
 			return (this.board_info.status);
-		if (this.board_info.build_number < 0x3080517)
+		if (this.board_info.version < 0x3080517)
 			return (ZunoSapiClassStatus.UN_SUPPORT);
 		return (ZunoSapiClassStatus.OK)
 	}

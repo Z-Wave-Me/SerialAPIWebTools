@@ -189,7 +189,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		if (status == ZunoSapiClassStatus.OK) {
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
 			await sleep(1000);
-			this.re_begin_func(true);
+			this.re_begin_func(false);
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
