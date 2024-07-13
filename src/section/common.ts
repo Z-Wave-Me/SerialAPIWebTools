@@ -88,7 +88,8 @@ class CommonUiSectionClass extends CommonUiSectionHtmlClass {
 		}
 		return (false);
 	}
-	protected create_tr_el(name:string|ControllerUiLangClassId, title:string|ControllerUiLangClassId, value:string|HTMLElement, action:string|HTMLElement): HTMLElement {
+
+	public create_tr_el(name:string|ControllerUiLangClassId, title:string|ControllerUiLangClassId, value:string|HTMLElement, action:string|HTMLElement): HTMLElement {
 		const el_tr: HTMLElement = document.createElement("tr");
 		const el_td_1: HTMLElement = document.createElement("td");
 		const el_td_2: HTMLElement = document.createElement("td");
