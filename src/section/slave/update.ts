@@ -3,57 +3,17 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut, PaketUiClassUpdateInfo} from "../update"
+import {UpdateUiSectionClass, UpdateUiSectionClassFinwareStatus, PaketUiClassUpdateInfo} from "../update"
 
 import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave} from "../../other/utilities";
 import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
-import {SapiClassDetectType} from "./../../sapi/sapi";
+import {SapiClassDetectType, SapiClassUpdateProcess} from "./../../sapi/sapi";
 
 export {SlaveUiSectionUpdateClass};
 
-
 class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	private readonly zuno:ZunoSapiClass;
-	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
-
 	private readonly update:UpdateUiSectionClass;
-
-	private _update_bootloader_click(): void {
-	}
-
-	private async _update_finware_click_add(data:Uint8Array, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
-		const el_progress:HTMLElement = document.createElement('progress');
-		const el_span:HTMLElement = document.createElement('span');
-		el_progress.setAttribute('max', '100');
-		this.update.finware.el_span.innerHTML = '';
-		this.update.finware.el_span.appendChild(el_progress);
-		this.update.finware.el_span.appendChild(el_span);
-		el_progress.setAttribute('value', "66");
-		const status:ZunoSapiClassStatus = await this.zuno.updateFinware(data, (percentage:number) => {
-				el_progress.setAttribute('value', percentage.toFixed().toString());
-				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
-				if (percentage >= 100.00) {
-					this.update.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
-				}
-			}, target_type
-		);
-		return (status);
-	}
-
-	private _update_finware_click(): void {
-		const process:UpdateUiSectionClassXhrFinwareProcess = async (gbl:Uint8Array, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassXhrFinwareProcessOut> => {
-			const out:UpdateUiSectionClassXhrFinwareProcessOut = {
-				ok:false,
-				code:0x0
-			};
-			const status:ZunoSapiClassStatus = await this._update_finware_click_add(gbl, target_type);
-			out.code = status;
-			if (status == ZunoSapiClassStatus.OK)
-				out.ok = true;
-			return (out);
-		};
-		this.update.finware_download_xhr((): boolean => {return(this.is_busy());}, process, this.re_begin_func);
-	}
 
 	private _update_init(): boolean {
 		this.log.infoStart(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
@@ -81,10 +41,22 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		this.update.end();
 	}
 
+	private async _update_finware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFinwareStatus> {
+		const out:UpdateUiSectionClassFinwareStatus = {
+			ok:false,
+			code:0x0
+		};
+		const status:ZunoSapiClassStatus = await this.zuno.updateFinware(data, process, target_type);
+		out.code = status;
+		if (status == ZunoSapiClassStatus.OK)
+			out.ok = true;
+		return (out);
+	}
+
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, zuno:ZunoSapiClass, log:ControllerUiLogClass, re_begin_func:ControllerUiDefineClassReBeginFunc) {
 		super(el_section, locale, zuno, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.zuno = zuno;
-		this.update = new UpdateUiSectionClass(log, locale, () => { this._update_finware_click();}, () => {this._update_bootloader_click();}, this);
-		this.re_begin_func = re_begin_func;
+		this.update = new UpdateUiSectionClass(log, locale, this, re_begin_func,
+			async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFinwareStatus> => {return(await this._update_finware(data, process, target_type));});
 	}
 }

@@ -81,7 +81,7 @@ class CommonUiSectionClass extends CommonUiSectionHtmlClass {
 	private readonly begin_func:CommonUiSectionClassBegin;
 	private readonly end_func:CommonUiSectionClassEnd;
 
-	protected is_busy(): boolean {
+	public is_busy(): boolean {
 		if (this.management.is_busy() == true) {
 			this.log.warning(ControllerUiLangClassId.MESSAGE_PLEASE_WAIT);
 			return (true);

@@ -1,7 +1,7 @@
 import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
-import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType, SapiClassUpdateProcess, SapiClassDetectType} from "./sapi";
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
@@ -122,10 +122,6 @@ interface ControllerSapiClasstInitData
 }
 
 // ------------------------------------------------------------------------------------------------------
-
-interface ControllerUpdateProcess {
-	(percentage:number):void
-}
 
 interface ControllerOutData
 {
@@ -478,7 +474,7 @@ class ControllerSapiClass {
 		return (intToBytearrayMsbLsb(node, 0x1));
 	}
 
-	private async _load_file(addr:number, data:Uint8Array, process:ControllerUpdateProcess|null): Promise<ControllerSapiClassStatus> {
+	private async _load_file(addr:number, data:Uint8Array, process:SapiClassUpdateProcess|null): Promise<ControllerSapiClassStatus> {
 		let step:number, i:number, percentage:number;
 		step = this.getQuantumSize();
 		percentage = 0x0;
@@ -641,7 +637,7 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
-	public async updateFinware(data:Uint8Array, process:ControllerUpdateProcess|null): Promise<ControllerSapiClassStatus> {
+	public async updateFinware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ControllerSapiClassStatus> {
 		let status:ControllerSapiClassStatus;
 
 		if (this.isRazberry7() == false)

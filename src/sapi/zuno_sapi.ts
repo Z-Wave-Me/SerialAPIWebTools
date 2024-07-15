@@ -1,5 +1,5 @@
 
-import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType, SapiClassUpdateProcess} from "./sapi";
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
@@ -114,7 +114,6 @@ interface ZunoSapiClassBoardInfo
 	license?:ZunoSapiClassBoardInfoLicense;
 }
 // ------------------------------------------------------------------------------------------------------
-type SlaveUpdateProcess = (percentage:number) => void;
 
 class ZunoSapiClass {
 	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
@@ -371,7 +370,7 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
-	private async _load_file(addr:number, data:Uint8Array, process:SlaveUpdateProcess|null): Promise<ZunoSapiClassStatus> {
+	private async _load_file(addr:number, data:Uint8Array, process:SapiClassUpdateProcess|null): Promise<ZunoSapiClassStatus> {
 		let step:number, i:number, percentage:number;
 		step = this.getQuantumSize();
 		percentage = 0x0;
@@ -393,7 +392,7 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
-	public async updateFinware(data:Uint8Array, process:SlaveUpdateProcess|null, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
+	public async updateFinware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
 		if (this.board_info.status != ZunoSapiClassStatus.OK)
 			return (this.board_info.status);
 		const status:ZunoSapiClassStatus = await this._load_file(this.board_info.boot_offset, data, process);

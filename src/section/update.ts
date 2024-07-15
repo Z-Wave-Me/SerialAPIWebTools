@@ -3,17 +3,23 @@ import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionHtmlClass} from "./common"
 import { ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../ui_define"
-import {SapiClassDetectType} from "./../sapi/sapi";
+import {SapiClassDetectType, SapiClassUpdateProcess} from "./../sapi/sapi";
 import {CommonUiSectionClass} from "./common"
 import {versionNumberToString, versionNumberToStringSlave} from "../other/utilities";
 
 export {
-	UpdateUiSectionClass, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassXhrFinwareProcess, UpdateUiSectionClassXhrFinwareProcessOut,
+	UpdateUiSectionClass, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassFinwareStatus, UpdateUiSectionClassFinware,
 	PaketUiClassUpdateInfo, PaketUiClassUpdateInfoData,
 };
 
-type UpdateUiSectionClassXhrFinwareBusy = () => boolean;
-type UpdateUiSectionClassXhrFinwareProcess = (data:Uint8Array, target_type:SapiClassDetectType) => Promise<UpdateUiSectionClassXhrFinwareProcessOut>;
+interface UpdateUiSectionClassFinwareStatus
+{
+	ok:boolean;
+	code:number;
+}
+
+type UpdateUiSectionClassFinware = (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType) => Promise<UpdateUiSectionClassFinwareStatus>;
+
 type UpdateUiSectionClassButtonClick =  () => void;
 
 
@@ -32,12 +38,6 @@ interface PaketUiClassUpdateInfo
 	version_name:string;
 	type:SapiClassDetectType;
 	data:Array<PaketUiClassUpdateInfoData>;
-}
-
-interface UpdateUiSectionClassXhrFinwareProcessOut
-{
-	ok:boolean;
-	code:number;
 }
 
 interface UpdateUiSectionClassJson
@@ -69,8 +69,6 @@ interface UpdateUiSectionClassButton
 class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 	private readonly URL_UPDATE:string								= "https://service.z-wave.me/expertui/uzb/";
 	private readonly URL_UPDATE_LIST:string							= this.URL_UPDATE + "?";
-	private readonly URL_LICENSE_MORE_OPTIONS:string				= "https://z-wave.me/hardware-capabilities/?uuid=";
-	private readonly URL_LICENSE_SERVISE:string						= "https://service.z-wave.me/hardware/capabilities/?uuid=";
 
 	private readonly JSON_UPDATE_DISABLED:string					= "disabled";
 	private readonly JSON_UPDATE_TYPE_FINWARE:string				= "firmware";
@@ -97,6 +95,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 
 	private readonly log:ControllerUiLogClass;
 	private readonly commom_ui:CommonUiSectionClass;
+	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
 	readonly finware:UpdateUiSectionClassButton;
 	readonly bootloader:UpdateUiSectionClassButton;
@@ -128,7 +127,26 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this._progress(info, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
 	}
 
-	private _download_xhr_start(paket:UpdateUiSectionClassButton, busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
+	private async _update_process(data:Uint8Array, target_type:SapiClassDetectType, update_finware:UpdateUiSectionClassFinware): Promise<UpdateUiSectionClassFinwareStatus> {
+		const el_progress:HTMLElement = document.createElement('progress');
+		const el_span:HTMLElement = document.createElement('span');
+		el_progress.setAttribute('max', '100');
+		this.finware.el_span.innerHTML = '';
+		this.finware.el_span.appendChild(el_progress);
+		this.finware.el_span.appendChild(el_span);
+		el_progress.setAttribute('value', "66");
+		const status:UpdateUiSectionClassFinwareStatus = await update_finware(data, (percentage:number) => {
+				el_progress.setAttribute('value', percentage.toFixed().toString());
+				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
+				if (percentage >= 100.00) {
+					this.progress_finware(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
+				}
+			}, target_type
+		);
+		return (status);
+	}
+
+	private _download_xhr_start(paket:UpdateUiSectionClassButton, update_finware:UpdateUiSectionClassFinware): void {
 		let i:number, type:SapiClassDetectType|undefined;
 
 		const info:PaketUiClassUpdateInfo|undefined = paket.info;
@@ -172,22 +190,22 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 				const gbl:Uint8Array = new Uint8Array(this.finware_xhr.response);
 				const fun_bus_timer:TimerHandler = async () => {
 					this.finware_timer_id = undefined;
-					if (busy() == true) {
+					if (this.commom_ui.is_busy() == true) {
 						this.finware_timer_id = window.setTimeout(fun_bus_timer, this.bus_timout);
 						return ;
 					}
 					this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
-					const status:UpdateUiSectionClassXhrFinwareProcessOut = await process(gbl, type);
+					const status:UpdateUiSectionClassFinwareStatus = await this._update_process(gbl, type, update_finware);
 					if (status.ok == false) {
 						this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE, status.code);
 						paket.el_span.innerHTML = "";
 						paket.el_span.appendChild(paket.el_select);
 						this.common_button_atrr(paket.el_button, '', false);
-						re_begin_func(true);
+						this.re_begin_func(true);
 						return ;
 					}
 					this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_START_FINWARE);
-					re_begin_func(false);
+					this.re_begin_func(false);
 					return ;
 
 				};
@@ -376,7 +394,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_TITLE, this.finware.el_span,  this.finware.el_button);
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.bootloader.el_span, this.bootloader.el_button);
-		url = this.URL_UPDATE_LIST + url + '&token=internal';//'&token=internal' '&token=all';
+		url = this.URL_UPDATE_LIST + url + '&token=all';//'&token=internal' '&token=all';
 		const fun_xhr_timer:TimerHandler = () => {
 			this.info_xhr_timer_id = undefined;
 			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
@@ -412,17 +430,15 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
 	}
 
-	public finware_download_xhr(busy:UpdateUiSectionClassXhrFinwareBusy, process:UpdateUiSectionClassXhrFinwareProcess, re_begin_func:ControllerUiDefineClassReBeginFunc): void {
-		this._download_xhr_start(this.finware, busy, process, re_begin_func);
-	}
-
-	constructor(log:ControllerUiLogClass, locale:ControllerUiLangClass, finware_click:UpdateUiSectionClassButtonClick, bootloader_click:UpdateUiSectionClassButtonClick, commom_ui:CommonUiSectionClass) {
+	constructor(log:ControllerUiLogClass, locale:ControllerUiLangClass, commom_ui:CommonUiSectionClass, re_begin_func:ControllerUiDefineClassReBeginFunc, update_finware:UpdateUiSectionClassFinware
+	) {
 		super(locale);
 		this.log = log;
 		this.commom_ui = commom_ui;
-		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, finware_click,
+		this.re_begin_func = re_begin_func;
+		this.finware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON, () => {this._download_xhr_start(this.finware, update_finware);},
 			(event:Event) => {this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_FINWARE_BUTTON_TITLE, this.finware);});
-		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, bootloader_click,
+		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, () => {},
 			(event:Event) =>{ this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE, this.bootloader);});
 	}
 }

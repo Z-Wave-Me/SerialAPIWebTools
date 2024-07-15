@@ -1,11 +1,12 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
 
-export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc, SapiClassDetectWait};
+export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc, SapiClassDetectWait, SapiClassUpdateProcess};
 
 interface SapiClassDetectTypeFunc {
 	(): Promise<boolean>
 }
 
+type SapiClassUpdateProcess = (percentage:number) => void;
 
 enum SapiClassDetectType
 {
