@@ -637,7 +637,7 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
-	public async updateFinware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ControllerSapiClassStatus> {
+	public async updateFirmware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ControllerSapiClassStatus> {
 		let status:ControllerSapiClassStatus;
 
 		if (this.isRazberry7() == false)

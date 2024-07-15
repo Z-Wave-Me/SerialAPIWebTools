@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoardInfo, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {UpdateUiSectionClass, UpdateUiSectionClassFinwareStatus, PaketUiClassUpdateInfo} from "../update"
+import {UpdateUiSectionClass, UpdateUiSectionClassFirmwareStatus, PaketUiClassUpdateInfo} from "../update"
 
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 import {SapiClassDetectType, SapiClassUpdateProcess} from "./../../sapi/sapi";
@@ -51,12 +51,12 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		this.update.end();
 	}
 
-	private async _update_finware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFinwareStatus> {
-		const out:UpdateUiSectionClassFinwareStatus = {
+	private async _update_firmware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFirmwareStatus> {
+		const out:UpdateUiSectionClassFirmwareStatus = {
 			ok:false,
 			code:0x0
 		};
-		const status:ControllerSapiClassStatus = await this.razberry.updateFinware(data, process, target_type);
+		const status:ControllerSapiClassStatus = await this.razberry.updateFirmware(data, process, target_type);
 		out.code = status;
 		if (status == ControllerSapiClassStatus.OK)
 			out.ok = true;
@@ -67,6 +67,6 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		super(el_section, locale, razberry, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.razberry = razberry;
 		this.update = new UpdateUiSectionClass(log, locale, this, re_begin_func,
-			async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFinwareStatus> => {return(await this._update_finware(data, process, target_type));});
+			async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFirmwareStatus> => {return(await this._update_firmware(data, process, target_type));});
 	}
 }

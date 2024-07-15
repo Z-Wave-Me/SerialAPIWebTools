@@ -392,7 +392,7 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
-	public async updateFinware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
+	public async updateFirmware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ZunoSapiClassStatus> {
 		if (this.board_info.status != ZunoSapiClassStatus.OK)
 			return (this.board_info.status);
 		const status:ZunoSapiClassStatus = await this._load_file(this.board_info.boot_offset, data, process);
