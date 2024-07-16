@@ -1,7 +1,7 @@
 import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
-import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType, SapiClassUpdateProcess, SapiClassDetectType} from "./sapi";
+import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType, SapiClassUpdateProcess, SapiClassDetectType, SapiClassDetectWait} from "./sapi";
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
@@ -638,16 +638,14 @@ class ControllerSapiClass {
 	}
 
 	public async updateFirmware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<ControllerSapiClassStatus> {
-		let status:ControllerSapiClassStatus;
-
 		if (this.isRazberry7() == false)
 			return (ControllerSapiClassStatus.NOT_RAZBERRY);
-		status = await this._load_file(0x3A000, data, process);
+		const status:ControllerSapiClassStatus = await this._load_file(0x3A000, data, process);
 		if (status != ControllerSapiClassStatus.OK)
 			return (status);
-		status = await this.softReset(20000);
-		if (status != ControllerSapiClassStatus.OK)
-			return (status);
+		const res:SapiClassDetectWait = await this.sapi.update(0x3A000, target_type);
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ControllerSapiClassStatus);
 		return (ControllerSapiClassStatus.OK);
 	}
 

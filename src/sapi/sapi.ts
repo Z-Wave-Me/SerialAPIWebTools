@@ -865,11 +865,36 @@ class SapiClass {
 		out.status = SapiClassStatus.UPDATE_TIMOUT;
 	}
 
+	private async _update_wait_razberry(target_type:SapiClassDetectType, out:SapiClassDetectWait): Promise<void> {
+		const wait_timeout:number = Date.now() + 30000;
+
+		if (target_type == SapiClassDetectType.RAZBERRY) {
+			await sleep(20000);
+			const out_detect:SapiClassDetect = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN, baudrate:0x0};
+			await this._detect(out_detect, [115200], null);
+			out.type = out_detect.type;
+			out.status = out_detect.status;
+			return ;
+		}
+		while (wait_timeout > Date.now()) {
+			const res:SapiClassRet = await this._recvIncomingRequest(1000);
+			await this._detect_rcv(res, out);
+			if (out.status == SapiClassStatus.UPDATE_PROCESS)
+				continue ;
+			return ;
+		}
+		out.status = SapiClassStatus.UPDATE_TIMOUT;
+	}
+
 	private async _update(addr:number, target_type:SapiClassDetectType, out:SapiClassDetectWait): Promise<void> {
 		switch (this.detect_type) {
 			case SapiClassDetectType.ZUNO:
 				await this._checkBootImage(addr);
 				await this._update_wait_zuno(target_type, out);
+				break ;
+			case SapiClassDetectType.RAZBERRY:
+				await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, 200)
+				await this._update_wait_razberry(target_type, out);
 				break ;
 			default:
 				out.status = SapiClassStatus.UPDATE_UNK;
