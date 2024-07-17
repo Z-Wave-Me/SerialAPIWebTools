@@ -26,7 +26,9 @@ class ControllerUiLogClass {
 		return (txt);
 	}
 
-	public info(txt:string): void {
+	public info(txt:string|ControllerUiLangClassId): void {
+		if (typeof txt !== "string")
+			txt = this.locale.getLocale(txt);
 		this._log('<div class="ZUnoRazberryModal_color_info">' + txt + "</div>");
 	}
 

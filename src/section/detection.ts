@@ -13,14 +13,10 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	private readonly re_begin_func:ControllerUiDefineClassReBeginFunc;
 
 	private readonly el_container:HTMLElement								= document.createElement("span");
-	private readonly LOCAL_STORAGE_KEY_BAUDRATE:string						= ControllerUiDefineClass.NAME_APP + '_baudrate_cache';
-	private readonly LOCAL_STORAGE_DETECTION_SYNC_MANUAL:string				= ControllerUiDefineClass.NAME_APP + '_detection_sync_manual';
-	private readonly LOCAL_STORAGE_VALUE_TRUE:string						= 'true';
-	private readonly LOCAL_STORAGE_VALUE_FALSE:string						= 'false';
 
 	private _get_detection_sync_manual():boolean {
-		const detection_sync_manual:string|null = localStorage.getItem(this.LOCAL_STORAGE_DETECTION_SYNC_MANUAL);
-		if (detection_sync_manual === this.LOCAL_STORAGE_VALUE_TRUE)
+		const detection_sync_manual:string|null = localStorage.getItem(ControllerUiDefineClass.KEY_DETECTION_SYNC_MANUAL);
+		if (detection_sync_manual === ControllerUiDefineClass.STORAGE_VALUE_TRUE)
 			return (true);
 		return (false);
 	}
@@ -29,13 +25,13 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
 		if (el_target == null)
 			return ;
-		localStorage.setItem(this.LOCAL_STORAGE_DETECTION_SYNC_MANUAL, ((el_target.checked == true) ? this.LOCAL_STORAGE_VALUE_TRUE: this.LOCAL_STORAGE_VALUE_FALSE));
+		localStorage.setItem(ControllerUiDefineClass.KEY_DETECTION_SYNC_MANUAL, ((el_target.checked == true) ? ControllerUiDefineClass.STORAGE_VALUE_TRUE: ControllerUiDefineClass.STORAGE_VALUE_FALSE));
 	}
 
 	private _get_baudrate_cache():Array<number> {
 		let baudrate:Array<number>, i:number;
 
-		const baudrate_str:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_BAUDRATE);
+		const baudrate_str:string|null = localStorage.getItem(ControllerUiDefineClass.KEY_BAUDRATE);
 		if (baudrate_str == null)
 			return ([]);
 		try {
@@ -59,7 +55,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 		if (i != -1)
 			baudrate_array.splice(i, 0x1);
 		baudrate_array.unshift(baudrate);
-		localStorage.setItem(this.LOCAL_STORAGE_KEY_BAUDRATE, JSON.stringify(baudrate_array));
+		localStorage.setItem(ControllerUiDefineClass.KEY_BAUDRATE, JSON.stringify(baudrate_array));
 	}
 
 	private async _click_start_stop_question(): Promise<boolean> {

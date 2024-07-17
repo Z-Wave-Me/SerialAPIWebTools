@@ -5,6 +5,20 @@ import {HardwareChipClass} from "../hardware/chip"
 
 export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower};
 
+enum ELearnStatus
+{
+	ELEARNSTATUS_ASSIGN_COMPLETE,             /**< Internal status. Not passed to application. */
+	ELEARNSTATUS_ASSIGN_NODEID_DONE,          /**< Internal status. Node ID have been assigned */
+	ELEARNSTATUS_ASSIGN_RANGE_INFO_UPDATE,    /**< Internal status. Node is doing Neighbor discovery */
+	ELEARNSTATUS_ASSIGN_INFO_PENDING,         /**< Internal status. Not passed to application. */
+	ELEARNSTATUS_ASSIGN_WAITING_FOR_FIND,     /**< Internal status. Not passed to application. */
+	ELEARNSTATUS_SMART_START_IN_PROGRESS,     /**< Passed to application when Smart Start learn mode goes into progress. */
+	ELEARNSTATUS_LEARN_IN_PROGRESS,           /**< Passed to application when classic learn mode goes into progress. */
+	ELEARNSTATUS_LEARN_MODE_COMPLETED_TIMEOUT,/**< Passed to application if classic learn mode times out. */
+	ELEARNSTATUS_LEARN_MODE_COMPLETED_FAILED,  /**< Passed to application if learn mode failed. */
+	ELEARNSTATUS_PROCESS = -1,
+}
+
 interface ZunoSapiClassPower
 {
 	status:ZunoSapiClassStatus;
@@ -30,7 +44,11 @@ enum ZunoSapiClassStatus
 	WRONG_STATUS,
 	NO_FREEZE,
 	INVALID_ARG,
+	TIMOUT,
 	UN_SUPPORT,
+	TIMOUT_FORCE_RESTART,
+	LEARN_EXLUDE,
+	LEARN_INCLUDE,
 }
 
 interface ZunoSapiClassBoardInfoZwDataProt
@@ -426,6 +444,14 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK)
 	}
 
+	public isSupportIncludeExclude():ZunoSapiClassStatus {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info.version < 0x30C108C)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		return (ZunoSapiClassStatus.OK)
+	}
+
 	public getRegion(): ZunoSapiClassRegion {
 		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:this.param_info.freq_str, region_array:this.region_array};
 		if (out.status != ZunoSapiClassStatus.OK)
@@ -473,6 +499,115 @@ class ZunoSapiClass {
 		const raw:Array<number> =  this.param_info.raw;
 		raw[0x2] = power;
 		return (await this._apply_param(raw));
+	}
+
+	public async enableNif(): Promise<ZunoSapiClassStatus> {
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x0A])
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	public async enableEvent(): Promise<ZunoSapiClassStatus> {
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x09, 0x1])
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	private async _enableLearn_get_status(): Promise<ELearnStatus> {
+		const res:SapiClassRet = await this.sapi.recvIncomingRequest(1000);
+		if (res.status != SapiClassStatus.OK)
+			return (ELearnStatus.ELEARNSTATUS_PROCESS);
+		if (res.cmd != SapiClassFuncId.FUNC_ID_NVM_EXT_READ_LONG_BUFFER)
+			return (ELearnStatus.ELEARNSTATUS_PROCESS);
+		if (res.data.length < 0x3)
+			return (ELearnStatus.ELEARNSTATUS_PROCESS);
+		if (res.data[0x1] != 0xA0)
+			return (ELearnStatus.ELEARNSTATUS_PROCESS);
+		console.log(res.data[0x2]);
+		return (res.data[0x2]);
+	}
+
+	private async _enableLearn_include(): Promise<ZunoSapiClassStatus> {
+		let retries:number;
+	
+		const wait_timeout:number = Date.now() + ((30 + 0x1) * 1000);
+		retries = 0x0;
+		while (wait_timeout > Date.now()) {
+			switch (await this._enableLearn_get_status()) {
+				case ELearnStatus.ELEARNSTATUS_PROCESS:
+					retries++;
+					break ;
+				case ELearnStatus.ELEARNSTATUS_ASSIGN_NODEID_DONE:
+					retries = 0x0;
+					break ;
+				default:
+					return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+					break ;
+				
+			}
+			if (retries >= 0x3)
+				return (ZunoSapiClassStatus.LEARN_INCLUDE);
+		}
+		return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+	}
+
+	private async _enableLearn_exlude(): Promise<ZunoSapiClassStatus> {
+		let retries:number;
+
+		retries = 0x0;
+		while (retries < 0x3) {
+			retries++;
+			switch (await this._enableLearn_get_status()) {
+				case ELearnStatus.ELEARNSTATUS_ASSIGN_COMPLETE:
+					break ;
+				case ELearnStatus.ELEARNSTATUS_PROCESS:
+					break ;
+				case ELearnStatus.ELEARNSTATUS_ASSIGN_NODEID_DONE:
+					return (await this._enableLearn_include());
+					break ;
+			}
+		}
+		return (ZunoSapiClassStatus.LEARN_EXLUDE);
+	}
+
+	public async enableLearn(timeout:number): Promise<ZunoSapiClassStatus> {
+		let detect_wait:SapiClassDetectWait, status:ZunoSapiClassStatus;
+
+		timeout = timeout & 0xFF;
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x07, timeout & 0xFF, 0x1 & 0xFF])
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		const wait_timeout:number = Date.now() + ((timeout + 0x1) * 1000);
+		this.lock();
+		while (wait_timeout > Date.now()) {
+			switch (await this._enableLearn_get_status()) {
+				case ELearnStatus.ELEARNSTATUS_LEARN_MODE_COMPLETED_TIMEOUT:
+					this.unlock();
+					detect_wait = await this.sapi.detect_rcv();
+					if (detect_wait.status != SapiClassStatus.OK)
+						return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+					return (ZunoSapiClassStatus.TIMOUT);
+					break ;
+				case ELearnStatus.ELEARNSTATUS_LEARN_MODE_COMPLETED_FAILED:
+					this.unlock();
+					return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+					break ;
+				case ELearnStatus.ELEARNSTATUS_ASSIGN_COMPLETE:
+					status = await this._enableLearn_exlude();
+					this.unlock();
+					return (status);
+					break ;
+				case ELearnStatus.ELEARNSTATUS_ASSIGN_NODEID_DONE:
+					status = await this._enableLearn_include();
+					this.unlock();
+					return (status);
+					break ;
+			}
+		}
+		this.unlock();
+		return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
 	}
 
 	public async setDefault(): Promise<ZunoSapiClassStatus> {

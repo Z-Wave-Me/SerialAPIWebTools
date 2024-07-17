@@ -5,15 +5,22 @@ import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {versionNumberToStringSlave, arrayToStringHex, numberToStringHex, conv2Decimal, sleep} from "../../other/utilities";
 import { QRCode, QRCodeOption, QRErrorCorrectLevel } from "./../../qr_code/qrcode";
-import {ControllerUiDefineClassReBeginFunc} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
 
 export {SlaveUiSectionInfoClass};
 
 class SlaveUiSectionInfoClass extends CommonUiSectionClass {
+	private readonly INCLUDE_EXLUDE_DEFAULT:number							= 30;
+	private readonly INCLUDE_EXLUDE_MIN:number								= 5;
+	private readonly INCLUDE_EXLUDE_MAX:number								= 255;
+
 	private region_current:string											= '';
 	private region_new:string												= '';
 	private power_current:number											= 0x0;
 	private power_new:number												= 0x0;
+
+	private readonly el_container_include_exlude:HTMLElement				= document.createElement("span");
+	private readonly el_timout_include_exlude:HTMLElement					= document.createElement("span");
 
 	private readonly region_el_button:HTMLButtonElement;
 	private readonly power_el_button:HTMLButtonElement;
@@ -122,6 +129,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		el_select.innerHTML = el_option_str;
 		el_select.addEventListener("change", (event:Event) => {this._region_change(event);});
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_REGION, ControllerUiLangClassId.TABLE_NAME_REGION_TITLE, el_select, this.region_el_button);
+		this.common_button_atrr(this.region_el_button, ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON_TITLE, (this.region_new == this.region_current) ? true:false);
 		return (true);
 	}
 
@@ -169,6 +177,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		el_value.appendChild(el_input);
 		el_value.appendChild(document.createElement("span"));
 		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_POWER, ControllerUiLangClassId.TABLE_NAME_POWER_TITLE, el_value, this.power_el_button);
+		this.common_button_atrr(this.power_el_button, ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON_TITLE, (this.power_new == this.power_current) ? true:false);
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_POWER);
 		return (true);
 	}
@@ -188,11 +197,176 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, false);
 		if (status == ZunoSapiClassStatus.OK) {
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+			this.zuno.lock();
 			await sleep(1000);
-			this.re_begin_func(false);
+			this.zuno.unlock();
+			this.re_begin_func(true);
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
+	}
+
+	private _include_exclude_get_test_timout(info_timout:string|null): number {
+		return (this.INCLUDE_EXLUDE_DEFAULT);
+		let value:number;
+
+		if (info_timout == null)
+			return (this.INCLUDE_EXLUDE_DEFAULT);
+		try {
+			value = Number(info_timout);
+		} catch (error) {
+			return (this.INCLUDE_EXLUDE_DEFAULT);
+		}
+		if (value < this.INCLUDE_EXLUDE_MIN)
+			value = this.INCLUDE_EXLUDE_MIN;
+		else if (value > this.INCLUDE_EXLUDE_MAX)
+			value = this.INCLUDE_EXLUDE_MAX;
+		return (value);
+	}
+
+	private _include_exclude_get_storage(): number {
+		return (this._include_exclude_get_test_timout(localStorage.getItem(ControllerUiDefineClass.KEY_INCLUDE_EXLUDE_TIMOUT)));
+	}
+
+	private _include_exclude_change(event:Event): void {
+		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
+		if (el_target == null)
+			return ;
+		localStorage.setItem(ControllerUiDefineClass.KEY_INCLUDE_EXLUDE_TIMOUT, this._include_exclude_get_test_timout(el_target.value).toString());
+	}
+
+	private _include_exclude_progress(text:ControllerUiLangClassId): void {
+		this.el_container_include_exlude.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
+	}
+
+	private _include_exclude_message_info(text:ControllerUiLangClassId): void {
+		this.el_container_include_exlude.innerHTML = '<div class="ZUnoRazberryModal_color_info">' +  this.locale.getLocale(text) +'</div>';
+	}
+
+	private _include_exclude_message_warning(text:ControllerUiLangClassId): void {
+		this.el_container_include_exlude.innerHTML = '<div class="ZUnoRazberryModal_color_warning">' +  this.locale.getLocale(text) +'</div>';
+	}
+
+	private _include_exclude_timout_show(): void {
+		this.el_container_include_exlude.innerHTML = '';
+		// this.el_container_include_exlude.appendChild(this.el_timout_include_exlude);
+	}
+
+	private _include_exclude_click_end(el_target:HTMLButtonElement, txt:ControllerUiLangClassId|null, status:ZunoSapiClassStatus): void {
+		if (txt!= null)
+			this.log.errorFalledCode(txt, status);
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE, false);
+		this._include_exclude_timout_show();
+	}
+
+	private async _include_exclude_click_start_stop_question(): Promise<boolean> {
+		const promise:Promise<boolean> = new Promise((resolve) => {
+			this.el_container_include_exlude.innerHTML = '';
+			const el_span:HTMLSpanElement = document.createElement("span");
+			el_span.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE);
+			el_span.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE_TITLE);
+			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
+			const el_button_continue:HTMLButtonElement = document.createElement("button");
+			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_CONTINUE);
+			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE);
+			el_button_continue.type = "button";
+			el_button_continue.className = "ZUnoRazberryModalContentSection_migration_action_button";
+			const el_button_stop:HTMLButtonElement = document.createElement("button");
+			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_STOP);
+			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_STOP_TITLE);
+			el_button_stop.type = "button";
+			el_button_stop.className = "ZUnoRazberryModalContentSection_migration_action_button";
+			el_button_stop.addEventListener("click", async () => { resolve(false)});
+			el_button_continue.addEventListener("click", async () => { resolve(true)});
+			this.el_container_include_exlude.appendChild(el_span);
+			this.el_container_include_exlude.appendChild(el_button_continue);
+			this.el_container_include_exlude.appendChild(el_button_stop);
+		});
+		return (promise);
+	}
+
+	private async _include_exclude_click(event:Event): Promise<void> {
+		let status:ZunoSapiClassStatus;
+
+		if (this.is_busy() == true)
+			return ;
+		const el_target:HTMLButtonElement|null = this.event_get_element_button(event);
+		if (el_target == null)
+			return ;
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE, true);
+		const excluding_question:boolean = await this._include_exclude_click_start_stop_question();
+		if (excluding_question == false) {
+			this._include_exclude_click_end(el_target, null, ZunoSapiClassStatus.OK);
+			return ;
+		}
+		this._include_exclude_progress(ControllerUiLangClassId.INCLUDE_EXLUDE_WAIT);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
+		status = await this.zuno.enableNif();
+		if (status != ZunoSapiClassStatus.OK) {
+			this._include_exclude_click_end(el_target, ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT, status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
+		status = await this.zuno.enableEvent();
+		if (status != ZunoSapiClassStatus.OK) {
+			this._include_exclude_click_end(el_target, ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN, status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_START_LEARN);
+		status = await this.zuno.enableLearn(this._include_exclude_get_storage());
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_START_LEARN);
+		switch (status) {
+			case ZunoSapiClassStatus.TIMOUT:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
+				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
+				await sleep(3000);
+				break ;
+			case ZunoSapiClassStatus.TIMOUT_FORCE_RESTART:
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				await sleep(3000);
+				this.re_begin_func(true);
+				return ;
+				break ;
+			default:
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				await sleep(3000);
+				this.re_begin_func(true);
+				return ;
+				break ;
+			case ZunoSapiClassStatus.LEARN_EXLUDE:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
+				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
+				await sleep(3000);
+				this.re_begin_func(false);
+				return ;
+				break ;
+			case ZunoSapiClassStatus.LEARN_INCLUDE:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_INCLUDE_RESTART);
+				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_INCLUDE_RESTART);
+				await sleep(3000);
+				this.re_begin_func(false);
+				return ;
+				break ;
+		}
+		this._include_exclude_click_end(el_target, null, ZunoSapiClassStatus.OK);
+	}
+
+	private _include_exclude_init(): boolean {
+		const status:ZunoSapiClassStatus = this.zuno.isSupportIncludeExclude();
+		if (status != ZunoSapiClassStatus.OK)
+			return (false);
+		const el_button:HTMLButtonElement = document.createElement("button");
+		el_button.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE);
+		el_button.type = "button";
+		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON);
+		el_button.addEventListener("click", (event:Event) => {this._include_exclude_click(event);});
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_TITLE, this.el_container_include_exlude, el_button);
+		this._include_exclude_timout_show();
+		return (true);
 	}
 
 	private _controller_default_init(): boolean {
@@ -218,13 +392,15 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 			display = true;
 		if (await this._power_init() == true)
 			display = true;
+		if (this._include_exclude_init() == true)
+			display = true;
 		if (this._controller_default_init() == true)
 			display = true;
 		return (display);
 	}
 
 	private async _end(): Promise<void> {
-
+		this.el_container_include_exlude.innerHTML = "";
 	}
 
 	private _constructor_button(text:ControllerUiLangClassId, click:EventListener):HTMLButtonElement {
@@ -241,5 +417,15 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		this.re_begin_func = re_begin_func;
 		this.power_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_POWER_BUTTON, () => {this._power_click();});
 		this.region_el_button = this._constructor_button(ControllerUiLangClassId.TABLE_NAME_REGION_BUTTON, () => {this._region_click();});
+		const el_input:HTMLInputElement = document.createElement("input");
+		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_SELECT_TITLE);
+		el_input.type = "number";
+		el_input.min = this.INCLUDE_EXLUDE_MIN.toString();
+		el_input.max = this.INCLUDE_EXLUDE_MAX.toString();
+		el_input.step = "1";
+		el_input.value = this._include_exclude_get_storage().toString();
+		el_input.addEventListener("change", (event:Event) => {this._include_exclude_change(event);});
+		this.el_timout_include_exlude.appendChild(el_input);
+		this.el_timout_include_exlude.appendChild(document.createElement("span"));
 	}
 }

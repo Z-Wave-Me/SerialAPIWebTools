@@ -924,6 +924,40 @@ class SapiClass {
 		return (out);
 	}
 
+	public async _detect_rcv_add(out:SapiClassDetectWait): Promise<void> {
+		const wait_timeout:number = Date.now() + 3000;
+		while (wait_timeout > Date.now()) {
+			const res:SapiClassRet = await this._recvIncomingRequest(1000);
+			await this._detect_rcv(res, out);
+			if (out.status == SapiClassStatus.UPDATE_PROCESS)
+				continue ;
+			return ;
+		}
+	}
+
+	public async detect_rcv(): Promise<SapiClassDetectWait> {
+		const out:SapiClassDetectWait = {status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN};
+		if (this.busy() == true) {
+			out.status = SapiClassStatus.PORT_BUSY;
+			return (out);
+		}
+		if (this.detect_type == SapiClassDetectType.UNKNOWN) {
+			out.status = SapiClassStatus.DETECTED_UNC;
+			return (out);
+		}
+		this.b_busy = true;
+		const detect_type:SapiClassDetectType = this.detect_type;
+		await this._detect_rcv_add(out);
+		this.detect_type = out.type;
+		this.b_busy = false;
+		if (out.type != detect_type) {
+			out.status = SapiClassStatus.DETECTED_TARGET_TYPE;
+			return (out);
+		}
+		return (out);
+	}
+
+
 	constructor() {
 	}
 

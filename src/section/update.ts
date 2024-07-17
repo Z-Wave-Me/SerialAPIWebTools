@@ -73,10 +73,6 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 	private readonly JSON_UPDATE_DISABLED:string					= "disabled";
 	private readonly JSON_UPDATE_TYPE_FIRMWARE:string				= "firmware";
 
-	private readonly LOCAL_STORAGE_KEY_UPDATE_BETA:string			= ControllerUiDefineClass.NAME_APP + '_update_beta';
-	private readonly LOCAL_STORAGE_VALUE_TRUE:string				= 'true';
-	private readonly LOCAL_STORAGE_VALUE_FALSE:string				= 'false';
-
 	private readonly SELECTOR_BETA:string							= 'data-beta';
 	private readonly SELECTOR_DEFAULT:string						= 'data-default';
 
@@ -288,8 +284,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 	private _update_beta_change_all(): void {
 		let beta:boolean;
 
-		const update_beta:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA);
-		if (update_beta === this.LOCAL_STORAGE_VALUE_TRUE)
+		const update_beta:string|null = localStorage.getItem(ControllerUiDefineClass.KEY_UPDATE_BETA);
+		if (update_beta === ControllerUiDefineClass.STORAGE_VALUE_TRUE)
 			beta = true;
 		else
 			beta = false;
@@ -305,7 +301,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
 		if (el_target == null)
 			return ;
-		localStorage.setItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA, ((el_target.checked == true) ? this.LOCAL_STORAGE_VALUE_TRUE: this.LOCAL_STORAGE_VALUE_FALSE));
+		localStorage.setItem(ControllerUiDefineClass.KEY_UPDATE_BETA, ((el_target.checked == true) ? ControllerUiDefineClass.STORAGE_VALUE_TRUE: ControllerUiDefineClass.STORAGE_VALUE_FALSE));
 		this._update_beta_change_all();
 	}
 
@@ -384,17 +380,17 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 	public info_download_xhr(url:string, app:PaketUiClassUpdateInfo, boot:PaketUiClassUpdateInfo): void {
 		this.firmware.info = app;
 		this.bootloader.info = boot;
-		const update_beta:string|null = localStorage.getItem(this.LOCAL_STORAGE_KEY_UPDATE_BETA);
+		const update_beta:string|null = localStorage.getItem(ControllerUiDefineClass.KEY_UPDATE_BETA);
 		const el_input:HTMLInputElement = document.createElement("input");
 		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_SELECT_TITLE);
 		el_input.type = "checkbox";
-		if (update_beta === this.LOCAL_STORAGE_VALUE_TRUE)
+		if (update_beta === ControllerUiDefineClass.STORAGE_VALUE_TRUE)
 			el_input.checked = true;
 		el_input.addEventListener("change", (event:Event) => {this._update_beta_change(event);});
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_TITLE, this.firmware.el_span,  this.firmware.el_button);
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.bootloader.el_span, this.bootloader.el_button);
-		url = this.URL_UPDATE_LIST + url + '&token=all';//'&token=internal' '&token=all';
+		url = this.URL_UPDATE_LIST + url + '&token=internal';//'&token=internal' '&token=all';
 		const fun_xhr_timer:TimerHandler = () => {
 			this.info_xhr_timer_id = undefined;
 			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
