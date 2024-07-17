@@ -390,7 +390,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_TITLE, this.firmware.el_span,  this.firmware.el_button);
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.bootloader.el_span, this.bootloader.el_button);
-		url = this.URL_UPDATE_LIST + url + '&token=internal';//'&token=internal' '&token=all';
+		url = this.URL_UPDATE_LIST + url + '&token=all';//'&token=internal' '&token=all';
 		const fun_xhr_timer:TimerHandler = () => {
 			this.info_xhr_timer_id = undefined;
 			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
