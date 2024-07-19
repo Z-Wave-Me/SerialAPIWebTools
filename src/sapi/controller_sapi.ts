@@ -5,6 +5,8 @@ import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSeri
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
 
+import {HardwareChipClass} from "../hardware/chip"
+
 export {ControllerSapiClassLearnMode, ControllerSapiClasstInitData, ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassCapabilities, ControllerSapiClassRegion, ControllerSapiClassLicense, ControllerSapiClassBoardInfo, ControllerSapiClassPower, ControllerSapiClasstNetworkIDs};
 
 interface ControllerSapiClassLearnMode
@@ -106,6 +108,10 @@ interface ControllerSapiClassBoardInfo
 	bootloader_crc32:number;
 	lock_status:number;
 	lock_status_name:string;
+	se_version:number
+	chip_family:number;
+	chip_type:number;
+	keys_hash:number;
 }
 
 interface ControllerSapiClasstNetworkIDs
@@ -198,7 +204,8 @@ class ControllerSapiClass {
 	private seqNo:number																		= 0x1;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
 	private license:ControllerSapiClassLicense													= {status:ControllerSapiClassStatus.NOT_INIT, vallid:false, vendor_id:0x0, max_nodes:0x0, count_support:0x0, flags:[], crc16:0x0};
-	private board_info:ControllerSapiClassBoardInfo												= {status:ControllerSapiClassStatus.NOT_INIT, core_version:0x0, build_seq:0x0, build_ts:0x0, hw_revision:0x0, sdk_version:0x0, chip_uuid:[], sn_raw:[], bootloader_version:0x0, bootloader_crc32:0x0,lock_status:0x0, lock_status_name:""};
+	private board_info:ControllerSapiClassBoardInfo												= {	status:ControllerSapiClassStatus.NOT_INIT, core_version:0x0, build_seq:0x0, build_ts:0x0, hw_revision:0x0, sdk_version:0x0, chip_uuid:[], sn_raw:[], bootloader_version:0x0, bootloader_crc32:0x0,lock_status:0x0,
+																									lock_status_name:"", se_version:0x0, chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x2C6FAF52};
 
 	private _set_seq(): number {
 		const seq:number = this.seqNo;
@@ -417,11 +424,22 @@ class ControllerSapiClass {
 			return ;
 		}
 		const data:Array<number> = board_info.data;
-		if (data.length < 27) {
+		if (data.length < 49) {
 			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
 			return ;
 		}
-		switch (data[51]) {
+		out.status = ControllerSapiClassStatus.OK;
+		out.core_version = costruct_int(data.slice(0, 0 + 2),2, false);
+		out.build_seq = costruct_int(data.slice(2, 2 +4), 4, false);
+		out.build_ts = costruct_int(data.slice(6, 6 + 4), 4, false);
+		out.hw_revision = costruct_int(data.slice(10, 10 + 2), 2, false);
+		out.sdk_version = costruct_int(data.slice(12, 12 + 4), 4, false);
+		out.chip_uuid = data.slice(16, 16 + 8);
+		out.sn_raw = data.slice(24,40);
+		out.bootloader_version = costruct_int(data.slice(40, 44), 4, false);
+		out.bootloader_crc32 = costruct_int(data.slice(44, 48), 4, false);
+		out.lock_status = data[48];
+		switch (data[48]) {
 			case ControllerSapiClassLockStatus.UNLOCKED:
 				lock_status_name = "UNLOCKED";
 				break ;
@@ -438,18 +456,23 @@ class ControllerSapiClass {
 				lock_status_name = "UNKNOWN";
 				break ;
 		}
-		out.status = ControllerSapiClassStatus.OK;
-		out.core_version = costruct_int(data.slice(0, 0 + 2),2, false);
-		out.build_seq = costruct_int(data.slice(2, 2 +4), 4, false);
-		out.build_ts = costruct_int(data.slice(6, 6 + 4), 4, false);
-		out.hw_revision = costruct_int(data.slice(10, 10 + 2), 2, false);
-		out.sdk_version = costruct_int(data.slice(12, 12 + 4), 4, false);
-		out.chip_uuid = data.slice(16, 16 + 8);
-		out.sn_raw = data.slice(24,40);
-		out.bootloader_version = costruct_int(data.slice(40, 44), 4, false);
-		out.bootloader_crc32 = costruct_int(data.slice(44, 48), 4, false);
-		out.lock_status = data[48];
 		out.lock_status_name = lock_status_name;
+		const se_version_offset:number = 49;
+		const se_version_size:number = 0x4;
+		if (data.length < se_version_offset + se_version_size)
+			return ;
+		out.se_version = costruct_int(data.slice(se_version_offset, se_version_offset + se_version_size), se_version_size, false);
+		const chip_offset:number = se_version_offset + se_version_size;
+		const chip_size:number = 0x2;
+		if (data.length < chip_offset + chip_size)
+			return ;
+		out.chip_family = data[chip_offset];
+		out.chip_type = data[chip_offset + 0x1];
+		const key_hash_offset:number = chip_offset + chip_size;
+		const key_hash_size:number = 0x4;
+		if (data.length < key_hash_offset + key_hash_size)
+			return ;
+		out.keys_hash = costruct_int(data.slice(key_hash_offset, key_hash_offset + key_hash_size), key_hash_size, false);
 	}
 
 	private async _begin(test:boolean):Promise<void> {

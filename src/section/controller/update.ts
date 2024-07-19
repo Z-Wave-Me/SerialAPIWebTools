@@ -8,7 +8,7 @@ import {UpdateUiSectionClass, UpdateUiSectionClassFirmwareStatus, PaketUiClassUp
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 import {SapiClassDetectType, SapiClassUpdateProcess} from "./../../sapi/sapi";
 
-import {ControllerUiDefineClassReBeginFunc} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
 
 export {ControllerUiSectionUpdateClass};
 
@@ -36,7 +36,9 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		const app_update_info:PaketUiClassUpdateInfo = {version:version, version_name:versionNumberToString(version), type:SapiClassDetectType.RAZBERRY, data: []};
 		const bootloader_update_info:PaketUiClassUpdateInfo = {version:board_info.bootloader_version, version_name:versionNumberToString(board_info.bootloader_version), type:SapiClassDetectType.UNKNOWN, data: []};
 		const url:string = 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() +
-							"&bootloaderCRC=" + board_info.bootloader_crc32.toString() + '&uuid=' + arrayToStringHex(board_info.chip_uuid);
+							"&bootloaderCRC=" + board_info.bootloader_crc32.toString() + '&uuid=' + arrayToStringHex(board_info.chip_uuid) + "&bootloaderVersion=" + board_info.bootloader_version.toString() +
+							'&org_family=' + board_info.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.RAZBERRY.toString() + '&chip_family=' + board_info.chip_family.toString() +
+							'&chip_id=' + board_info.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL
 		this.update.info_download_xhr(url, app_update_info, bootloader_update_info);
 		return (true);
 	}
