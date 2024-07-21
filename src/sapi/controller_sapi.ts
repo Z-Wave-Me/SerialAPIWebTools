@@ -672,6 +672,32 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	public async updateBotloader(data:Uint8Array, process:SapiClassUpdateProcess|null): Promise<ControllerSapiClassStatus> {
+		if (this.isRazberry7() == false)
+			return (ControllerSapiClassStatus.NOT_RAZBERRY);
+		const status:ControllerSapiClassStatus = await this._load_file(0x3A000, data, process);
+		if (status != ControllerSapiClassStatus.OK)
+			return (status);
+		const seq:number = this._set_seq();
+		const response:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_4, [seq]);
+		if (response.status != SapiClassStatus.OK)
+			return (((response.status as unknown) as ControllerSapiClassStatus));
+		if (response.data.length < 0x1)
+			return (ControllerSapiClassStatus.WRONG_RESPONSE_LENGTH);
+		if (response.data[0x0] != 0x00)
+			return (ControllerSapiClassStatus.WRONG_RESPONSE_STATUS);
+		const callback = await this.sapi.recvIncomingRequest(1000);
+		if (callback.status != SapiClassStatus.OK)
+			return (((callback.status as unknown) as ControllerSapiClassStatus));
+		if (callback.data.length < 0x2)//0x1 seq
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_LENGTH);
+		if (callback.data[0x0] != seq)
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_SEQ);
+		if (callback.data[0x1] != 0x0)
+			return (ControllerSapiClassStatus.WRONG_CALLBACK_STATUS);
+		return (ControllerSapiClassStatus.OK);
+	}
+
 	public async clear_node(): Promise<ControllerSapiClassStatus> {
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);

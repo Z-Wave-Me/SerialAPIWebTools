@@ -57,6 +57,8 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		super(el_section, locale, zuno, log, ControllerUiLangClassId.UPDATE_INFO_HEADER, async ():Promise<boolean> => {return (await this._begin());}, async ():Promise<void> => {return (await this._end());});
 		this.zuno = zuno;
 		this.update = new UpdateUiSectionClass(log, locale, this, re_begin_func,
-			async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFirmwareStatus> => {return(await this._update_firmware(data, process, target_type));});
+			async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<UpdateUiSectionClassFirmwareStatus> => {return(await this._update_firmware(data, process, target_type));},
+			null
+		);
 	}
 }
