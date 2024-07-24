@@ -1,14 +1,23 @@
 import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "..//lang/ui_lang"
-import {SapiClass, SapiClassDetect, SapiClassStatus, SapiClassDetectTypeFunc} from "../sapi/sapi";
+import {SapiClass, SapiClassDetect, SapiClassStatus, SapiClassDetectTypeFunc, SapiClassDetectType} from "../sapi/sapi";
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionClass} from "./common"
 
 import {ControllerUiDefineClass} from "../ui_define"
 
-export {DetectionUiSectionClass, ControllerUiDefineClassReBeginFunc};
+export {DetectionUiSectionClass, ControllerUiDefineClassReBeginFunc, DetectionUiSectionClassUpdate};
 
-type ControllerUiDefineClassReBeginFunc = (detection:boolean) => Promise<void>;
+interface DetectionUiSectionClassUpdate
+{
+	status:SapiClassStatus;
+	type:SapiClassDetectType;
+	type_target:SapiClassDetectType;
+	version:number;
+	version_target:number;
+}
+
+type ControllerUiDefineClassReBeginFunc = (detection:boolean, update:DetectionUiSectionClassUpdate|null) => Promise<void>;
 
 class DetectionUiSectionClass extends CommonUiSectionClass {
 	private readonly sapi:SapiClass;
@@ -102,7 +111,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	private async _click_re_sync(event:Event) {
 		if (this.is_busy() == true)
 			return ;
-		this.re_begin_func(true);
+		this.re_begin_func(true, null);
 	}
 
 	private _constructor_struct_end(): void {
@@ -116,7 +125,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	}
 
 
-	public async detection(): Promise<boolean> {
+	public async detection(update:DetectionUiSectionClassUpdate|null): Promise<boolean> {
 		let func:SapiClassDetectTypeFunc|null;
 
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);

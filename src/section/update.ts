@@ -3,23 +3,17 @@ import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionHtmlClass} from "./common"
 import {ControllerUiDefineClass} from "../ui_define"
-import {SapiClassDetectType, SapiClassUpdateProcess} from "./../sapi/sapi";
+import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus} from "./../sapi/sapi";
 import {CommonUiSectionClass} from "./common"
 import {ControllerUiDefineClassReBeginFunc} from "../section/detection"
 import {versionNumberToString, versionNumberToStringSlave} from "../other/utilities";
 
 export {
-	UpdateUiSectionClass, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassFirmwareStatus, UpdateUiSectionClassFirmware,
+	UpdateUiSectionClass, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassFirmware,
 	PaketUiClassUpdateInfo, PaketUiClassUpdateInfoData,
 };
 
-interface UpdateUiSectionClassFirmwareStatus
-{
-	ok:boolean;
-	code:number;
-}
-
-type UpdateUiSectionClassFirmware = (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType) => Promise<UpdateUiSectionClassFirmwareStatus>;
+type UpdateUiSectionClassFirmware = (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType) => Promise<SapiClassStatus>;
 
 type UpdateUiSectionClassButtonClick =  () => void;
 
@@ -120,7 +114,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this._progress(info, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
 	}
 
-	private async _update_process(paket:UpdateUiSectionClassButton, data:Uint8Array, target_type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware): Promise<UpdateUiSectionClassFirmwareStatus> {
+	private async _update_process(paket:UpdateUiSectionClassButton, data:Uint8Array, target_type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware): Promise<SapiClassStatus> {
 		const el_progress:HTMLElement = document.createElement('progress');
 		const el_span:HTMLElement = document.createElement('span');
 		el_progress.setAttribute('max', '100');
@@ -128,7 +122,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		paket.el_span.appendChild(el_progress);
 		paket.el_span.appendChild(el_span);
 		el_progress.setAttribute('value', "66");
-		const status:UpdateUiSectionClassFirmwareStatus = await update_firmware(data, (percentage:number) => {
+		const status:SapiClassStatus = await update_firmware(data, (percentage:number) => {
 				el_progress.setAttribute('value', percentage.toFixed().toString());
 				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
 				if (percentage >= 100.00) {
@@ -141,17 +135,17 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 
 	private async _update_process_common(txt:ControllerUiLangClassId, paket:UpdateUiSectionClassButton, gbl:Uint8Array, type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware): Promise<void> {
 		this.log.infoStart(txt);
-		const status:UpdateUiSectionClassFirmwareStatus = await this._update_process(paket, gbl, type, update_firmware);
-		if (status.ok == false) {
-			this.log.errorFalledCode(txt, status.code);
+		const status:SapiClassStatus = await this._update_process(paket, gbl, type, update_firmware);
+		if (status != SapiClassStatus.OK) {
+			this.log.errorFalledCode(txt, status);
 			paket.el_span.innerHTML = "";
 			paket.el_span.appendChild(paket.el_select);
 			this.common_button_atrr(paket.el_button, '', false);
-			this.re_begin_func(true);
+			this.re_begin_func(true, null);
 			return ;
 		}
 		this.log.infoDone(txt);
-		this.re_begin_func(false);
+		this.re_begin_func(true, null);
 		return ;
 	}
 
