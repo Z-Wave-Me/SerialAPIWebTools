@@ -715,6 +715,10 @@ class SapiClass {
 		if (res.status != SapiClassStatus.OK) {
 			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
 			if (capabilities_info.status == SapiClassStatus.OK) {
+				if (capabilities_info.data.length >= 0x6 && capabilities_info.data[0x2] == 0x1 && capabilities_info.data[0x3] == 0x15 && capabilities_info.data[0x4] == 0x2 && capabilities_info.data[0x5] == 0x10) {
+					out.type = SapiClassDetectType.ZUNO;//VendorID = 0x0115 and ProductTypeID = 0x0210
+					return ;
+				}
 				out.type = SapiClassDetectType.RAZBERRY;
 				return ;
 			}
