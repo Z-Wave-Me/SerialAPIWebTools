@@ -125,7 +125,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	}
 
 
-	public async detection(update:DetectionUiSectionClassUpdate|null): Promise<boolean> {
+	public async detection(): Promise<boolean> {
 		let func:SapiClassDetectTypeFunc|null;
 
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);

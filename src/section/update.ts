@@ -5,7 +5,7 @@ import {CommonUiSectionHtmlClass} from "./common"
 import {ControllerUiDefineClass} from "../ui_define"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus} from "./../sapi/sapi";
 import {CommonUiSectionClass} from "./common"
-import {ControllerUiDefineClassReBeginFunc} from "../section/detection"
+import {ControllerUiDefineClassReBeginFunc, DetectionUiSectionClassUpdate} from "../section/detection"
 import {versionNumberToString, versionNumberToStringSlave} from "../other/utilities";
 
 export {

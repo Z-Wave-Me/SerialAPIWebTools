@@ -67,7 +67,7 @@ class ControllerUiClass {
 		}
 		if (detection == true) {
 			await this.detection.begin();
-			if (await this.detection.detection(update) == false)
+			if (await this.detection.detection() == false)
 				return ;
 		}
 		this.detect_type = this.sapi.type();
