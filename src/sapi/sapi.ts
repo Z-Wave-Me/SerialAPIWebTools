@@ -711,12 +711,23 @@ class SapiClass {
 		return (this.detect_type);
 	}
 
+	private async _detect_rcv_freeze_zuno(out:SapiClassDetectWait): Promise<void> {
+		const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
+		if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0) {
+			out.status = SapiClassStatus.ZUNO_NO_FREEZE;
+			return ;
+		}
+		out.type = SapiClassDetectType.ZUNO;
+		return ;
+	}
+
 	private async _detect_rcv(res:SapiClassRet, out:SapiClassDetectWait): Promise<void> {
 		if (res.status != SapiClassStatus.OK) {
 			const capabilities_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 0x1, 300);
 			if (capabilities_info.status == SapiClassStatus.OK) {
+				//VendorID = 0x0115 and ProductTypeID = 0x0210
 				if (capabilities_info.data.length >= 0x6 && capabilities_info.data[0x2] == 0x1 && capabilities_info.data[0x3] == 0x15 && capabilities_info.data[0x4] == 0x2 && capabilities_info.data[0x5] == 0x10) {
-					out.type = SapiClassDetectType.ZUNO;//VendorID = 0x0115 and ProductTypeID = 0x0210
+					await this._detect_rcv_freeze_zuno(out);
 					return ;
 				}
 				out.type = SapiClassDetectType.RAZBERRY;
@@ -735,12 +746,7 @@ class SapiClass {
 				out.status = SapiClassStatus.ZUNO_START_WRONG_FRAME;
 				return ;
 			}
-			const freeze_zuno_info:SapiClassRet = await this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
-			if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0) {
-				out.status = SapiClassStatus.ZUNO_NO_FREEZE;
-				return ;
-			}
-			out.type = SapiClassDetectType.ZUNO;
+			await this._detect_rcv_freeze_zuno(out);
 			return ;
 		}
 		if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED) {
