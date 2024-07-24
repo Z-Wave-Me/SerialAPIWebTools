@@ -33,8 +33,10 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES);
 		const version:number = (capabilities_info.ApiVersion << 0x8) | capabilities_info.ApiRevision;
-		const app_update_info:PaketUiClassUpdateInfo = {version:version, version_name:versionNumberToString(version), type:SapiClassDetectType.RAZBERRY, data: []};
-		const bootloader_update_info:PaketUiClassUpdateInfo = {version:board_info.bootloader_version, version_name:versionNumberToString(board_info.bootloader_version), type:SapiClassDetectType.UNKNOWN, data: []};
+		const app_update_info:PaketUiClassUpdateInfo = {version:version, version_name:versionNumberToString(version), type:SapiClassDetectType.RAZBERRY,
+														update:true, update_type:true, data: []};
+		const bootloader_update_info:PaketUiClassUpdateInfo = {	version:board_info.bootloader_version, version_name:versionNumberToString(board_info.bootloader_version), type:SapiClassDetectType.UNKNOWN,
+																update:true, update_type:true, data: []};
 		const url:string = 'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() +
 							'&uuid=' + arrayToStringHex(board_info.chip_uuid) + "&bootloaderVersion=" + board_info.bootloader_version.toString() +
 							'&org_family=' + board_info.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.RAZBERRY.toString() + '&chip_family=' + board_info.chip_family.toString() +

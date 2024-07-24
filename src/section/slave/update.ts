@@ -23,8 +23,10 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
-		const app_update_info:PaketUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), type:SapiClassDetectType.ZUNO, data: []};
-		const bootloader_update_info:PaketUiClassUpdateInfo = {version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), type:SapiClassDetectType.UNKNOWN, data: []};
+		const app_update_info:PaketUiClassUpdateInfo = {version:board_info.version, version_name:versionNumberToStringSlave(board_info.version), type:SapiClassDetectType.ZUNO,
+														update:true, update_type:(this.zuno.isSupportUpdateBootloader() == ZunoSapiClassStatus.OK) ? true:false, data: []};
+		const bootloader_update_info:PaketUiClassUpdateInfo = {	version:board_info.boot_version, version_name:versionNumberToString(board_info.boot_version), type:SapiClassDetectType.UNKNOWN,
+																update:false, update_type:false, data: []};
 		const url:string = 'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
 							+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.ZUNO.toString()
 							+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='

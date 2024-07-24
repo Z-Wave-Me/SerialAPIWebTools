@@ -452,6 +452,19 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK)
 	}
 
+	public isSupportUpdateBootloader():ZunoSapiClassStatus {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info.product == undefined)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		if (this.board_info.product.prod_valid == false)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		const prod_date:Date = new Date(this.board_info.product.prod_ts * 1000);
+		if (prod_date.getUTCFullYear() <= 2022)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		return (ZunoSapiClassStatus.OK)
+	}
+
 	public getRegion(): ZunoSapiClassRegion {
 		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:this.param_info.freq_str, region_array:this.region_array};
 		if (out.status != ZunoSapiClassStatus.OK)

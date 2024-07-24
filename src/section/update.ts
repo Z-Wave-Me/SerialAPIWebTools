@@ -34,6 +34,8 @@ interface PaketUiClassUpdateInfoData
 
 interface PaketUiClassUpdateInfo
 {
+	update:boolean;
+	update_type:boolean;
 	version:number;
 	version_name:string;
 	type:SapiClassDetectType;
@@ -312,9 +314,18 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		i = 0x0;
 		const add_data:Array<PaketUiClassUpdateInfoData> = [];
 		while (i < response.data.length) {
+			const target_fw_family:number = Number(response.data[i].target_fw_family);
 			switch (response.data[i].type) {
 				case this.JSON_UPDATE_TYPE_FIRMWARE:
-					switch (Number(response.data[i].target_fw_family)) {
+					if (app.update == false) {
+						i++;
+						continue ;
+					}
+					if (app.update_type == false && app.type != target_fw_family) {
+						i++;
+						continue ;
+					}
+					switch (target_fw_family) {
 						case SapiClassDetectType.ZUNO:
 							version = (Number(response.data[i].targetAppVersionMajor) << 0x10) | Number(response.data[i].targetAppVersionMinor);
 							if (app.type == SapiClassDetectType.ZUNO && version <= app.version) {
@@ -344,6 +355,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 					}
 					break ;
 				case this.JSON_UPDATE_TYPE_BOOTLOADER:
+					if (boot.update == false) {
+						i++;
+						continue ;
+					}
 					version = Number(response.data[i].targetBootloaderVersion);
 					if (version <= boot.version) {
 						i++;
