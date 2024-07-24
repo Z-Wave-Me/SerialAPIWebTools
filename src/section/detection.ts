@@ -6,18 +6,9 @@ import {CommonUiSectionClass} from "./common"
 
 import {ControllerUiDefineClass} from "../ui_define"
 
-export {DetectionUiSectionClass, ControllerUiDefineClassReBeginFunc, DetectionUiSectionClassUpdate};
+export {DetectionUiSectionClass, ControllerUiDefineClassReBeginFunc};
 
-interface DetectionUiSectionClassUpdate
-{
-	status:SapiClassStatus;
-	type:SapiClassDetectType;
-	type_target:SapiClassDetectType;
-	version:number;
-	version_target:number;
-}
-
-type ControllerUiDefineClassReBeginFunc = (detection:boolean, update:DetectionUiSectionClassUpdate|null) => Promise<void>;
+type ControllerUiDefineClassReBeginFunc = (detection:boolean) => Promise<void>;
 
 class DetectionUiSectionClass extends CommonUiSectionClass {
 	private readonly sapi:SapiClass;
@@ -111,7 +102,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	private async _click_re_sync(event:Event) {
 		if (this.is_busy() == true)
 			return ;
-		this.re_begin_func(true, null);
+		this.re_begin_func(true);
 	}
 
 	private _constructor_struct_end(): void {

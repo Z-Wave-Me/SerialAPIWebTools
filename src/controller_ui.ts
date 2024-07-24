@@ -12,7 +12,7 @@ import {SlaveUiSectionInfoClass} from "./section/slave/info"
 import {SlaveUiSectionLicenseClass} from "./section/slave/license"
 import {SlaveUiSectionUpdateClass} from "./section/slave/update"
 import {ControllerUiDefineClass} from "./ui_define"
-import {ControllerUiDefineClassReBeginFunc, DetectionUiSectionClassUpdate} from "./section/detection"
+import {ControllerUiDefineClassReBeginFunc} from "./section/detection"
 
 import {ControllerSapiClass} from "./sapi/controller_sapi";
 import {ZunoSapiClass} from "./sapi/zuno_sapi";
@@ -56,7 +56,7 @@ class ControllerUiClass {
 		return (out);
 	}
 
-	private async _begin(detection:boolean, update:DetectionUiSectionClassUpdate|null): Promise<void> {
+	private async _begin(detection:boolean): Promise<void> {
 		let i:number, array_type:all_array_type;
 
 		array_type = this._get_all_array_type();
@@ -98,7 +98,7 @@ class ControllerUiClass {
 		if (status != SapiClassStatus.OK)
 			return (this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_PORT_SELECT, status));
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
-		await this._begin(true, null);
+		await this._begin(true);
 	}
 
 	private _constructor_button_create(el_section_button:HTMLElement, func:EventListener, text:string, title:string): void {
@@ -139,7 +139,7 @@ class ControllerUiClass {
 		this.el_modal.className = "ZUnoRazberryModal";
 		this.el_modal.appendChild(this.el_section);
 		this._constructor_button();
-		const re_begin:ControllerUiDefineClassReBeginFunc = async (detection:boolean, update:DetectionUiSectionClassUpdate|null) => {await this._begin(detection, update)};
+		const re_begin:ControllerUiDefineClassReBeginFunc = async (detection:boolean) => {await this._begin(detection)};
 		this.detection = new DetectionUiSectionClass(this.el_section, this.locale, this.sapi, this.log, re_begin);
 		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, re_begin));
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));

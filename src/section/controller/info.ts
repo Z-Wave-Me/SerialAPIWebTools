@@ -34,7 +34,7 @@ class ControllerUiSectionInfoClass extends CommonUiSectionClass {
 		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_RESET_DEFAULT_BUTTON_TITLE, false);
 		if (status == ControllerSapiClassStatus.OK) {
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
-			this.re_begin_func(false, null);
+			this.re_begin_func(false);
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);

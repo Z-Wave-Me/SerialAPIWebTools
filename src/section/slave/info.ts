@@ -33,7 +33,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		if (status != ZunoSapiClassStatus.NO_FREEZE)
 			return ;
 		this.log.errorFalled(ControllerUiLangClassId.SLAVE_MESSAGE_FREZEE_ERROR);
-		this.re_begin_func(true, null);
+		this.re_begin_func(true);
 	}
 
 	private _board_info(): boolean {
@@ -201,7 +201,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 			this.zuno.lock();
 			await sleep(1000);
 			this.zuno.unlock();
-			this.re_begin_func(true, null);
+			this.re_begin_func(true);
 			return ;
 		}
 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
@@ -328,28 +328,28 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
 				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
 				await sleep(3000);
-				this.re_begin_func(true, null);
+				this.re_begin_func(true);
 				return ;
 				break ;
 			default:
 				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
 				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
 				await sleep(3000);
-				this.re_begin_func(true, null);
+				this.re_begin_func(true);
 				return ;
 				break ;
 			case ZunoSapiClassStatus.LEARN_EXLUDE:
 				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
 				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
 				await sleep(3000);
-				this.re_begin_func(false, null);
+				this.re_begin_func(false);
 				return ;
 				break ;
 			case ZunoSapiClassStatus.LEARN_INCLUDE:
 				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_INCLUDE_RESTART);
 				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_INCLUDE_RESTART);
 				await sleep(3000);
-				this.re_begin_func(false, null);
+				this.re_begin_func(false);
 				return ;
 				break ;
 		}

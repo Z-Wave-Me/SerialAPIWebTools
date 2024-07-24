@@ -5,7 +5,7 @@ import {CommonUiSectionHtmlClass} from "./common"
 import {ControllerUiDefineClass} from "../ui_define"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus} from "./../sapi/sapi";
 import {CommonUiSectionClass} from "./common"
-import {ControllerUiDefineClassReBeginFunc, DetectionUiSectionClassUpdate} from "../section/detection"
+import {ControllerUiDefineClassReBeginFunc} from "../section/detection"
 import {versionNumberToString, versionNumberToStringSlave} from "../other/utilities";
 
 export {
@@ -141,11 +141,11 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 			paket.el_span.innerHTML = "";
 			paket.el_span.appendChild(paket.el_select);
 			this.common_button_atrr(paket.el_button, '', false);
-			this.re_begin_func(true, null);
+			this.re_begin_func(true);
 			return ;
 		}
 		this.log.infoDone(txt);
-		this.re_begin_func(true, null);
+		this.re_begin_func(true);
 		return ;
 	}
 
