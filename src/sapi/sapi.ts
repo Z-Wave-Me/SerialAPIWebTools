@@ -917,7 +917,7 @@ class SapiClass {
 		await this._update(addr, target_type, out);
 		this.detect_type = out.type;
 		this.b_busy = false;
-		if (out.type != target_type) {
+		if (out.status == SapiClassStatus.OK && out.type != target_type) {
 			out.status = SapiClassStatus.DETECTED_TARGET_TYPE;
 			return (out);
 		}
