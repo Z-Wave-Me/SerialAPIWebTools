@@ -1,8 +1,6 @@
 export {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc, TABLE_NAME_LICENSE_YES, TABLE_NAME_LICENSE_NO};
 
-interface ControllerUiDefineClassReBeginFunc {
-	(detection:boolean): Promise<void>
-}
+type ControllerUiDefineClassReBeginFunc = (detection:boolean) => Promise<void>;
 
 const TABLE_NAME_LICENSE_YES:string = '<input disabled="disabled" checked type="checkbox">';
 const TABLE_NAME_LICENSE_NO:string = '<input disabled="disabled" type="checkbox">';

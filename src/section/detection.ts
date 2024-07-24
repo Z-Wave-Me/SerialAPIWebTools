@@ -114,7 +114,7 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 	}
 
 
-	public async detection(): Promise<SapiClassDetect|undefined> {
+	public async detection(): Promise<boolean> {
 		let func:SapiClassDetectTypeFunc|null;
 
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
@@ -128,12 +128,12 @@ class DetectionUiSectionClass extends CommonUiSectionClass {
 		if (detect_dict.status != SapiClassStatus.OK) {
 			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
 			this._constructor_struct_end();
-			return (undefined);
+			return (false);
 		}
 		this._constructor_struct_end();
 		this._set_baudrate_cache(baudrate_array, detect_dict.baudrate);
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
-		return (detect_dict);
+		return (true);
 	}
 
 	private async _begin(): Promise<boolean> {
