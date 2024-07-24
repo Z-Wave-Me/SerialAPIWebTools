@@ -317,8 +317,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 					switch (Number(response.data[i].target_fw_family)) {
 						case SapiClassDetectType.ZUNO:
 							version = (Number(response.data[i].targetAppVersionMajor) << 0x10) | Number(response.data[i].targetAppVersionMinor);
-							if (app.type == SapiClassDetectType.ZUNO && version <= app.version)
+							if (app.type == SapiClassDetectType.ZUNO && version <= app.version) {
+								i++;
 								continue ;
+							}
 							version_name = versionNumberToStringSlave(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
 							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.ZUNO, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
 							if (app.type == SapiClassDetectType.ZUNO)
@@ -328,8 +330,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 							break ;
 						case SapiClassDetectType.RAZBERRY:
 							version = (Number(response.data[i].targetAppVersionMajor) << 0x8) | Number(response.data[i].targetAppVersionMinor);
-							if (app.type == SapiClassDetectType.RAZBERRY && version <= app.version)
+							if (app.type == SapiClassDetectType.RAZBERRY && version <= app.version) {
+								i++;
 								continue ;
+							}
 							version_name = versionNumberToString(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
 							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.RAZBERRY, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
 							if (app.type == SapiClassDetectType.RAZBERRY)
@@ -341,8 +345,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 					break ;
 				case this.JSON_UPDATE_TYPE_BOOTLOADER:
 					version = Number(response.data[i].targetBootloaderVersion);
-					if (version <= boot.version)
+					if (version <= boot.version) {
+						i++;
 						continue ;
+					}
 					version_name = versionNumberToString(version);
 					temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.UNKNOWN, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
 					boot.data.push(temp_data);
