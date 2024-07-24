@@ -5,7 +5,8 @@ import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {versionNumberToStringSlave, arrayToStringHex, numberToStringHex, conv2Decimal, sleep} from "../../other/utilities";
 import { QRCode, QRCodeOption, QRErrorCorrectLevel } from "./../../qr_code/qrcode";
-import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 
 export {SlaveUiSectionInfoClass};
 

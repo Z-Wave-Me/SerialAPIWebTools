@@ -3,7 +3,7 @@ import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassPower, ControllerSapiClassRegion, ControllerSapiClassCapabilities} from "../../sapi/controller_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
-import {ControllerUiDefineClassReBeginFunc} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 
 export {ControllerUiSectionInfoClass};
 

@@ -4,11 +4,10 @@ import {ControllerSapiClass, ControllerSapiClassStatus, ControllerSapiClassBoard
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {UpdateUiSectionClass, UpdateUiSectionClassFirmwareStatus, PaketUiClassUpdateInfo} from "../update"
-
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 import {SapiClassDetectType, SapiClassUpdateProcess} from "./../../sapi/sapi";
-
-import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 
 export {ControllerUiSectionUpdateClass};
 

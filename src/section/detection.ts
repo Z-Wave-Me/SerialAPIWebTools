@@ -4,9 +4,11 @@ import {SapiClass, SapiClassDetect, SapiClassStatus, SapiClassDetectTypeFunc} fr
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionClass} from "./common"
 
-import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "../ui_define"
+import {ControllerUiDefineClass} from "../ui_define"
 
-export {DetectionUiSectionClass};
+export {DetectionUiSectionClass, ControllerUiDefineClassReBeginFunc};
+
+type ControllerUiDefineClassReBeginFunc = (detection:boolean) => Promise<void>;
 
 class DetectionUiSectionClass extends CommonUiSectionClass {
 	private readonly sapi:SapiClass;

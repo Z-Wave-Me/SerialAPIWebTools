@@ -4,7 +4,8 @@ import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo} from "../../
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {arrayToStringHex} from "../../other/utilities";
-import {ControllerUiDefineClassReBeginFunc, TABLE_NAME_LICENSE_YES, TABLE_NAME_LICENSE_NO} from "../../ui_define"
+import {TABLE_NAME_LICENSE_YES, TABLE_NAME_LICENSE_NO} from "../../ui_define"
+import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 
 export {SlaveUiSectionLicenseClass};
 

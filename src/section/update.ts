@@ -2,9 +2,10 @@ import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 import {ControllerUiLogClass} from "../log/ui_log"
 import {CommonUiSectionHtmlClass} from "./common"
-import { ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../ui_define"
+import {ControllerUiDefineClass} from "../ui_define"
 import {SapiClassDetectType, SapiClassUpdateProcess} from "./../sapi/sapi";
 import {CommonUiSectionClass} from "./common"
+import {ControllerUiDefineClassReBeginFunc} from "../section/detection"
 import {versionNumberToString, versionNumberToStringSlave} from "../other/utilities";
 
 export {

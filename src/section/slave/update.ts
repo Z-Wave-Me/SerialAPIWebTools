@@ -4,9 +4,9 @@ import {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo} from "../../
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {UpdateUiSectionClass, UpdateUiSectionClassFirmwareStatus, PaketUiClassUpdateInfo} from "../update"
-
+import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave} from "../../other/utilities";
-import {ControllerUiDefineClassReBeginFunc, ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass} from "../../ui_define"
 import {SapiClassDetectType, SapiClassUpdateProcess} from "./../../sapi/sapi";
 
 export {SlaveUiSectionUpdateClass};

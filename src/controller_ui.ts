@@ -11,8 +11,8 @@ import {DetectionUiSectionClass} from "./section/detection"
 import {SlaveUiSectionInfoClass} from "./section/slave/info"
 import {SlaveUiSectionLicenseClass} from "./section/slave/license"
 import {SlaveUiSectionUpdateClass} from "./section/slave/update"
-
-import {ControllerUiDefineClass, ControllerUiDefineClassReBeginFunc} from "./ui_define"
+import {ControllerUiDefineClass} from "./ui_define"
+import {ControllerUiDefineClassReBeginFunc} from "./section/detection"
 
 import {ControllerSapiClass} from "./sapi/controller_sapi";
 import {ZunoSapiClass} from "./sapi/zuno_sapi";
