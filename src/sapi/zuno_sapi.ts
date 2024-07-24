@@ -525,7 +525,6 @@ class ZunoSapiClass {
 			return (ELearnStatus.ELEARNSTATUS_PROCESS);
 		if (res.data[0x1] != 0xA0)
 			return (ELearnStatus.ELEARNSTATUS_PROCESS);
-		console.log(res.data[0x2]);
 		return (res.data[0x2]);
 	}
 
