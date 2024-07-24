@@ -155,7 +155,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.TABLE_NAME_TYPE]: "Type:",
 	[ControllerUiLangClassId.TABLE_NAME_TYPE_TITLE]: "",
 	[ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER]: "Controller",
-	[ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE]: "Slave",
+	[ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE]: "Z-Uno / repeater",
 	[ControllerUiLangClassId.ERROR_ARGUMENT_FOR_UPDATE_SELECT]: "error arg for update select",
 	[ControllerUiLangClassId.ERROR_ARGUMENT_FIND_TYPE]: "error arg find type",
 	[ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE]: "Include/Exlude:",
