@@ -360,7 +360,8 @@ class ZunoSapiClass {
 		if (out.ext_nvm >= 512)
 			out.boot_offset = 0xA10000 + ((out.ext_nvm - 512) << 10);
 		const offset_chip:number = offset_ext_nvm + 0x2;
-		if (info.length < (offset_chip + 0xA))
+		const size_chip:number = 0xA;
+		if (info.length < (offset_chip + size_chip))
 			return ;
 		out.chip = 
 		{
@@ -369,6 +370,11 @@ class ZunoSapiClass {
 			keys_hash:costruct_int(info.slice(offset_chip + 0x2, offset_chip + 0x2 + 0x4), 0x4, false),
 			se_version:costruct_int(info.slice(offset_chip + 0x2 + 0x4, offset_chip + 0x2 + 0x4 + 0x4), 0x4, false)
 		};
+		const offset_boot_version:number = offset_chip + size_chip;
+		const size_boot_version:number = 0x4;
+		if (info.length < (offset_boot_version + size_boot_version))
+			return ;
+		out.boot_version = costruct_int(info.slice(offset_boot_version, offset_boot_version + size_boot_version), size_boot_version, false);
 	}
 
 	private async _apply_param(raw:Array<number>): Promise<ZunoSapiClassStatus> {
