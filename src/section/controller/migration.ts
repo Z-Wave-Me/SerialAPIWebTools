@@ -4,7 +4,7 @@ import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClass
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {ControllerUiSectionUpdateClass} from "./update"
-import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData,} from "../update"
+import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
 
 export {ControllerUiSectionMigrationClass};
@@ -192,7 +192,18 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 
 		i = data.length;
 		while (i-- != 0x0) {
-			if (data[i].type == target_type)
+			if (data[i].beta == false && data[i].type == target_type)
+				return (data[i]);
+		}
+		return (undefined);
+	}
+
+	private _update_raz_full_boot_url(data:Array<PaketUiClassUpdateInfoData>): PaketUiClassUpdateInfoData|undefined {
+		let i:number;
+
+		i = data.length;
+		while (i-- != 0x0) {
+			if (data[i].beta == false)
 				return (data[i]);
 		}
 		return (undefined);
@@ -203,6 +214,11 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return ((status as unknown) as SapiClassStatus);
 	}
 
+	private async _update_bootloader_raz(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> {
+		const status:ControllerSapiClassStatus = await this.razberry.updateBotloader(data, process);
+		return ((status as unknown) as SapiClassStatus);
+	}
+
 	private _update_raz_full_get_info_paket(): PaketUiClassUpdateInfoPaket|undefined {
 		const paket:PaketUiClassUpdateInfoPaket|undefined = ControllerUiSectionUpdateClass.getInfoUrlPaket(this.log, this.razberry);
 		if (paket == undefined) {
@@ -210,6 +226,24 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return (undefined);
 		}
 		return (paket);
+	}
+
+	private async _update_raz_full_dowload_and_update(update_firmware:UpdateUiSectionClassFirmware, data:PaketUiClassUpdateInfoData, version_name:string): Promise<boolean> {
+		this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE, "");
+		const finware:Uint8Array = await UpdateUiSectionClass.downloadFile(this.download_process, data.url, this.log);
+		this.el_container.innerHTML = '';
+		const el_div_progress:HTMLDivElement = document.createElement("div");
+		const el_div_text:HTMLDivElement = document.createElement("div");
+		el_div_text.textContent = version_name + " -> " + data.version_name;
+		this.el_container.appendChild(el_div_text);
+		this.el_container.appendChild(el_div_progress);
+		const finware_status:boolean = await UpdateUiSectionClass.updateProcess(ControllerUiLangClassId.MESSAGE_UPDATE_START_FIRMWARE, el_div_progress, finware, SapiClassDetectType.RAZBERRY,
+			update_firmware, this.locale, this.log);
+		if (finware_status == false) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_UPDATE);
+			return (false);
+		}
+		return (true);
 	}
 
 	private async _update_raz_full(): Promise<boolean> {
@@ -224,19 +258,26 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO, "");
 			await UpdateUiSectionClass.downloadInfo(this.download_process, paket, this.log, this.locale);
 			const data_raz:PaketUiClassUpdateInfoData|undefined = this._update_raz_full_finware_url(paket.app.data, SapiClassDetectType.RAZBERRY);
-			if (data_raz == undefined)
-				return (true);
-			this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE, "");
-			const finware:Uint8Array = await UpdateUiSectionClass.downloadFile(this.download_process, data_raz.url, this.log);
-			this.el_container.innerHTML = '';
-			el_div_text.textContent = paket.app.version_name + " -> " + data_raz.version_name;
-			this.el_container.appendChild(el_div_text);
-			this.el_container.appendChild(el_div_progress);
-			const finware_status:boolean = await UpdateUiSectionClass.updateProcess(ControllerUiLangClassId.MESSAGE_UPDATE_START_FIRMWARE, el_div_progress, finware, SapiClassDetectType.RAZBERRY,
-				async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> => {return(await this._update_firmware_raz(data, process, target_type));},
-				this.locale, this.log);
-			if (finware_status == false) {
-				this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_UPDATE);
+			if (data_raz == undefined) {
+				const data_boot:PaketUiClassUpdateInfoData|undefined = this._update_raz_full_boot_url(paket.boot.data);
+				if (data_boot == undefined)
+					return (true);
+				if (await this._update_raz_full_dowload_and_update( async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> => {return(await this._update_bootloader_raz(data, process, target_type));},
+																	data_boot, paket.boot.version_name) == false) {
+					return (false);
+				}
+				await this.razberry.connect();
+				paket = this._update_raz_full_get_info_paket();
+				if (paket == undefined)
+					return (false);
+				if (paket.boot.version != data_boot.version) {
+					this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_UPDATE_VERSION);
+					return (false);
+				}
+				continue ;
+			}
+			if (await this._update_raz_full_dowload_and_update( async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> => {return(await this._update_firmware_raz(data, process, target_type));},
+																data_raz, paket.app.version_name) == false) {
 				return (false);
 			}
 			const detect_dict:SapiClassDetect = await this.sapi.detect([115200], null);

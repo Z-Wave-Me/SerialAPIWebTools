@@ -178,8 +178,8 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE]: "Please turn on inclusion/exluzion mode on you controller",
 	[ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE_TITLE]: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
 	[ControllerUiLangClassId.MIGRATION_NOT_GET_URL_INFO]: "Could not get a link to the information needed for migration",
-	[ControllerUiLangClassId.MIGRATION_NOT_UPDATE]: "Failed to update firmware",
+	[ControllerUiLangClassId.MIGRATION_NOT_UPDATE]: "Failed to update",
 	[ControllerUiLangClassId.MIGRATION_LAST_UPDATE_DETECT]: "After the update, the firmware could not be detected",
 	[ControllerUiLangClassId.MIGRATION_FILED_UPDATE_TYPE]: "The type of the updated firmware does not match",
-	[ControllerUiLangClassId.MIGRATION_FILED_UPDATE_VERSION]: "The version of the updated firmware does not match",
+	[ControllerUiLangClassId.MIGRATION_FILED_UPDATE_VERSION]: "After the update the version is not what it should be",
 };
