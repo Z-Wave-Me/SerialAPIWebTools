@@ -10,7 +10,7 @@ import {versionNumberToString, versionNumberToStringSlave} from "../other/utilit
 
 export {
 	UpdateUiSectionClass, UpdateUiSectionClassJsonInfo, UpdateUiSectionClassButton, UpdateUiSectionClassFirmware,
-	PaketUiClassUpdateInfo, PaketUiClassUpdateInfoData,
+	PaketUiClassUpdateInfo, PaketUiClassUpdateInfoData, PaketUiClassUpdateInfoPaket, UpdateUiSectionClassPaket
 };
 
 type UpdateUiSectionClassFirmware = (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType) => Promise<SapiClassStatus>;
@@ -35,6 +35,19 @@ interface PaketUiClassUpdateInfo
 	version_name:string;
 	type:SapiClassDetectType;
 	data:Array<PaketUiClassUpdateInfoData>;
+}
+
+interface PaketUiClassUpdateInfoPaket
+{
+	url:string;
+	app:PaketUiClassUpdateInfo;
+	boot:PaketUiClassUpdateInfo;
+}
+
+interface UpdateUiSectionClassPaket
+{
+	xhr:XMLHttpRequest;
+	timer_id?:number;
 }
 
 interface UpdateUiSectionClassJson
@@ -65,28 +78,24 @@ interface UpdateUiSectionClassButton
 
 
 class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
-	private readonly URL_UPDATE:string								= "https://service.z-wave.me/expertui/uzb/";
-	private readonly URL_UPDATE_LIST:string							= this.URL_UPDATE + "?";
+	private static readonly URL_UPDATE:string						= "https://service.z-wave.me/expertui/uzb/";
+	private static readonly URL_UPDATE_LIST:string					= UpdateUiSectionClass.URL_UPDATE + "?";
 
-	private readonly JSON_UPDATE_DISABLED:string					= "disabled";
-	private readonly JSON_UPDATE_TYPE_FIRMWARE:string				= "firmware";
-	private readonly JSON_UPDATE_TYPE_BOOTLOADER:string				= "bootloader";
+	private static readonly JSON_UPDATE_DISABLED:string				= "disabled";
+	private static readonly JSON_UPDATE_TYPE_FIRMWARE:string		= "firmware";
+	private static readonly JSON_UPDATE_TYPE_BOOTLOADER:string		= "bootloader";
 
 	private readonly SELECTOR_BETA:string							= 'data-beta';
 	private readonly SELECTOR_DEFAULT:string						= 'data-default';
 
 
-	private readonly info_xhr_timeout:number						= 5000;
-	private readonly info_xhr_timer_timeout:number					= 3000;
-	private readonly firmware_xhr_timout:number						= 10000;
-	private readonly firmware_xhr_timer_timout:number				= 3000;
+	private static readonly info_xhr_timeout:number					= 5000;
+	private static readonly info_xhr_timer_timeout:number			= 3000;
+	private static readonly firmware_xhr_timout:number				= 10000;
+	private static readonly firmware_xhr_timer_timout:number		= 3000;
 	private readonly bus_timout:number								= 3000;
 
-	private readonly info_xhr:XMLHttpRequest						= new XMLHttpRequest();
-	private readonly firmware_xhr:XMLHttpRequest						= new XMLHttpRequest();
-
-	info_xhr_timer_id?:number;
-	firmware_timer_id?:number;
+	private readonly download_process:UpdateUiSectionClassPaket		= {xhr:new XMLHttpRequest()};
 
 	private readonly log:ControllerUiLogClass;
 	private readonly commom_ui:CommonUiSectionClass;
@@ -114,42 +123,64 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this._progress(info, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
 	}
 
-	private async _update_process(paket:UpdateUiSectionClassButton, data:Uint8Array, target_type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware): Promise<SapiClassStatus> {
+	public static async updateProcess(txt:ControllerUiLangClassId, el:HTMLElement, data:Uint8Array, target_type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware, locale:ControllerUiLangClass, log:ControllerUiLogClass): Promise<boolean> {
+		log.infoStart(txt);
 		const el_progress:HTMLElement = document.createElement('progress');
 		const el_span:HTMLElement = document.createElement('span');
 		el_progress.setAttribute('max', '100');
-		paket.el_span.innerHTML = '';
-		paket.el_span.appendChild(el_progress);
-		paket.el_span.appendChild(el_span);
+		el.innerHTML = '';
+		el.appendChild(el_progress);
+		el.appendChild(el_span);
 		el_progress.setAttribute('value', "66");
 		const status:SapiClassStatus = await update_firmware(data, (percentage:number) => {
 				el_progress.setAttribute('value', percentage.toFixed().toString());
 				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
 				if (percentage >= 100.00) {
-					this._progress(paket, ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE);
+					el.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE) +'</div>';
 				}
 			}, target_type
 		);
-		return (status);
-	}
-
-	private async _update_process_common(txt:ControllerUiLangClassId, paket:UpdateUiSectionClassButton, gbl:Uint8Array, type:SapiClassDetectType, update_firmware:UpdateUiSectionClassFirmware): Promise<void> {
-		this.log.infoStart(txt);
-		const status:SapiClassStatus = await this._update_process(paket, gbl, type, update_firmware);
+		el.innerHTML = '';
 		if (status != SapiClassStatus.OK) {
-			this.log.errorFalledCode(txt, status);
-			paket.el_span.innerHTML = "";
-			paket.el_span.appendChild(paket.el_select);
-			this.common_button_atrr(paket.el_button, '', false);
-			this.re_begin_func(true);
-			return ;
+			log.errorFalledCode(txt, status);
+			return (false);
 		}
-		this.log.infoDone(txt);
-		this.re_begin_func(true);
-		return ;
+		log.infoDone(txt);
+		return (true);
 	}
 
-	private _download_xhr_start(paket:UpdateUiSectionClassButton, update_firmware:UpdateUiSectionClassFirmware|null): void {
+	public static async downloadFile(file_process:UpdateUiSectionClassPaket, url:string, log:ControllerUiLogClass): Promise<Uint8Array> {
+		const promise:Promise<Uint8Array> = new Promise((resolve) => {
+			log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+			url = UpdateUiSectionClass.URL_UPDATE + url;
+			const fun_xhr_timer:TimerHandler = () => {
+				file_process.timer_id = undefined;
+				file_process.xhr.open("POST", url, true);
+				file_process.xhr.responseType = "arraybuffer";
+				file_process.xhr.timeout = UpdateUiSectionClass.firmware_xhr_timout;
+				file_process.xhr.ontimeout = () => {
+					log.errorXhrTimeout(url);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					file_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.firmware_xhr_timer_timout);
+				};
+				file_process.xhr.onerror = () => {
+					log.errorXhrError(url);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					file_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.firmware_xhr_timer_timout);
+				};
+				file_process.xhr.onload = () => {
+					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					const gbl:Uint8Array = new Uint8Array(file_process.xhr.response);
+					resolve(gbl);
+				};
+				file_process.xhr.send();
+			};
+			file_process.timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		});
+		return (promise);
+	}
+
+	private async _download_xhr_start(paket:UpdateUiSectionClassButton, update_firmware:UpdateUiSectionClassFirmware|null, txt:ControllerUiLangClassId,): Promise<void> {
 		let i:number, type:SapiClassDetectType|undefined;
 
 		if (update_firmware == null)
@@ -173,42 +204,20 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		}
 		this._progress(paket, ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
 		this.common_button_atrr(paket.el_button, '', true);
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-		const url:string = this.URL_UPDATE + paket.url_new;
-		const fun_xhr_timer:TimerHandler = () => {
-			this.firmware_timer_id = undefined;
-			this.firmware_xhr.open("POST", url, true);
-			this.firmware_xhr.responseType = "arraybuffer";
-			this.firmware_xhr.timeout = this.firmware_xhr_timout;
-			this.firmware_xhr.ontimeout = () => {
-				this.log.errorXhrTimeout(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				this.firmware_timer_id = window.setTimeout(fun_xhr_timer, this.firmware_xhr_timer_timout);
-			};
-			this.firmware_xhr.onerror = () => {
-				this.log.errorXhrError(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				this.firmware_timer_id = window.setTimeout(fun_xhr_timer, this.firmware_xhr_timer_timout);
-			};
-			this.firmware_xhr.onload = () => {
-				this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
-				const gbl:Uint8Array = new Uint8Array(this.firmware_xhr.response);
-				const fun_bus_timer:TimerHandler = async () => {
-					this.firmware_timer_id = undefined;
-					if (this.commom_ui.is_busy() == true) {
-						this.firmware_timer_id = window.setTimeout(fun_bus_timer, this.bus_timout);
-						return ;
-					}
-					await this._update_process_common(ControllerUiLangClassId.MESSAGE_UPDATE_START_FIRMWARE, paket, gbl, type, update_firmware);
-					return ;
+		const gbl:Uint8Array = await UpdateUiSectionClass.downloadFile(this.download_process, paket.url_new, this.log);
+		const fun_bus_timer:TimerHandler = async () => {
+			this.download_process.timer_id = undefined;
+			if (this.commom_ui.is_busy() == true) {
+				this.download_process.timer_id = window.setTimeout(fun_bus_timer, this.bus_timout);
+				return ;
+			}
+			await UpdateUiSectionClass.updateProcess(txt, paket.el_span, gbl, type, update_firmware, this.locale, this.log);
+			this.re_begin_func(true);
+			return ;
 
-				};
-				this._progress(paket, ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
-				this.firmware_timer_id = window.setTimeout(fun_bus_timer, 0x0);
-			};
-			this.firmware_xhr.send();
 		};
-		this.firmware_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		this._progress(paket, ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_BUS_SERIAL);
+		this.download_process.timer_id = window.setTimeout(fun_bus_timer, 0x0);
 	}
 
 	private _constructor_struct(button_text:ControllerUiLangClassId, click:UpdateUiSectionClassButtonClick, change:EventListener):UpdateUiSectionClassButton {
@@ -303,7 +312,25 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this._update_beta_change_all();
 	}
 
-	private _info_download_xhr_process(response: UpdateUiSectionClassJsonInfo, app:PaketUiClassUpdateInfo, boot:PaketUiClassUpdateInfo): void {
+	public end(): void {
+		this._end_struct(this.firmware);
+		this._end_struct(this.bootloader);
+		this.download_process.xhr.abort();
+		if (this.download_process.timer_id != undefined) {
+			window.clearTimeout(this.download_process.timer_id);
+			this.download_process.timer_id = undefined;
+		}
+	}
+
+	public init_select_firmware(): void {
+		this._init_select(this.firmware, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_SELECT_TITLE);
+	}
+
+	public init_select_bootloader(): void {
+		this._init_select(this.bootloader, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
+	}
+
+	private static _downloadInfo_process(response: UpdateUiSectionClassJsonInfo, app:PaketUiClassUpdateInfo, boot:PaketUiClassUpdateInfo, locale:ControllerUiLangClass): void {
 		let i:number, version:number, version_name:string, temp_data:PaketUiClassUpdateInfoData;
 
 		i = 0x0;
@@ -311,7 +338,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		while (i < response.data.length) {
 			const target_fw_family:number = Number(response.data[i].target_fw_family);
 			switch (response.data[i].type) {
-				case this.JSON_UPDATE_TYPE_FIRMWARE:
+				case UpdateUiSectionClass.JSON_UPDATE_TYPE_FIRMWARE:
 					if (app.update == false) {
 						i++;
 						continue ;
@@ -327,8 +354,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 								i++;
 								continue ;
 							}
-							version_name = versionNumberToStringSlave(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
-							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.ZUNO, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
+							version_name = versionNumberToStringSlave(version) + " - " + locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_SLAVE);
+							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.ZUNO, beta:((response.data[i].enabled == UpdateUiSectionClass.JSON_UPDATE_DISABLED ? true:false))};
 							if (app.type == SapiClassDetectType.ZUNO)
 								app.data.push(temp_data);
 							else
@@ -340,8 +367,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 								i++;
 								continue ;
 							}
-							version_name = versionNumberToString(version) + " - " + this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
-							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.RAZBERRY, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
+							version_name = versionNumberToString(version) + " - " + locale.getLocale(ControllerUiLangClassId.TABLE_NAME_TYPE_CONTROLER);
+							temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.RAZBERRY, beta:((response.data[i].enabled == UpdateUiSectionClass.JSON_UPDATE_DISABLED ? true:false))};
 							if (app.type == SapiClassDetectType.RAZBERRY)
 								app.data.push(temp_data);
 							else
@@ -349,7 +376,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 							break ;
 					}
 					break ;
-				case this.JSON_UPDATE_TYPE_BOOTLOADER:
+				case UpdateUiSectionClass.JSON_UPDATE_TYPE_BOOTLOADER:
 					if (boot.update == false) {
 						i++;
 						continue ;
@@ -360,7 +387,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 						continue ;
 					}
 					version_name = versionNumberToString(version);
-					temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.UNKNOWN, beta:((response.data[i].enabled == this.JSON_UPDATE_DISABLED ? true:false))};
+					temp_data = {version:version, version_name:version_name, url:response.data[i].fileURL, type:SapiClassDetectType.UNKNOWN, beta:((response.data[i].enabled == UpdateUiSectionClass.JSON_UPDATE_DISABLED ? true:false))};
 					boot.data.push(temp_data);
 					break ;
 			}
@@ -382,32 +409,47 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		}
 	}
 
-	public end(): void {
-		this._end_struct(this.firmware);
-		this._end_struct(this.bootloader);
-		this.info_xhr.abort();
-		if (this.info_xhr_timer_id != undefined) {
-			window.clearTimeout(this.info_xhr_timer_id);
-			this.info_xhr_timer_id = undefined;
-		}
-		this.firmware_xhr.abort();
-		if (this.firmware_timer_id != undefined) {
-			window.clearTimeout(this.firmware_timer_id);
-			this.firmware_timer_id = undefined;
-		}
+	public static async downloadInfo(info_process:UpdateUiSectionClassPaket, in_paket:PaketUiClassUpdateInfoPaket, log:ControllerUiLogClass, locale:ControllerUiLangClass): Promise<void> {
+		const promise:Promise<void> = new Promise((resolve) => {
+			const url:string = UpdateUiSectionClass.URL_UPDATE_LIST + in_paket.url + '&token=internal';//'&token=internal' '&token=all';
+			const fun_xhr_timer:TimerHandler = () => {
+				info_process.timer_id = undefined;
+				log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+				info_process.xhr.open("POST", url, true);
+				info_process.xhr.responseType = 'json';
+				info_process.xhr.timeout = UpdateUiSectionClass.info_xhr_timeout;
+				info_process.xhr.ontimeout = () => {
+					log.errorXhrTimeout(url);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
+				};
+				info_process.xhr.onerror = () => {
+					log.errorXhrError(url);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
+				};
+				info_process.xhr.onload = () => {
+					try {
+						UpdateUiSectionClass._downloadInfo_process(info_process.xhr.response, in_paket.app, in_paket.boot, locale);
+					} catch (error) {
+						log.errorXhrInvalidData(url);
+						log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+						info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
+						return ;
+					}
+					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					resolve();
+				};
+				info_process.xhr.send();
+			};
+			info_process.timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		});
+		return (promise);
 	}
 
-	public init_select_firmware(): void {
-		this._init_select(this.firmware, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_SELECT_TITLE);
-	}
-
-	public init_select_bootloader(): void {
-		this._init_select(this.bootloader, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_SELECT_TITLE);
-	}
-
-	public info_download_xhr(url:string, app:PaketUiClassUpdateInfo, boot:PaketUiClassUpdateInfo): void {
-		this.firmware.info = app;
-		this.bootloader.info = boot;
+	public async info_download_xhr(in_paket:PaketUiClassUpdateInfoPaket): Promise<void> {
+		this.firmware.info = in_paket.app;
+		this.bootloader.info = in_paket.boot;
 		const update_beta:string|null = localStorage.getItem(ControllerUiDefineClass.KEY_UPDATE_BETA);
 		const el_input:HTMLInputElement = document.createElement("input");
 		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_SELECT_TITLE);
@@ -418,40 +460,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA, ControllerUiLangClassId.TABLE_NAME_UPDATE_BETA_TITLE, el_input, "");
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_TITLE, this.firmware.el_span,  this.firmware.el_button);
 		this.commom_ui.create_tr_el(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_TITLE, this.bootloader.el_span, this.bootloader.el_button);
-		url = this.URL_UPDATE_LIST + url + '&token=internal';//'&token=internal' '&token=all';
-		const fun_xhr_timer:TimerHandler = () => {
-			this.info_xhr_timer_id = undefined;
-			this.log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-			this.info_xhr.open("POST", url, true);
-			this.info_xhr.responseType = 'json';
-			this.info_xhr.timeout = this.info_xhr_timeout;
-			this.info_xhr.ontimeout = () => {
-				this.log.errorXhrTimeout(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-				this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-			};
-			this.info_xhr.onerror = () => {
-				this.log.errorXhrError(url);
-				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-				this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-			};
-			this.info_xhr.onload = () => {
-				try {
-					this._info_download_xhr_process(this.info_xhr.response, app, boot);
-				} catch (error) {
-					this.log.errorXhrInvalidData(url);
-					this.log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-					this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, this.info_xhr_timer_timeout);
-					return ;
-				}
-				this.init_select_firmware();
-				this.init_select_bootloader();
-				this._update_beta_change_all();
-				this.log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
-			};
-			this.info_xhr.send();
-		};
-		this.info_xhr_timer_id = window.setTimeout(fun_xhr_timer, 0x0);
+		await UpdateUiSectionClass.downloadInfo(this.download_process, in_paket, this.log, this.locale);
+		this.init_select_firmware();
+		this.init_select_bootloader();
+		this._update_beta_change_all();
 	}
 
 	constructor(log:ControllerUiLogClass, locale:ControllerUiLangClass, commom_ui:CommonUiSectionClass, re_begin_func:ControllerUiDefineClassReBeginFunc,
@@ -461,9 +473,9 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		this.log = log;
 		this.commom_ui = commom_ui;
 		this.re_begin_func = re_begin_func;
-		this.firmware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_BUTTON, () => {this._download_xhr_start(this.firmware, update_firmware);},
+		this.firmware = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_BUTTON, () => {this._download_xhr_start(this.firmware, update_firmware, ControllerUiLangClassId.MESSAGE_UPDATE_START_FIRMWARE);},
 			(event:Event) => {this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_FIRMWARE_BUTTON_TITLE, this.firmware);});
-		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, () => {this._download_xhr_start(this.bootloader, update_bootloader);},
+		this.bootloader = this._constructor_struct(ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON, () => {this._download_xhr_start(this.bootloader, update_bootloader, ControllerUiLangClassId.MESSAGE_UPDATE_START_BOOTLOADER);},
 			(event:Event) =>{ this._update_change(event, ControllerUiLangClassId.TABLE_NAME_UPDATE_BOOTLOADER_BUTTON_TITLE, this.bootloader);});
 	}
 }

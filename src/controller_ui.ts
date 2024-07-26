@@ -56,15 +56,21 @@ class ControllerUiClass {
 		return (out);
 	}
 
-	private async _begin(detection:boolean): Promise<void> {
-		let i:number, array_type:all_array_type;
+	private async _clear(): Promise<void> {
+		let i:number;
 
-		array_type = this._get_all_array_type();
+		const array_type:all_array_type = this._get_all_array_type();
 		i = 0x0;
 		while (i < array_type.length) {
 			await array_type[i].end();
 			i++;
 		}
+	}
+
+	private async _begin(detection:boolean): Promise<void> {
+		let i:number;
+
+		await this._clear();
 		if (detection == true) {
 			await this.detection.begin();
 			if (await this.detection.detection() == false)
@@ -79,7 +85,7 @@ class ControllerUiClass {
 				await this.razberry.connect();
 				break;
 		}
-		array_type = this._get_all_array_type();
+		const array_type:all_array_type = this._get_all_array_type();
 		i = 0x0;
 		while (i < array_type.length) {
 			await array_type[i].begin();
@@ -144,7 +150,7 @@ class ControllerUiClass {
 		this.controller.push(new ControllerUiSectionInfoClass(this.el_section, this.locale, this.razberry, this.log, re_begin));
 		this.controller.push(new ControllerUiSectionLicenseClass(this.el_section, this.locale, this.razberry, this.log));
 		this.controller.push(new ControllerUiSectionUpdateClass(this.el_section, this.locale, this.razberry, this.log, re_begin));
-		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log));
+		this.controller.push(new ControllerUiSectionMigrationClass(this.el_section, this.locale, this.razberry, this.log, async () => {await this._clear()}, this.sapi));
 		this.slave.push(new SlaveUiSectionInfoClass(this.el_section, this.locale, this.zuno, this.log, re_begin));
 		this.slave.push(new SlaveUiSectionLicenseClass(this.el_section, this.locale, this.zuno, this.log, re_begin));
 		this.slave.push(new SlaveUiSectionUpdateClass(this.el_section, this.locale, this.zuno, this.log, re_begin));
