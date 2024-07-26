@@ -3,7 +3,7 @@ import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDete
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
-export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower};
+export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower, ZunoSapiClassS2Key};
 
 enum ELearnStatus
 {
@@ -26,6 +26,15 @@ interface ZunoSapiClassPower
 	step:number;
 	min:number;
 	max:number;
+}
+
+interface ZunoSapiClassS2Key
+{
+	status:ZunoSapiClassStatus;
+	unauth:Uint8Array;
+	auth:Uint8Array;
+	access:Uint8Array;
+	s0:Uint8Array;
 }
 
 
@@ -134,6 +143,8 @@ interface ZunoSapiClassBoardInfo
 // ------------------------------------------------------------------------------------------------------
 
 class ZunoSapiClass {
+	private readonly LICENSE_KEY_DUMP_S2:number												= 0x1;
+	private readonly LICENSE_KEY_LONG_RANGE:number											= 0x5;
 	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
 	{
 		0x00: {name:"Pti", title: "Provides Packet Trace Interface (PTI) capabilities. Turns ZUno to advanced sniffer.", active:false},
@@ -471,12 +482,45 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK)
 	}
 
+	public isSupportDumpKey():ZunoSapiClassStatus {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info == undefined)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		if (this.board_info.license == undefined)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		if (this.board_info.license.lic_flags[this.LICENSE_KEY_DUMP_S2] != undefined && this.board_info.license.lic_flags[this.LICENSE_KEY_DUMP_S2].active == true)
+			return (ZunoSapiClassStatus.OK);
+		return (ZunoSapiClassStatus.UN_SUPPORT);
+	}
+
+	public async readS2Key(): Promise<ZunoSapiClassS2Key> {
+		const out:ZunoSapiClassS2Key = {status:ZunoSapiClassStatus.OK, unauth: new Uint8Array([]), auth: new Uint8Array([]), access: new Uint8Array([]), s0: new Uint8Array([])};
+		out.status = this.isSupportDumpKey();
+		if (out.status != ZunoSapiClassStatus.OK)
+			return (out);
+		const dump_key_info:SapiClassRet = await this._readNVM(0xFFCCC0, 0x40);
+		if (dump_key_info.status != SapiClassStatus.OK) {
+			out.status = ((dump_key_info.status as unknown) as ZunoSapiClassStatus);
+			return (out);
+		}
+		if (dump_key_info.data.length != 0x40) {
+			out.status = ZunoSapiClassStatus.WRONG_LENGTH_CMD;
+			return (out);
+		}
+		out.unauth = new Uint8Array(dump_key_info.data.slice(0, 16));
+		out.auth = new Uint8Array(dump_key_info.data.slice(16, 32));
+		out.access = new Uint8Array(dump_key_info.data.slice(32, 48));
+		out.s0 = new Uint8Array(dump_key_info.data.slice(48, 64));
+		return (out);
+	}
+
 	public getRegion(): ZunoSapiClassRegion {
 		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:this.param_info.freq_str, region_array:this.region_array};
 		if (out.status != ZunoSapiClassStatus.OK)
 			return (out);
 		if (this.board_info.license != undefined) {
-			if (this.board_info.license.lic_flags[0x05] != undefined && this.board_info.license.lic_flags[0x05].active == true)
+			if (this.board_info.license.lic_flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.board_info.license.lic_flags[this.LICENSE_KEY_LONG_RANGE].active == true)
 				out.region_array = this.region_array_full;
 		}
 		return (out);

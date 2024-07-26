@@ -136,6 +136,38 @@ class CommonUiSectionClass extends CommonUiSectionHtmlClass {
 		this.el_tbody.innerHTML = '';
 	}
 
+	public async quest_continue_stop(el:HTMLElement, quest:ControllerUiLangClassId|string, quest_title:ControllerUiLangClassId,
+										run:ControllerUiLangClassId, run_title:ControllerUiLangClassId,
+										stop:ControllerUiLangClassId|undefined, stop_title:ControllerUiLangClassId|undefined): Promise<boolean> {
+		const promise:Promise<boolean> = new Promise((resolve) => {
+			el.innerHTML = '';
+			const el_span:HTMLSpanElement = document.createElement("span");
+			if (typeof quest !== "string")
+				quest = this.locale.getLocale(quest);
+			el_span.innerHTML = quest;
+			el_span.title = this.locale.getLocale(quest_title);
+			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
+			const el_button_continue:HTMLButtonElement = document.createElement("button");
+			el_button_continue.textContent = this.locale.getLocale(run);
+			el_button_continue.title = this.locale.getLocale(run_title);
+			el_button_continue.type = "button";
+			el_button_continue.className = "ZUnoRazberryModalContentSection_migration_action_button";
+			el.appendChild(el_span);
+			el.appendChild(el_button_continue);
+			el_button_continue.addEventListener("click", async () => { resolve(true)});
+			if (stop != undefined && stop_title != undefined) {
+				const el_button_stop:HTMLButtonElement = document.createElement("button");
+				el_button_stop.textContent = this.locale.getLocale(stop);
+				el_button_stop.title = this.locale.getLocale(stop_title);
+				el_button_stop.type = "button";
+				el_button_stop.className = "ZUnoRazberryModalContentSection_migration_action_button";
+				el_button_stop.addEventListener("click", async () => { resolve(false)});
+				el.appendChild(el_button_stop);
+			}
+		});
+		return (promise);
+	}
+
 	constructor(el_section:HTMLElement, locale:ControllerUiLangClass, management:ControllerSapiClass|ZunoSapiClass|SapiClass, log:ControllerUiLogClass, id:ControllerUiLangClassId, begin_func:CommonUiSectionClassBegin, end_func:CommonUiSectionClassEnd) {
 		super(locale);
 		this.management = management;

@@ -1,13 +1,14 @@
 import {ControllerUiLangClassId} from "../../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../../lang/ui_lang"
 import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClassStatus, ControllerSapiClasstInitData, ControllerSapiClassLearnMode} from "../../sapi/controller_sapi";
-import {ZunoSapiClass} from "../../sapi/zuno_sapi";
+import {ZunoSapiClass, ZunoSapiClassRegion, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassS2Key} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
+import {conv2Decimal} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -183,8 +184,8 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (false);
 	}
 
-	private _progress(text:ControllerUiLangClassId, pre_text:string): void {
-		this.el_container.innerHTML = '<div>' + pre_text + '</div>' + '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
+	private _progress(text:ControllerUiLangClassId): void {
+		this.el_container.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
 	}
 
 	private _progress_error(text:ControllerUiLangClassId): void {
@@ -211,6 +212,11 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				return (data[i]);
 		}
 		return (undefined);
+	}
+
+	private async _update_firmware_zuno(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> {
+		const status:ZunoSapiClassStatus = await this.zuno.updateFirmware(data, process, target_type);
+		return ((status as unknown) as SapiClassStatus);
 	}
 
 	private async _update_firmware_raz(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> {
@@ -242,7 +248,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	}
 
 	private async _update_raz_full_dowload_and_update(update_firmware:UpdateUiSectionClassFirmware, data:PaketUiClassUpdateInfoData, version_name:string): Promise<boolean> {
-		this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE, "");
+		this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_FILE);
 		const finware:Uint8Array = await UpdateUiSectionClass.downloadFile(this.download_process, data.url, this.log);
 		this.el_container.innerHTML = '';
 		const el_div_progress:HTMLDivElement = document.createElement("div");
@@ -262,13 +268,11 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private async _update_raz_full(): Promise<PaketUiClassUpdateInfoPaket|undefined> {
 		let paket:PaketUiClassUpdateInfoPaket|undefined;
 	
-		const el_div_progress:HTMLDivElement = document.createElement("div");
-		const el_div_text:HTMLDivElement = document.createElement("div");
 		paket = this._update_raz_full_get_info_paket();
 		if (paket == undefined)
 			return (undefined);
 		for (;;) {
-			this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO, "");
+			this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
 			await UpdateUiSectionClass.downloadInfo(this.download_process, paket, this.log, this.locale);
 			const data_raz:PaketUiClassUpdateInfoData|undefined = this._update_raz_full_finware_url(paket.app.data, SapiClassDetectType.RAZBERRY);
 			if (data_raz == undefined) {
@@ -312,7 +316,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private async _update_raz_to_zuno(paket:PaketUiClassUpdateInfoPaket): Promise<PaketUiClassUpdateInfoPaket|undefined> {
 		const data_zuno:PaketUiClassUpdateInfoData|undefined = this._update_raz_full_finware_url(paket.app.data, SapiClassDetectType.ZUNO);
 		if (data_zuno == undefined) {
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_UPDATE_VERSION);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_AVIABLE_FINWARE);
 			return (undefined);
 		}
 		if (await this._update_raz_full_dowload_and_update( async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> => {return(await this._update_firmware_raz(data, process, target_type));},
@@ -334,6 +338,153 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (paket_new);
 	}
 
+	private async _click_start_stop_zuno_get_info_include_exlude(): Promise<boolean> {
+		let status:ZunoSapiClassStatus;
+
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
+		status = await this.zuno.enableNif();
+		if (status != ZunoSapiClassStatus.OK) {
+			this.log.errorFalledCode( ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT, status);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_EXLUDE);
+			return (false);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
+		status = await this.zuno.enableEvent();
+		if (status != ZunoSapiClassStatus.OK) {
+			this.log.errorFalledCode( ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN, status);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_EXLUDE);
+			return (false);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_START_LEARN);
+		status = await this.zuno.enableLearn(30);
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_START_LEARN);
+		switch (status) {
+			case ZunoSapiClassStatus.TIMOUT:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
+				this._progress_error(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
+				break ;
+			case ZunoSapiClassStatus.TIMOUT_FORCE_RESTART:
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				this._progress_error(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				break ;
+			default:
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				this._progress_error(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				break ;
+			case ZunoSapiClassStatus.LEARN_EXLUDE:
+				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_EXLUDE);
+				break ;
+			case ZunoSapiClassStatus.LEARN_INCLUDE:
+				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_INCLUDE);
+				break ;
+		}
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
+		const detect_dict:SapiClassDetect = await this.sapi.detect([115200], null);
+		if (detect_dict.status != SapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_DETECT);
+			return (false);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		await this.zuno.connect();
+		return (true);
+	}
+
+	private async _click_start_stop_zuno_get_info(region:string): Promise<number|undefined> {
+		let status:ZunoSapiClassStatus, final:boolean;
+
+		status = this.zuno.isSupportDumpKey();
+		if (status != ZunoSapiClassStatus.OK) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_DUMP_KEY);
+			return (undefined);
+		}
+		status = this.zuno.isSupportIncludeExclude();
+		if (status != ZunoSapiClassStatus.OK) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_INCLUDE_EXLUDE);
+			return (undefined);
+		}
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
+		const region_info:ZunoSapiClassRegion = this.zuno.getRegion();
+		if (region_info.status != ZunoSapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+			return (undefined);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_REGION);
+		if (region != region_info.region) {
+			this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_REGION);
+			status = await this.zuno.setRegion(region);
+			if (status != ZunoSapiClassStatus.OK) {
+				this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_REGION, status);
+				this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+				return (undefined);
+			}
+			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_REGION);
+		}
+		final = false;
+		for (;;) {
+			this.log.infoStart(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
+			const board_info:ZunoSapiClassBoardInfo = this.zuno.getBoardInfo();
+			if (board_info.status != ZunoSapiClassStatus.OK || board_info.node_id == undefined) {
+				this.log.errorFalledCode(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
+				this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+				return (undefined);
+			}
+			this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
+			if (board_info.node_id != 0x0) {
+				if (final == true)
+					return (board_info.node_id);
+				await this.quest_continue_stop(this.el_container,
+												ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE, ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_TITLE,
+												ControllerUiLangClassId.LERAN_PROCESS_CONTINUE, ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE,
+												undefined, undefined);
+				this._progress(ControllerUiLangClassId.INCLUDE_EXLUDE_WAIT);
+				if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
+					return (undefined);
+				continue ;
+			}
+			const quest_include:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE).replace("${dsk}", conv2Decimal(board_info.s2_pub, " - ").substring(0x0, 0x5));
+			await this.quest_continue_stop(this.el_container,
+											quest_include, ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE_TITLE,
+											ControllerUiLangClassId.LERAN_PROCESS_CONTINUE, ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE,
+											undefined, undefined);
+			this._progress(ControllerUiLangClassId.INCLUDE_EXLUDE_WAIT);
+			if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
+				return (undefined);
+			final = true;
+		}
+		return (undefined);
+	}
+
+	private async _update_zuno_to_raz(paket:PaketUiClassUpdateInfoPaket): Promise<boolean> {
+		this._progress(ControllerUiLangClassId.TABLE_NAME_UPDATE_DOWNLOAD_INFO);
+		await UpdateUiSectionClass.downloadInfo(this.download_process, paket, this.log, this.locale);
+		const data_raz:PaketUiClassUpdateInfoData|undefined = this._update_raz_full_finware_url(paket.app.data, SapiClassDetectType.RAZBERRY);
+		if (data_raz == undefined) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_AVIABLE_FINWARE);
+			return (false);
+		}
+		if (await this._update_raz_full_dowload_and_update( async (data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> => {return(await this._update_firmware_zuno(data, process, target_type));},
+															data_raz, paket.app.version_name) == false) {
+			return (false);
+		}
+		if (this.sapi.type() != SapiClassDetectType.RAZBERRY) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_UPDATE_TYPE);
+			return (false);
+		}
+		await this.razberry.connect();
+		const paket_new:PaketUiClassUpdateInfoPaket|undefined = this._update_raz_full_get_info_paket();
+		if (paket_new == undefined)
+			return (false);
+		if (paket_new.app.version != data_raz.version) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_UPDATE_VERSION);
+			return (false);
+		}
+		return (true);
+	}
+
 	private async _click_start_stop(event:Event) {
 		let paket:PaketUiClassUpdateInfoPaket|undefined;
 		// let result_test_include:boolean|undefined, status:ControllerSapiClassStatus;
@@ -352,13 +503,27 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		await this.begin();
 		this.el_button.disabled = true;
 		this.el_button.title = '';
+		this.el_button.style.display = 'none';
 		this.process = true;
-		// paket = await this._update_raz_full();
-		// if (paket == undefined)
-		// 	return ;
-		// paket = await this._update_raz_to_zuno(paket);
-		// if (paket == undefined)
-		// 	return ;
+		paket = await this._update_raz_full();
+		if (paket == undefined)
+			return ;
+		paket = await this._update_raz_to_zuno(paket);
+		if (paket == undefined)
+			return ;
+		const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info("EU");
+		if (zuno_node_id == undefined)
+			return ;
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
+		if (dump_key.status != ZunoSapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
+			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		if (await this._update_zuno_to_raz(paket) == false)
+			return ;
 		return ;
 		// const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
 		// const status_clear_node:ControllerSapiClassStatus = await this.razberry.clear_node();
@@ -429,6 +594,8 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.create_tr_el(ControllerUiLangClassId.MIGRATION_ABOUT_HEADER, ControllerUiLangClassId.MIGRATION_ABOUT_HEADER_TITLE, about_str, "");
 		if (this.razberry.isRazberry7() != true)
 			return (true);
+		this.el_button.disabled = false;
+		this.el_button.style.display = '';
 		this.el_button.addEventListener("click", async (event:Event) => { await this._click_start_stop(event);});
 		this.el_button.type = "button";
 		this.el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START);
