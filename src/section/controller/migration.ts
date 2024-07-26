@@ -24,6 +24,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 
 	private readonly progress_timer_id_ms_period:number				= 1000;
 	private readonly progress_timer_id_count:number					= 30;
+	private readonly el_button:HTMLButtonElement					= document.createElement("button");
 	private readonly el_container:HTMLElement;
 	private readonly razberry:ControllerSapiClass;
 	private readonly sapi:SapiClass;
@@ -349,28 +350,16 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return ;
 		await this.clear();
 		await this.begin();
+		this.el_button.disabled = true;
+		this.el_button.title = '';
 		this.process = true;
-		paket = await this._update_raz_full();
-		if (paket == undefined)
-			return ;
-		paket = await this._update_raz_to_zuno(paket);
-		if (paket == undefined)
-			return ;
+		// paket = await this._update_raz_full();
+		// if (paket == undefined)
+		// 	return ;
+		// paket = await this._update_raz_to_zuno(paket);
+		// if (paket == undefined)
+		// 	return ;
 		return ;
-		// const el_button:HTMLButtonElement = document.createElement("button");
-		// el_button.type = "button";
-		// el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START);
-		// el_button.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START_TITLE);
-		// this.create_tr_el(ControllerUiLangClassId.MIGRATION_PROCESS_HEADER, ControllerUiLangClassId.MIGRATION_PROCESS_HEADER_TITLE, this.el_container, el_button);
-		// while (true) {
-		// 	await sleep(1000);
-		// }
-		// return ;
-		// await sleep(100000);
-		// this.razberry.lock();
-		
-		// el_target.disabled = true;
-		// el_target.title = '';
 		// const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
 		// const status_clear_node:ControllerSapiClassStatus = await this.razberry.clear_node();
 		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_CLEAR_NODE);
@@ -440,12 +429,11 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.create_tr_el(ControllerUiLangClassId.MIGRATION_ABOUT_HEADER, ControllerUiLangClassId.MIGRATION_ABOUT_HEADER_TITLE, about_str, "");
 		if (this.razberry.isRazberry7() != true)
 			return (true);
-		const el_button:HTMLButtonElement = document.createElement("button");
-		el_button.addEventListener("click", async (event:Event) => { await this._click_start_stop(event);});
-		el_button.type = "button";
-		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START);
-		el_button.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START_TITLE);
-		this.create_tr_el(ControllerUiLangClassId.MIGRATION_PROCESS_HEADER, ControllerUiLangClassId.MIGRATION_PROCESS_HEADER_TITLE, this.el_container, el_button);
+		this.el_button.addEventListener("click", async (event:Event) => { await this._click_start_stop(event);});
+		this.el_button.type = "button";
+		this.el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START);
+		this.el_button.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START_TITLE);
+		this.create_tr_el(ControllerUiLangClassId.MIGRATION_PROCESS_HEADER, ControllerUiLangClassId.MIGRATION_PROCESS_HEADER_TITLE, this.el_container, this.el_button);
 		return (true);
 	}
 
