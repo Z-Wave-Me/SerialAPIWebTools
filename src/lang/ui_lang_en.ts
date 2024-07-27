@@ -186,7 +186,6 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_INCLUDE_EXLUDE]: "No support for exclude/include",
 	[ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE]: "Please turn on exluzion mode on you controller",
 	[ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_TITLE]: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
-	[ControllerUiLangClassId.MIGRATION_FILED_EXLUDE]: "Failed to exclude",
 	[ControllerUiLangClassId.MIGRATION_LEARN_INFO_INCLUDE]: "learn include",
 	[ControllerUiLangClassId.MIGRATION_LEARN_INFO_EXLUDE]: "learn exlude",
 	[ControllerUiLangClassId.MIGRATION_FILED_DETECT]: "could not be detected",
@@ -194,7 +193,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE_TITLE]: "xxxxxxxxxxxxxxxxxxxxxxxxxx",
 	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_DUMP_KEY]: "No support for dump key",
 	[ControllerUiLangClassId.MESSAGE_READ_S2_KEY]: "Read s2 key",
-	[ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY]: "Failed read s2 key",
 	[ControllerUiLangClassId.MIGRATION_NOT_AVIABLE_FINWARE]: "The required firmware is not in the database",
 	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR]: "LR is not supported",
+	[ControllerUiLangClassId.MIGRATION_FALLED_SEE_LOG]: "Failed - see log",
 };

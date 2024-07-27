@@ -136,7 +136,7 @@ class CommonUiSectionClass extends CommonUiSectionHtmlClass {
 		this.el_tbody.innerHTML = '';
 	}
 
-	public async quest_continue_stop(el:HTMLElement, quest:ControllerUiLangClassId|string, quest_title:ControllerUiLangClassId,
+	public async quest_continue_stop(el:HTMLElement, quest:ControllerUiLangClassId|string, quest_title:ControllerUiLangClassId|string,
 										run:ControllerUiLangClassId, run_title:ControllerUiLangClassId,
 										stop:ControllerUiLangClassId|undefined, stop_title:ControllerUiLangClassId|undefined): Promise<boolean> {
 		const promise:Promise<boolean> = new Promise((resolve) => {
@@ -145,7 +145,9 @@ class CommonUiSectionClass extends CommonUiSectionHtmlClass {
 			if (typeof quest !== "string")
 				quest = this.locale.getLocale(quest);
 			el_span.innerHTML = quest;
-			el_span.title = this.locale.getLocale(quest_title);
+			if (typeof quest_title !== "string")
+				quest_title = this.locale.getLocale(quest_title);
+			el_span.title = quest_title;
 			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
 			const el_button_continue:HTMLButtonElement = document.createElement("button");
 			el_button_continue.textContent = this.locale.getLocale(run);

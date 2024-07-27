@@ -9,7 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
-import {conv2Decimal} from "../../other/utilities";
+import {conv2Decimal, intToBytearrayLsbMsb} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -90,7 +90,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (promise);
 	}
 
-	private async _click_start_stop_include_excluding(el:HTMLButtonElement, excluding:boolean): Promise<boolean> {
+	private async _click_start_stop_include_excluding(excluding:boolean): Promise<boolean> {
 		let index_timout:number, start_id:ControllerUiLangClassId, question_id:ControllerUiLangClassId, wait_id:ControllerUiLangClassId;
 
 		if (excluding == true) {
@@ -103,16 +103,15 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			question_id = ControllerUiLangClassId.MIGRATION_QUESTION_INCLUDE;
 			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_INCLUDE_START_MASTER;
 		}
-		const excluding_question:boolean = await this._click_start_stop_question(question_id);
-		if (excluding_question == false) {
-			this._constructor_struct_end_stop(el);
-			return (false);
-		}
+		await this.quest_continue_stop(this.el_container, question_id, "",
+												ControllerUiLangClassId.LERAN_PROCESS_CONTINUE, ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE,
+												undefined, undefined);
+
 		this.el_container.innerHTML = '';
 		this.log.infoStart(start_id);
 		const include_excluding:ControllerSapiClassLearnMode = await this.razberry.include_excluding();
 		if (include_excluding.status != ControllerSapiClassStatus.OK) {
-			this._constructor_struct_end_unknown(el, start_id, include_excluding.status);
+			this._progress_faled(start_id, include_excluding.status);
 			return (false);
 		}
 		const el_progress:HTMLProgressElement = document.createElement('progress');
@@ -148,24 +147,24 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				return (true);
 			}
 			if (wait != ControllerSapiClassStatus.PROCESS) {
-				this._constructor_struct_end_unknown(el, start_id, wait);
+				this._progress_faled(start_id, wait);
 				return (false);
 			}
 			if (this.progress_timer_id == undefined) {
 				await this.razberry.disabled();
-				this._constructor_struct_end_unknown(el, start_id, ControllerSapiClassStatus.TIMOUT);
+				this._progress_faled(start_id, ControllerSapiClassStatus.TIMOUT);
 				return (false);
 			}
 		}
 		return (true);
 	}
 
-	private async _click_start_stop_test_include(el:HTMLButtonElement, home:ControllerUiSectionMigrationClassHome): Promise<boolean|undefined> {
+	private async _click_start_stop_test_include(home:ControllerUiSectionMigrationClassHome): Promise<boolean|undefined> {
 		this._constructor_struct_progress(ControllerUiLangClassId.MIGRATION_TEST_INCLUDE);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_HOME_ID);
 		const home_id:ControllerSapiClasstNetworkIDs = await this.razberry.GetNetworkIDs();
 		if (home_id.status != ControllerSapiClassStatus.OK) {
-			this._constructor_struct_end_unknown(el, ControllerUiLangClassId.MESSAGE_READ_HOME_ID, home_id.status);
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_HOME_ID, home_id.status);
 			return (undefined);
 		}
 		home.home = home_id.home;
@@ -176,7 +175,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_INIT_DATA);
 		const get_init_data:ControllerSapiClasstInitData = await this.razberry.GetInitData();
 		if (get_init_data.status != ControllerSapiClassStatus.OK) {
-			this._constructor_struct_end_unknown(el, ControllerUiLangClassId.MESSAGE_READ_INIT_DATA, get_init_data.status);
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_INIT_DATA, get_init_data.status);
 			return (undefined);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_INIT_DATA);
@@ -191,6 +190,11 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 
 	private _progress_error(text:ControllerUiLangClassId): void {
 		this.el_container.innerHTML = '<div class="ZUnoRazberryModal_color_error">' +  this.locale.getLocale(text) +'</div>';
+	}
+
+	private _progress_faled(txt:string|ControllerUiLangClassId, code:number): void {
+		this.log.errorFalledCode(txt, code);
+		this._progress_error(ControllerUiLangClassId.MIGRATION_FALLED_SEE_LOG);
 	}
 
 	private _update_raz_full_finware_url(data:Array<PaketUiClassUpdateInfoData>, target_type:SapiClassDetectType): PaketUiClassUpdateInfoData|undefined {
@@ -345,16 +349,14 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
 		status = await this.zuno.enableNif();
 		if (status != ZunoSapiClassStatus.OK) {
-			this.log.errorFalledCode( ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT, status);
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_EXLUDE);
+			this._progress_faled( ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT, status);
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
 		status = await this.zuno.enableEvent();
 		if (status != ZunoSapiClassStatus.OK) {
-			this.log.errorFalledCode( ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN, status);
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_EXLUDE);
+			this._progress_faled( ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN, status);
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_ENABLE_EVENT_FOR_LEARN);
@@ -384,8 +386,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
 		const detect_dict:SapiClassDetect = await this.sapi.detect([115200], null);
 		if (detect_dict.status != SapiClassStatus.OK) {
-			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_DETECT);
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
 			return (false);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
@@ -409,8 +410,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
 		const region_info:ZunoSapiClassRegion = this.zuno.getRegion();
 		if (region_info.status != ZunoSapiClassStatus.OK) {
-			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
 			return (undefined);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_REGION);
@@ -418,8 +418,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_REGION);
 			status = await this.zuno.setRegion(region);
 			if (status != ZunoSapiClassStatus.OK) {
-				this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_REGION, status);
-				this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+				this._progress_faled(ControllerUiLangClassId.MESSAGE_SET_REGION, status);
 				return (undefined);
 			}
 			this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_REGION);
@@ -429,8 +428,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this.log.infoStart(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 			const board_info:ZunoSapiClassBoardInfo = this.zuno.getBoardInfo();
 			if (board_info.status != ZunoSapiClassStatus.OK || board_info.node_id == undefined) {
-				this.log.errorFalledCode(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
-				this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_CHANGE_REGION);
+				this._progress_faled(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
 				return (undefined);
 			}
 			this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
@@ -488,7 +486,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 
 	private async _click_start_stop(event:Event) {
 		let paket:PaketUiClassUpdateInfoPaket|undefined;
-		// let result_test_include:boolean|undefined, status:ControllerSapiClassStatus;
+		let result_test_include:boolean|undefined, status:ControllerSapiClassStatus;
 
 		if (this.process == true)
 			return ;
@@ -517,81 +515,62 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
 		}
-		// paket = await this._update_raz_full();
-		// if (paket == undefined)
-		// 	return ;
-		// paket = await this._update_raz_to_zuno(paket);
-		// if (paket == undefined)
-		// 	return ;
-		// const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info("EU");
-		// if (zuno_node_id == undefined)
-		// 	return ;
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-		// const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
-		// if (dump_key.status != ZunoSapiClassStatus.OK) {
-		// 	this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
-		// 	this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY);
-		// 	return ;
-		// }
-		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-		// if (await this._update_zuno_to_raz(paket) == false)
-		// 	return ;
-		return ;
-		// const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
-		// const status_clear_node:ControllerSapiClassStatus = await this.razberry.clear_node();
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_CLEAR_NODE);
-		// if (status_clear_node != ControllerSapiClassStatus.OK) {
-		// 	this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_CLEAR_NODE, status_clear_node);
-		// 	return ;
-		// }
-		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_CLEAR_NODE);
-		// for (;;) {
-		// 	result_test_include = await this._click_start_stop_test_include(el_target, home);
-		// 	if (result_test_include == undefined)
-		// 		return ;
-		// 	if (result_test_include == false)
-		// 		break ;
-		// 	if (await this._click_start_stop_include_excluding(el_target, true) == false)
-		// 		return ;
-		// }
-		// for (;;) {
-		// 	if (await this._click_start_stop_include_excluding(el_target, false) == false)
-		// 		return ;
-		// 	result_test_include = await this._click_start_stop_test_include(el_target, home);
-		// 	if (result_test_include == undefined)
-		// 		return ;
-		// 	if (result_test_include == true)
-		// 		break ;
-		// }
-		// this._constructor_struct_progress(ControllerUiLangClassId.MIGRATION_FINALIZE);
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_HOME_ID);
-		// const set_home_id:ControllerSapiClassStatus = await this.razberry.nvmWrite(this.NVM_HOMEID, intToBytearrayLsbMsb(home.home));
-		// if (set_home_id != ControllerSapiClassStatus.OK) {
-		// 	this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_SET_HOME_ID, set_home_id);
-		// 	return ;
-		// }
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
-		// const soft_reset:ControllerSapiClassStatus = await this.razberry.softReset();
-		// if (soft_reset != ControllerSapiClassStatus.OK) {
-		// 	this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_SOFT_RESET, soft_reset);
-		// 	return (undefined);
-		// }
-		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_NOP);
-		// status = await this.razberry.nop(home.node_id);
-		// if (status != ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK) {
-		// 	this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_NOP, status);
-		// 	return ;
-		// }
-		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_NOP);
-		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
-		// status = await this.razberry.removeFaledNode(home.node_id);
-		// if (status != ControllerSapiClassStatus.OK) {
-		// 	this._constructor_struct_end_unknown(el_target, ControllerUiLangClassId.MESSAGE_REMOVE_NODE, status);
-		// 	return ;
-		// }
-		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
-		// this._constructor_struct_end_good(el_target);
+		paket = await this._update_raz_full();
+		if (paket == undefined)
+			return ;
+		paket = await this._update_raz_to_zuno(paket);
+		if (paket == undefined)
+			return ;
+		const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info(region_info.region);
+		if (zuno_node_id == undefined)
+			return ;
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
+		if (dump_key.status != ZunoSapiClassStatus.OK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		if (await this._update_zuno_to_raz(paket) == false)
+			return ;
+		const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
+		for (;;) {
+			if (await this._click_start_stop_include_excluding(false) == false)
+				return ;
+			result_test_include = await this._click_start_stop_test_include(home);
+			if (result_test_include == undefined)
+				return ;
+			if (result_test_include == true)
+				break ;
+		}
+		this._progress(ControllerUiLangClassId.MIGRATION_FINALIZE);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_HOME_ID);
+		const set_home_id:ControllerSapiClassStatus = await this.razberry.nvmWrite(this.NVM_HOMEID, intToBytearrayLsbMsb(home.home));
+		if (set_home_id != ControllerSapiClassStatus.OK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_SET_HOME_ID, set_home_id);
+			return ;
+		}
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
+		const soft_reset:ControllerSapiClassStatus = await this.razberry.softReset();
+		if (soft_reset != ControllerSapiClassStatus.OK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_SOFT_RESET, soft_reset);
+			return (undefined);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_NOP);
+		status = await this.razberry.nop(home.node_id);
+		if (status != ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_NOP, status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_NOP);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
+		status = await this.razberry.removeFaledNode(home.node_id);
+		if (status != ControllerSapiClassStatus.OK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_REMOVE_NODE, status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
 	}
 
 	private async _begin(): Promise<boolean> {
