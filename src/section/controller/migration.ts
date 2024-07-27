@@ -9,7 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
-import {conv2Decimal, intToBytearrayLsbMsb} from "../../other/utilities";
+import {conv2Decimal, intToBytearrayLsbMsb, arrayToStringHex, numberToStringHex} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -529,6 +529,16 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return ;
 		if (await this._remove_node(zuno_node_id) == false)
 			return ;
+		const home_str:string = "home: " + numberToStringHex(home.home);
+		console.log(home_str);
+		const access:string = "access: " + arrayToStringHex(dump_key.access);
+		console.log(access);
+		const auth:string = "auth: " + arrayToStringHex(dump_key.auth);
+		console.log(auth);
+		const unauth:string = "unauth: " + arrayToStringHex(dump_key.unauth);
+		console.log(unauth);
+		const s0:string = "s0: " + arrayToStringHex(dump_key.s0);
+		console.log(s0);
 	}
 
 	private async _begin(): Promise<boolean> {
