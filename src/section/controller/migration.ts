@@ -1,6 +1,7 @@
 import {ControllerUiLangClassId} from "../../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../../lang/ui_lang"
-import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClassStatus, ControllerSapiClasstInitData, ControllerSapiClassLearnMode} from "../../sapi/controller_sapi";
+import {ControllerSapiClass, ControllerSapiClasstNetworkIDs, ControllerSapiClassStatus, ControllerSapiClasstInitData, ControllerSapiClassLearnMode,
+		ControllerSapiClassRegion} from "../../sapi/controller_sapi";
 import {ZunoSapiClass, ZunoSapiClassRegion, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassS2Key} from "../../sapi/zuno_sapi";
 import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
@@ -505,25 +506,36 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.el_button.title = '';
 		this.el_button.style.display = 'none';
 		this.process = true;
-		paket = await this._update_raz_full();
-		if (paket == undefined)
-			return ;
-		paket = await this._update_raz_to_zuno(paket);
-		if (paket == undefined)
-			return ;
-		const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info("EU");
-		if (zuno_node_id == undefined)
-			return ;
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-		const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
-		if (dump_key.status != ZunoSapiClassStatus.OK) {
-			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
-			this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
+		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
+		if (region_info.status != ControllerSapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
 			return ;
 		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-		if (await this._update_zuno_to_raz(paket) == false)
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_REGION);
+		if (this.razberry.isRegionStandart(region_info.region) == false) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
+		}
+		// paket = await this._update_raz_full();
+		// if (paket == undefined)
+		// 	return ;
+		// paket = await this._update_raz_to_zuno(paket);
+		// if (paket == undefined)
+		// 	return ;
+		// const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info("EU");
+		// if (zuno_node_id == undefined)
+		// 	return ;
+		// this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		// const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
+		// if (dump_key.status != ZunoSapiClassStatus.OK) {
+		// 	this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
+		// 	this._progress_error(ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY);
+		// 	return ;
+		// }
+		// this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+		// if (await this._update_zuno_to_raz(paket) == false)
+		// 	return ;
 		return ;
 		// const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
 		// const status_clear_node:ControllerSapiClassStatus = await this.razberry.clear_node();

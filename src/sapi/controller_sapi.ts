@@ -168,6 +168,7 @@ class ControllerSapiClass {
 	private readonly RAZ7_FLAGS_SIZE															= 0x08;
 	private readonly RAZ7_COUNT_SUPPORT_OFFSET													= this.RAZ7_FLAG_OFFSET + this.RAZ7_FLAGS_SIZE
 
+	private readonly LICENSE_KEY_LONG_RANGE:number												= 0x5;
 	private readonly license_flags: {[key:number]: ControllerSapiClassLicenseFlag}				=
 	{
 		0x00: {name:"Controller Static API", title: "Enables static cotroller mode. User can switch Razberry to \"staic\" mode instead of default \"bridge\"", active:false},
@@ -183,7 +184,11 @@ class ControllerSapiClass {
 		0x0B: {name:"Zniffer in PTI mode", title: "Enables Packet Trace Interface. Device dumps all the packets it sends and receives. This uses external UART interface and doesn't consume time of the main core", active:false},
 		0x0C: {name:"Zniffer and Advanced Radio Tool", title: "Razberry works as direct transmitter", active:false},
 	};
-	private readonly region_array:string[]														=
+	private readonly region_standart:string[]														=
+	[
+		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "JP", "KR"
+	];
+	private readonly region_full:string[]														=
 	[
 		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
 	];
@@ -587,8 +592,14 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
+	public isRegionStandart(region:string): boolean {
+		if (this.region_standart.includes(region)== false)
+			return (false);
+		return (true);
+	}
+
 	public async getRegion(): Promise<ControllerSapiClassRegion> {
-		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_array};
+		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_standart};
 		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
 		if (rerion_get.status != ControllerSapiClassStatus.OK) {
 			out.status = rerion_get.status;
@@ -603,6 +614,11 @@ class ControllerSapiClass {
 			return (out);
 		}
 		out.region = this.region_number_to_string[rerion_get.data[0x0]];
+		if (this.license.status == ControllerSapiClassStatus.OK) {
+			if (this.license.flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.license.flags[this.LICENSE_KEY_LONG_RANGE].active == true) {
+				out.region_array = this.region_full;
+			}
+		}
 		return (out);
 	}
 

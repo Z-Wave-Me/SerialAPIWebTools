@@ -196,4 +196,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_READ_S2_KEY]: "Read s2 key",
 	[ControllerUiLangClassId.MIGRATION_FILED_READ_S2_KEY]: "Failed read s2 key",
 	[ControllerUiLangClassId.MIGRATION_NOT_AVIABLE_FINWARE]: "The required firmware is not in the database",
+	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR]: "LR is not supported",
 };
