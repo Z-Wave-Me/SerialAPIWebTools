@@ -38,58 +38,6 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private process:boolean											= false;
 	private progress_timer_id?:number;
 
-
-
-	private _constructor_struct_progress(text:ControllerUiLangClassId): void {
-		this.el_container.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  this.locale.getLocale(text) +'</div>';
-	}
-
-	private _constructor_struct_end(el:HTMLButtonElement, class_namme:string, txt:ControllerUiLangClassId): void {
-		this.el_container.innerHTML = '<span class="'+ class_namme +'">' +  this.locale.getLocale(txt) +'</span>';
-		this.process = false;
-		this.razberry.unlock();
-		el.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_BUTTON_START_TITLE);
-		el.disabled = false;
-	}
-
-	private _constructor_struct_end_unknown(el:HTMLButtonElement, txt:string|ControllerUiLangClassId, code:number): void {
-		this.log.errorFalledCode(txt, code);
-		this._constructor_struct_end(el, "ZUnoRazberryModal_color_error", ControllerUiLangClassId.MIGRATION_UNKNOWN_ERROR);
-	}
-
-	private _constructor_struct_end_good(el:HTMLButtonElement): void {
-		this._constructor_struct_end(el, "ZUnoRazberryModal_color_info", ControllerUiLangClassId.MIGRATION_GOOD_RESULT);
-	}
-	
-	private _constructor_struct_end_stop(el:HTMLButtonElement): void {
-		this._constructor_struct_end(el, "ZUnoRazberryModal_color_info", ControllerUiLangClassId.MIGRATION_STOP_RESULT);
-	}
-
-	private async _click_start_stop_question(text:ControllerUiLangClassId): Promise<boolean> {
-		const promise:Promise<boolean> = new Promise((resolve) => {
-			this.el_container.innerHTML = '';
-			const el_span:HTMLSpanElement = document.createElement("span");
-			el_span.textContent = this.locale.getLocale(text);
-			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
-			const el_button_continue:HTMLButtonElement = document.createElement("button");
-			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_ACTION_CONTINUE);
-			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_ACTION_CONTINUE_TITLE);
-			el_button_continue.type = "button";
-			el_button_continue.className = "ZUnoRazberryModalContentSection_migration_action_button";
-			const el_button_stop:HTMLButtonElement = document.createElement("button");
-			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_ACTION_STOP);
-			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_ACTION_STOP_TITLE);
-			el_button_stop.type = "button";
-			el_button_stop.className = "ZUnoRazberryModalContentSection_migration_action_button";
-			el_button_stop.addEventListener("click", async () => { resolve(false)});
-			el_button_continue.addEventListener("click", async () => { resolve(true)});
-			this.el_container.appendChild(el_span);
-			this.el_container.appendChild(el_button_continue);
-			this.el_container.appendChild(el_button_stop);
-		});
-		return (promise);
-	}
-
 	private async _click_start_stop_include_excluding(excluding:boolean): Promise<boolean> {
 		let index_timout:number, start_id:ControllerUiLangClassId, question_id:ControllerUiLangClassId, wait_id:ControllerUiLangClassId;
 
@@ -160,7 +108,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	}
 
 	private async _click_start_stop_test_include(home:ControllerUiSectionMigrationClassHome): Promise<boolean|undefined> {
-		this._constructor_struct_progress(ControllerUiLangClassId.MIGRATION_TEST_INCLUDE);
+		this._progress(ControllerUiLangClassId.MIGRATION_TEST_INCLUDE);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_HOME_ID);
 		const home_id:ControllerSapiClasstNetworkIDs = await this.razberry.GetNetworkIDs();
 		if (home_id.status != ControllerSapiClassStatus.OK) {
@@ -484,9 +432,29 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (true);
 	}
 
+
+	private async _remove_node(node_id:number): Promise<boolean> {
+		let status:ControllerSapiClassStatus;
+
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_NOP);
+		status = await this.razberry.nop(node_id);
+		if (status != ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_NOP, status);
+			return (false);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_NOP);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
+		status = await this.razberry.removeFaledNode(node_id);
+		if (status != ControllerSapiClassStatus.OK) {
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_REMOVE_NODE, status);
+			return (false);
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
+		return (true);
+	}
+
 	private async _click_start_stop(event:Event) {
-		let paket:PaketUiClassUpdateInfoPaket|undefined;
-		let result_test_include:boolean|undefined, status:ControllerSapiClassStatus;
+		let paket:PaketUiClassUpdateInfoPaket|undefined, result_test_include:boolean|undefined;
 
 		if (this.process == true)
 			return ;
@@ -557,20 +525,10 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return (undefined);
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_NOP);
-		status = await this.razberry.nop(home.node_id);
-		if (status != ControllerSapiClassStatus.TRANSMIT_COMPLETE_NO_ACK) {
-			this._progress_faled(ControllerUiLangClassId.MESSAGE_NOP, status);
+		if (await this._remove_node(home.node_id) == false)
 			return ;
-		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_NOP);
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
-		status = await this.razberry.removeFaledNode(home.node_id);
-		if (status != ControllerSapiClassStatus.OK) {
-			this._progress_faled(ControllerUiLangClassId.MESSAGE_REMOVE_NODE, status);
+		if (await this._remove_node(zuno_node_id) == false)
 			return ;
-		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_REMOVE_NODE);
 	}
 
 	private async _begin(): Promise<boolean> {
