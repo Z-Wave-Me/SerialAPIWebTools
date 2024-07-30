@@ -9,7 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
-import {conv2Decimal, intToBytearrayLsbMsb, arrayToStringHex, numberToStringHex} from "../../other/utilities";
+import {conv2Decimal, intToBytearrayLsbMsb, arrayToStringHex, numberToStringHex, sleep} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -331,6 +331,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_INCLUDE);
 				break ;
 		}
+		await sleep(2000);//что бы точно ресетнулось
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
 		const detect_dict:SapiClassDetect = await this.sapi.detect([115200], null);
 		if (detect_dict.status != SapiClassStatus.OK) {
