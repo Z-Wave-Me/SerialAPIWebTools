@@ -571,10 +571,10 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return ;
 
 		this.el_container.innerHTML = '<h5 align="center">'+ this.locale.getLocale(ControllerUiLangClassId.MIGRATION_SUCESS) +'</h5>' +
-		'<div>'+ "unauth: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.unauth) +'</div>' +
-		'<div>'+ "auth: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.auth) +'</div>' +
-		'<div>'+ "access: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.access) +'</div>' +
-		'<div>'+ "s0: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.s0) +'</div>'
+		'<div>'+ "<b>unauth:</b> " + arrayToStringHex(zuno_node_id_dump_key.dump_key.unauth) +'</div>' +
+		'<div>'+ "<b>auth:</b>   " + arrayToStringHex(zuno_node_id_dump_key.dump_key.auth) +'</div>' +
+		'<div>'+ "<b>access:</b> " + arrayToStringHex(zuno_node_id_dump_key.dump_key.access) +'</div>' +
+		'<div>'+ "<b>s0:</b>     " + arrayToStringHex(zuno_node_id_dump_key.dump_key.s0) +'</div>'
 	}
 
 	private async _begin(): Promise<boolean> {
