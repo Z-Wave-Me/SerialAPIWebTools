@@ -19,6 +19,12 @@ interface ControllerUiSectionMigrationClassHome
 	node_id:number;
 }
 
+interface ControllerUiSectionMigrationClassNodeDumpKey
+{
+	zuno_node_id:number;
+	dump_key:ZunoSapiClassS2Key;
+}
+
 type ControllerUiSectionMigrationClassClear = () => Promise<void>;
 
 class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
@@ -341,7 +347,29 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (true);
 	}
 
-	private async _click_start_stop_zuno_get_info(region:string): Promise<number|undefined> {
+	private _test_dump_key(array:Uint8Array): boolean {
+		const empty_v1:string = "00000000000000000000000000000000";
+		const empty_v2:string = "ffffffffffffffffffffffffffffffff";
+
+		const key:string = arrayToStringHex(array);
+		if (key === empty_v1 || key === empty_v2)
+			return (false);
+		return (true);
+	}
+
+	private _test_dump_key_all(dump_key:ZunoSapiClassS2Key): boolean {
+		if (this._test_dump_key(dump_key.unauth) == false)
+			return (false);
+		if (this._test_dump_key(dump_key.auth) == false)
+			return (false);
+		if (this._test_dump_key(dump_key.access) == false)
+			return (false);
+			if (this._test_dump_key(dump_key.s0) == false)
+			return (false);
+		return (true);
+	}
+
+	private async _click_start_stop_zuno_get_info(region:string): Promise<ControllerUiSectionMigrationClassNodeDumpKey|undefined> {
 		let status:ZunoSapiClassStatus, final:boolean;
 
 		status = this.zuno.isSupportDumpKey();
@@ -380,8 +408,28 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			}
 			this.log.infoDone(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 			if (board_info.node_id != 0x0) {
-				if (final == true)
-					return (board_info.node_id);
+				if (final == true) {
+					this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+					const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
+					if (dump_key.status != ZunoSapiClassStatus.OK) {
+						this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
+						return ;
+					}
+					this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
+					if (this._test_dump_key_all(dump_key) == false) {
+						await this.quest_continue_stop(this.el_container,
+														ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER, ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER_TITLE,
+														ControllerUiLangClassId.LERAN_PROCESS_CONTINUE, ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE,
+														undefined, undefined);
+						this._progress(ControllerUiLangClassId.INCLUDE_EXLUDE_WAIT);
+						if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
+							return (undefined);
+						final = false;
+						continue ;
+					}
+					const zuno_node_id_dump_key:ControllerUiSectionMigrationClassNodeDumpKey = {zuno_node_id:board_info.node_id, dump_key:dump_key};
+					return (zuno_node_id_dump_key);
+				}
 				await this.quest_continue_stop(this.el_container,
 												ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE, ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_TITLE,
 												ControllerUiLangClassId.LERAN_PROCESS_CONTINUE, ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE,
@@ -488,16 +536,9 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		paket = await this._update_raz_to_zuno(paket);
 		if (paket == undefined)
 			return ;
-		const zuno_node_id:number|undefined = await this._click_start_stop_zuno_get_info(region_info.region);
-		if (zuno_node_id == undefined)
+		const zuno_node_id_dump_key:ControllerUiSectionMigrationClassNodeDumpKey|undefined = await this._click_start_stop_zuno_get_info(region_info.region);
+		if (zuno_node_id_dump_key == undefined)
 			return ;
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-		const dump_key:ZunoSapiClassS2Key = await this.zuno.readS2Key();
-		if (dump_key.status != ZunoSapiClassStatus.OK) {
-			this._progress_faled(ControllerUiLangClassId.MESSAGE_READ_S2_KEY, dump_key.status);
-			return ;
-		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
 		if (await this._update_zuno_to_raz(paket) == false)
 			return ;
 		const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
@@ -526,17 +567,17 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SOFT_RESET);
 		if (await this._remove_node(home.node_id) == false)
 			return ;
-		if (await this._remove_node(zuno_node_id) == false)
+		if (await this._remove_node(zuno_node_id_dump_key.zuno_node_id) == false)
 			return ;
 		const home_str:string = "home: " + numberToStringHex(home.home);
 		console.log(home_str);
-		const access:string = "access: " + arrayToStringHex(dump_key.access);
+		const access:string = "access: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.access);
 		console.log(access);
-		const auth:string = "auth: " + arrayToStringHex(dump_key.auth);
+		const auth:string = "auth: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.auth);
 		console.log(auth);
-		const unauth:string = "unauth: " + arrayToStringHex(dump_key.unauth);
+		const unauth:string = "unauth: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.unauth);
 		console.log(unauth);
-		const s0:string = "s0: " + arrayToStringHex(dump_key.s0);
+		const s0:string = "s0: " + arrayToStringHex(zuno_node_id_dump_key.dump_key.s0);
 		console.log(s0);
 	}
 
