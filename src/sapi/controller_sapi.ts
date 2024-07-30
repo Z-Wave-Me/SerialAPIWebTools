@@ -202,6 +202,17 @@ class ControllerSapiClass {
 		0x00:"EU", 0x01:"US", 0x02: "ANZ", 0x03:"HK", 0x05:"IN", 0x06:"IL",
 		0x07:"RU", 0x08:"CN", 0x09:"US_LR",0x20: "JP", 0x21:"KR", 0xFF:"EU"
 	};
+	private readonly custom_region_string_to_number: {[key:string]: number}						=
+	{
+		"EU": 0x00, "US": 0x03, "ANZ": 0x04, "HK": 0x05, "IN": 0x02, "IL": 0x09,
+		"RU": 0x01, "CN": 0x06, "US_LR": 0x0B, "JP": 0x07, "KR": 0x08
+	};
+	private readonly custom_region_number_to_string: {[key:number]: string}						=
+	{
+		0x00:"EU", 0x03:"US", 0x04:"ANZ", 0x05:"HK", 0x02:"IN", 0x09:"IL",
+		0x01:"RU", 0x06:"CN", 0x0B:"US_LR", 0x07:"JP", 0x08:"KR"
+	};
+
 	private readonly sapi:SapiClass;
 	private readonly raz_key:Array<number>														= [0x86, 0x78, 0x02, 0x09, 0x8D, 0x89, 0x4D, 0x41, 0x8F, 0x3F, 0xD2, 0x04, 0x2E, 0xEC, 0xF5, 0xC4, 0x05, 0x8C, 0xB9, 0x36, 0xA9, 0xCC, 0x4B, 0x87, 0x91, 0x39, 0x36, 0xB7, 0x43, 0x18, 0x37, 0x42];
 
@@ -600,20 +611,38 @@ class ControllerSapiClass {
 
 	public async getRegion(): Promise<ControllerSapiClassRegion> {
 		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_standart};
-		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
-		if (rerion_get.status != ControllerSapiClassStatus.OK) {
-			out.status = rerion_get.status;
-			return (out);
+		if (this.isRazberry7() == true) {
+			const custom_region_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [0xFF]);
+			if (custom_region_info.status != SapiClassStatus.OK) {
+				out.status = ((custom_region_info.status as unknown) as ControllerSapiClassStatus);
+				return (out);
+			}
+			if (custom_region_info.data.length < 0x1) {
+				out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
+				return (out);
+			}
+			if (this.custom_region_number_to_string[custom_region_info.data[0x0]] == undefined) {
+				out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
+				return (out);
+			}
+			out.region = this.custom_region_number_to_string[custom_region_info.data[0x0]];
 		}
-		if (rerion_get.data.length < 0x1) {
-			out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
-			return (out);
+		else {
+			const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
+			if (rerion_get.status != ControllerSapiClassStatus.OK) {
+				out.status = rerion_get.status;
+				return (out);
+			}
+			if (rerion_get.data.length < 0x1) {
+				out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
+				return (out);
+			}
+			if (this.region_number_to_string[rerion_get.data[0x0]] == undefined) {
+				out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
+				return (out);
+			}
+			out.region = this.region_number_to_string[rerion_get.data[0x0]];
 		}
-		if (Object.hasOwn(this.region_number_to_string, rerion_get.data[0x0]) == false) {
-			out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
-			return (out);
-		}
-		out.region = this.region_number_to_string[rerion_get.data[0x0]];
 		if (this.license.status == ControllerSapiClassStatus.OK) {
 			if (this.license.flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.license.flags[this.LICENSE_KEY_LONG_RANGE].active == true) {
 				out.region_array = this.region_full;
@@ -623,9 +652,23 @@ class ControllerSapiClass {
 	}
 
 	public async setRegion(region:string): Promise<ControllerSapiClassStatus> {
+		if (this.isRazberry7() == true) {
+			if (this.custom_region_string_to_number[region] == undefined)
+			return (ControllerSapiClassStatus.INVALID_ARG);
+			const custom_region_set:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [this.custom_region_string_to_number[region]]);
+			if (custom_region_set.status != SapiClassStatus.OK)
+				return (((custom_region_set.status as unknown) as ControllerSapiClassStatus));
+			const res:SapiClassRet = await this.sapi.recvIncomingRequest(1000);
+			if (res.status != SapiClassStatus.OK)
+				return (((res.status as unknown) as ControllerSapiClassStatus));
+			if (res.cmd != SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED)
+				return (ControllerSapiClassStatus.NOT_SET);
+			await this._begin(false);
+			return (ControllerSapiClassStatus.OK);
+		}
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
-		if (Object.hasOwn(this.region_string_to_number, region) == false)
+		if (this.region_string_to_number[region] == undefined)
 			return (ControllerSapiClassStatus.INVALID_ARG);
 		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [this.region_string_to_number[region]]);
 		if (rerion_get.status != ControllerSapiClassStatus.OK)

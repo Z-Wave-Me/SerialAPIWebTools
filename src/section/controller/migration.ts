@@ -519,9 +519,6 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.el_button.title = '';
 		this.el_button.style.display = 'none';
 		this.process = true;
-		paket = await this._update_raz_full();
-		if (paket == undefined)
-			return ;
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
 		if (region_info.status != ControllerSapiClassStatus.OK) {
@@ -533,6 +530,9 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
 		}
+		paket = await this._update_raz_full();
+		if (paket == undefined)
+			return ;
 		paket = await this._update_raz_to_zuno(paket);
 		if (paket == undefined)
 			return ;
@@ -541,6 +541,13 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return ;
 		if (await this._update_zuno_to_raz(paket) == false)
 			return ;
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_REGION);
+		const region_set_status:ControllerSapiClassStatus = await this.razberry.setRegion(region_info.region);
+		if (region_set_status != ControllerSapiClassStatus.OK) {
+			this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_REGION, region_set_status);
+			return ;
+		}
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_REGION);
 		const home:ControllerUiSectionMigrationClassHome = {home:0x0, node_id:0x0};
 		for (;;) {
 			if (await this._click_start_stop_include_excluding(false) == false)
