@@ -197,4 +197,5 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_FALLED_SEE_LOG]: "Failed - see log",
 	[ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER]: "<div>The slave was turned on without the required keys.</div><div>Please turn on exluzion mode on you controller</div>",
 	[ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER_TITLE]: "",
+	[ControllerUiLangClassId.MIGRATION_SUCESS]: "Success",
 };
