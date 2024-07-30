@@ -325,10 +325,8 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				this._progress_error(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
 				break ;
 			case ZunoSapiClassStatus.LEARN_EXLUDE:
-				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_EXLUDE);
-				break ;
 			case ZunoSapiClassStatus.LEARN_INCLUDE:
-				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_INCLUDE);
+				this.log.info(ControllerUiLangClassId.MIGRATION_LEARN_INFO_EXLUDE_INCLUDE);
 				break ;
 		}
 		await sleep(2000);//что бы точно ресетнулось
@@ -473,6 +471,9 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		this.el_button.title = '';
 		this.el_button.style.display = 'none';
 		this.process = true;
+		paket = await this._update_raz_full();
+		if (paket == undefined)
+			return ;
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_READ_REGION);
 		const region_info:ControllerSapiClassRegion = await this.razberry.getRegion();
 		if (region_info.status != ControllerSapiClassStatus.OK) {
@@ -484,9 +485,6 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
 		}
-		paket = await this._update_raz_full();
-		if (paket == undefined)
-			return ;
 		paket = await this._update_raz_to_zuno(paket);
 		if (paket == undefined)
 			return ;

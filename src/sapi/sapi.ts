@@ -485,7 +485,11 @@ class SapiClass {
 
 		if (this.b_open == false)
 			return (SapiClassStatus.PORT_NOT_OPEN);
-		await this._clear();
+		for (;;) {
+			const res:SapiClassRet = await this._recvIncomingRequest(100);
+			if (res.status != SapiClassStatus.OK)
+				break
+		}
 		for (;;) {
 			if (await this._sendData(cmd, databuff) == false)
 				return (SapiClassStatus.WRITE);
