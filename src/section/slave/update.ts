@@ -5,9 +5,9 @@ import {ControllerUiLogClass} from "../../log/ui_log"
 import {CommonUiSectionClass} from "../common"
 import {UpdateUiSectionClass, PaketUiClassUpdateInfoPaket} from "../update"
 import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
-import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave} from "../../other/utilities";
+import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave, sleep} from "../../other/utilities";
 import {ControllerUiDefineClass} from "../../ui_define"
-import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus} from "./../../sapi/sapi";
+import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClassDetect} from "./../../sapi/sapi";
 
 export {SlaveUiSectionUpdateClass};
 
@@ -54,6 +54,24 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 	}
 
 	private async _update_firmware(data:Uint8Array, process:SapiClassUpdateProcess|null, target_type:SapiClassDetectType): Promise<SapiClassStatus> {
+		// if (this.zuno.isMustResetDefault() == ZunoSapiClassStatus.OK && this.zuno.isSupportResetDefault() == ZunoSapiClassStatus.OK) {
+		// 	this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+		// 	const status:ZunoSapiClassStatus = await this.zuno.setDefault();
+		// 	if (status != ZunoSapiClassStatus.OK) {
+		// 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_SET_DEFAULT, status);
+		// 		return ((status as unknown) as SapiClassStatus);
+		// 	}
+		// 	this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
+		// 	await sleep(1000);
+		// 	this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
+		// 	const detect_dict:SapiClassDetect = await this.zuno.detect([115200], null);
+		// 	if (detect_dict.status != SapiClassStatus.OK) {
+		// 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
+		// 		return ((detect_dict.status as unknown) as SapiClassStatus);
+		// 	}
+		// 	this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		// 	await this.zuno.connect();
+		// }
 		const status:ZunoSapiClassStatus = await this.zuno.updateFirmware(data, process, target_type);
 		return ((status as unknown) as SapiClassStatus);
 	}

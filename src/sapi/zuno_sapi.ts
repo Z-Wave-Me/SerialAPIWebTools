@@ -1,5 +1,9 @@
 
-import {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType, SapiClassUpdateProcess} from "./sapi";
+import {
+	SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType, SapiClassUpdateProcess,
+	SapiClassDetectTypeFunc, SapiClassDetect
+} from "./sapi";
+
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
@@ -192,7 +196,7 @@ class ZunoSapiClass {
 		const board_info:ZunoSapiClassBoardInfo												=
 		{	
 			status:ZunoSapiClassStatus.NOT_INIT, version:0x0, build_number:0x0, build_ts:0x0, hw_rev:0x0, code_size:0x0, ram_size:0x0, dbg_lock:0x0, custom_code_offset:0x30000, chip_uuid: new Uint8Array(), s2_pub: new Uint8Array(),
-			boot_offset:0x3a000, boot_version: 0x01090001, max_default_power:50, ext_nvm:0x0, chip : {chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x8E19CC54, se_version:0x0}
+			boot_offset:0x3a000, boot_version: 0x0, max_default_power:50, ext_nvm:0x0, chip : {chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x8E19CC54, se_version:0x0}
 		};
 		return (board_info);
 	}
@@ -257,7 +261,7 @@ class ZunoSapiClass {
 		out.main_pow = param_info.data[2];
 	}
 
-	private async _get_board_info(): Promise<void> {
+	private async _get_board_info_add(): Promise<void> {
 		let code_sz_shift:number, shift_smrt:number, bLR:boolean, byte_i:number, bit_i:number;
 	
 		this.board_info = this._get_board_info_default();
@@ -388,6 +392,20 @@ class ZunoSapiClass {
 		out.boot_version = costruct_int(info.slice(offset_boot_version, offset_boot_version + size_boot_version), size_boot_version, false);
 	}
 
+	private async _get_board_info(): Promise<void> {
+		await this._get_board_info_add();
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return ;
+		if (this.board_info.boot_version == 0x0) {
+			this.board_info.boot_version = 0x01090001;
+		}
+		if (this.board_info.chip.keys_hash == 0x0) {
+			this.board_info.chip.keys_hash = 0x8E19CC54;
+			this.board_info.chip.chip_type = HardwareChipClass.CHIP_ZGM130S037HGN1;
+			this.board_info.chip.chip_family = HardwareChipClass.FAMILY_ZGM13;
+		}
+	}
+
 	private async _apply_param(raw:Array<number>): Promise<ZunoSapiClassStatus> {
 		const res:SapiClassRet = await this._writeNVM(0xFFE000, raw);
 		if (res.status != SapiClassStatus.OK)
@@ -453,7 +471,15 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK)
 	}
 
-	public isSupportResetDefaul():ZunoSapiClassStatus {
+	public isMustResetDefault():ZunoSapiClassStatus {
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (this.board_info.version < 0x30D124B)
+			return (ZunoSapiClassStatus.UN_SUPPORT);
+		return (ZunoSapiClassStatus.OK)
+	}
+
+	public isSupportResetDefault():ZunoSapiClassStatus {
 		if (this.board_info.status != ZunoSapiClassStatus.OK)
 			return (this.board_info.status);
 		if (this.board_info.version < 0x3080517)
@@ -700,6 +726,10 @@ class ZunoSapiClass {
 		await this._get_param_info();
 		await this._get_board_info();
 		// await this._begin(true);
+	}
+
+	public async detect(baudrate:Array<number>, func:SapiClassDetectTypeFunc|null): Promise<SapiClassDetect> {
+		return (await this.sapi.detect(baudrate, func));
 	}
 
 	constructor(sapi:SapiClass) {

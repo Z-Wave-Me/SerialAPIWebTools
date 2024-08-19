@@ -371,7 +371,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	}
 
 	private _controller_default_init(): boolean {
-		const status:ZunoSapiClassStatus = this.zuno.isSupportResetDefaul();
+		const status:ZunoSapiClassStatus = this.zuno.isSupportResetDefault();
 		if (status != ZunoSapiClassStatus.OK)
 			return (false);
 		const el_button:HTMLButtonElement = document.createElement("button");
