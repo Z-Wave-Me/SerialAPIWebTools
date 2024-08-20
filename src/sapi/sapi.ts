@@ -59,7 +59,7 @@ enum SapiClassStatus
 	PORT_NOT_REQUEST,
 	PORT_USED,
 	PORT_BUSY,
-	TIMOUT_RCV,
+	TIMEOUT_RCV,
 	SERIAL_UN_SUPPORT,
 	SERIAL_BUSY,
 	REQUEST_ONE_SHOT,
@@ -74,7 +74,7 @@ enum SapiClassStatus
 	DETECTED_UNC,
 	DETECTED_TARGET_TYPE,
 	UPDATE_UNK,
-	UPDATE_TIMOUT,
+	UPDATE_TIMEOUT,
 	UPDATE_PROCESS,
 	UPDATE_STEP_FAILL,
 	LAST_STATUS,
@@ -630,7 +630,7 @@ class SapiClass {
 		for (;;) {
 			const current_timeout:number = Date.now();
 			if (current_timeout >= wait_timeout) {
-				out.status = SapiClassStatus.TIMOUT_RCV;
+				out.status = SapiClassStatus.TIMEOUT_RCV;
 				return (out);
 			}
 			const res:SapiClassRet = await this._recvIncomingRequest(wait_timeout - current_timeout);
@@ -876,7 +876,7 @@ class SapiClass {
 				continue ;
 			return ;
 		}
-		out.status = SapiClassStatus.UPDATE_TIMOUT;
+		out.status = SapiClassStatus.UPDATE_TIMEOUT;
 	}
 
 	private async _update_wait_razberry(target_type:SapiClassDetectType, out:SapiClassDetectWait): Promise<void> {
@@ -890,7 +890,7 @@ class SapiClass {
 					continue ;
 				return ;
 			}
-			out.status = SapiClassStatus.UPDATE_TIMOUT;
+			out.status = SapiClassStatus.UPDATE_TIMEOUT;
 			return ;
 		}
 		await sleep(20000);

@@ -38,7 +38,7 @@ enum ControllerSapiClassStatus
 	INVALID_SET,
 	WRONG_SEND_DATA_LENGHT,
 	UNKNOWN,
-	TIMOUT,
+	TIMEOUT,
 	PROCESS,
 	LEARN_MODE_FALED,
 	WRONG_RESPONSE_STATUS,
@@ -758,7 +758,7 @@ class ControllerSapiClass {
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
 		const send_mode:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION, [0x80, 2, 7, 0], 3, 0x0);
-		if (send_mode.status == SapiClassStatus.OK || send_mode.status == SapiClassStatus.TIMOUT_RCV)
+		if (send_mode.status == SapiClassStatus.OK || send_mode.status == SapiClassStatus.TIMEOUT_RCV)
 			return (ControllerSapiClassStatus.OK);
 		return (((send_mode.status as unknown) as ControllerSapiClassStatus));
 	}

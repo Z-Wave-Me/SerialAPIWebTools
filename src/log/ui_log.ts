@@ -59,13 +59,13 @@ class ControllerUiLogClass {
 	public errorFalled(txt:string|ControllerUiLangClassId): void {
 		if (typeof txt !== "string")
 			txt = this.locale.getLocale(txt);
-		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FALLED));
+		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FAILED));
 	}
 
 	public errorFalledCode(txt:string|ControllerUiLangClassId, code:number): void {
 		if (typeof txt !== "string")
 			txt = this.locale.getLocale(txt);
-		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FALLED_CODE).replace('{{code}}', code.toString()));
+		this.error(txt + this.locale.getLocale(ControllerUiLangClassId.LOG_FAILED_CODE).replace('{{code}}', code.toString()));
 	}
 
 	public errorUnsupport(txt:string|ControllerUiLangClassId): void {

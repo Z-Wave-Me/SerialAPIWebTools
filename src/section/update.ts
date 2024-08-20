@@ -151,7 +151,7 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 
 	public static async downloadFile(file_process:UpdateUiSectionClassPaket, url:string, log:ControllerUiLogClass): Promise<Uint8Array> {
 		const promise:Promise<Uint8Array> = new Promise((resolve) => {
-			log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+			log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_FILE);
 			url = UpdateUiSectionClass.URL_UPDATE + url;
 			const fun_xhr_timer:TimerHandler = () => {
 				file_process.timer_id = undefined;
@@ -160,16 +160,16 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 				file_process.xhr.timeout = UpdateUiSectionClass.firmware_xhr_timout;
 				file_process.xhr.ontimeout = () => {
 					log.errorXhrTimeout(url);
-					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_FILE);
 					file_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.firmware_xhr_timer_timout);
 				};
 				file_process.xhr.onerror = () => {
 					log.errorXhrError(url);
-					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_FILE);
 					file_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.firmware_xhr_timer_timout);
 				};
 				file_process.xhr.onload = () => {
-					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_FILE);
+					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_FILE);
 					const gbl:Uint8Array = new Uint8Array(file_process.xhr.response);
 					resolve(gbl);
 				};
@@ -414,18 +414,18 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 			const url:string = UpdateUiSectionClass.URL_UPDATE_LIST + in_paket.url + '&token=internal';//'&token=internal' '&token=all';
 			const fun_xhr_timer:TimerHandler = () => {
 				info_process.timer_id = undefined;
-				log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+				log.infoStart(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_INFO);
 				info_process.xhr.open("POST", url, true);
 				info_process.xhr.responseType = 'json';
 				info_process.xhr.timeout = UpdateUiSectionClass.info_xhr_timeout;
 				info_process.xhr.ontimeout = () => {
 					log.errorXhrTimeout(url);
-					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_INFO);
 					info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
 				};
 				info_process.xhr.onerror = () => {
 					log.errorXhrError(url);
-					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_INFO);
 					info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
 				};
 				info_process.xhr.onload = () => {
@@ -433,11 +433,11 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 						UpdateUiSectionClass._downloadInfo_process(info_process.xhr.response, in_paket.app, in_paket.boot, locale);
 					} catch (error) {
 						log.errorXhrInvalidData(url);
-						log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+						log.errorFalled(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_INFO);
 						info_process.timer_id = window.setTimeout(fun_xhr_timer, UpdateUiSectionClass.info_xhr_timer_timeout);
 						return ;
 					}
-					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DWNLOAD_INFO);
+					log.infoDone(ControllerUiLangClassId.MESSAGE_UPDATE_DOWNLOAD_INFO);
 					resolve();
 				};
 				info_process.xhr.send();

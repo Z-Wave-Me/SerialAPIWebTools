@@ -60,10 +60,10 @@ enum ZunoSapiClassStatus
 	WRONG_IN_DATA,
 	NO_FREEZE,
 	INVALID_ARG,
-	TIMOUT,
+	TIMEOUT,
 	UN_SUPPORT,
-	TIMOUT_FORCE_RESTART,
-	LEARN_EXLUDE,
+	TIMEOUT_FORCE_RESTART,
+	LEARN_EXCLUDE,
 	LEARN_INCLUDE,
 }
 
@@ -620,14 +620,14 @@ class ZunoSapiClass {
 					retries = 0x0;
 					break ;
 				default:
-					return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+					return (ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART);
 					break ;
 				
 			}
 			if (retries >= 0x3)
 				return (ZunoSapiClassStatus.LEARN_INCLUDE);
 		}
-		return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+		return (ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART);
 	}
 
 	private async _enableLearn_exlude(): Promise<ZunoSapiClassStatus> {
@@ -646,7 +646,7 @@ class ZunoSapiClass {
 					break ;
 			}
 		}
-		return (ZunoSapiClassStatus.LEARN_EXLUDE);
+		return (ZunoSapiClassStatus.LEARN_EXCLUDE);
 	}
 
 	public async enableLearn(timeout:number): Promise<ZunoSapiClassStatus> {
@@ -664,12 +664,12 @@ class ZunoSapiClass {
 					this.unlock();
 					detect_wait = await this.sapi.detect_rcv();
 					if (detect_wait.status != SapiClassStatus.OK)
-						return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
-					return (ZunoSapiClassStatus.TIMOUT);
+						return (ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART);
+					return (ZunoSapiClassStatus.TIMEOUT);
 					break ;
 				case ELearnStatus.ELEARNSTATUS_LEARN_MODE_COMPLETED_FAILED:
 					this.unlock();
-					return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+					return (ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART);
 					break ;
 				case ELearnStatus.ELEARNSTATUS_ASSIGN_COMPLETE:
 					status = await this._enableLearn_exlude();
@@ -684,7 +684,7 @@ class ZunoSapiClass {
 			}
 		}
 		this.unlock();
-		return (ZunoSapiClassStatus.TIMOUT_FORCE_RESTART);
+		return (ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART);
 	}
 
 	public async setDefault(): Promise<ZunoSapiClassStatus> {

@@ -7,7 +7,7 @@ enum ControllerUiDefineClass
 {
 	NAME_APP = "SerialAPIWebTools",
 	NAME_APP_VERSION_FULL = NAME_APP + " 0.0.10",
-	KEY_INCLUDE_EXLUDE_TIMOUT = NAME_APP + '_info_include_exlude_timout',
+	KEY_INCLUDE_EXCLUDE_TIMEOUT = NAME_APP + '_info_include_exlude_timout',
 	KEY_BAUDRATE = ControllerUiDefineClass.NAME_APP + '_baudrate_cache',
 	KEY_DETECTION_SYNC_MANUAL = ControllerUiDefineClass.NAME_APP + '_detection_sync_manual',
 	KEY_UPDATE_BETA = ControllerUiDefineClass.NAME_APP + '_update_beta',

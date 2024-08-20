@@ -11,9 +11,9 @@ import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 export {SlaveUiSectionInfoClass};
 
 class SlaveUiSectionInfoClass extends CommonUiSectionClass {
-	private readonly INCLUDE_EXLUDE_DEFAULT:number							= 30;
-	private readonly INCLUDE_EXLUDE_MIN:number								= 5;
-	private readonly INCLUDE_EXLUDE_MAX:number								= 255;
+	private readonly INCLUDE_EXCLUDE_DEFAULT:number							= 30;
+	private readonly INCLUDE_EXCLUDE_MIN:number								= 5;
+	private readonly INCLUDE_EXCLUDE_MAX:number								= 255;
 
 	private region_current:string											= '';
 	private region_new:string												= '';
@@ -32,7 +32,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		this.log.errorFalledCode(title, status);
 		if (status != ZunoSapiClassStatus.NO_FREEZE)
 			return ;
-		this.log.errorFalled(ControllerUiLangClassId.SLAVE_MESSAGE_FREZEE_ERROR);
+		this.log.errorFalled(ControllerUiLangClassId.SLAVE_MESSAGE_FREEZE_ERROR);
 		this.re_begin_func(true);
 	}
 
@@ -208,32 +208,32 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	}
 
 	private _include_exclude_get_test_timout(info_timout:string|null): number {
-		return (this.INCLUDE_EXLUDE_DEFAULT);
+		return (this.INCLUDE_EXCLUDE_DEFAULT);
 		let value:number;
 
 		if (info_timout == null)
-			return (this.INCLUDE_EXLUDE_DEFAULT);
+			return (this.INCLUDE_EXCLUDE_DEFAULT);
 		try {
 			value = Number(info_timout);
 		} catch (error) {
-			return (this.INCLUDE_EXLUDE_DEFAULT);
+			return (this.INCLUDE_EXCLUDE_DEFAULT);
 		}
-		if (value < this.INCLUDE_EXLUDE_MIN)
-			value = this.INCLUDE_EXLUDE_MIN;
-		else if (value > this.INCLUDE_EXLUDE_MAX)
-			value = this.INCLUDE_EXLUDE_MAX;
+		if (value < this.INCLUDE_EXCLUDE_MIN)
+			value = this.INCLUDE_EXCLUDE_MIN;
+		else if (value > this.INCLUDE_EXCLUDE_MAX)
+			value = this.INCLUDE_EXCLUDE_MAX;
 		return (value);
 	}
 
 	private _include_exclude_get_storage(): number {
-		return (this._include_exclude_get_test_timout(localStorage.getItem(ControllerUiDefineClass.KEY_INCLUDE_EXLUDE_TIMOUT)));
+		return (this._include_exclude_get_test_timout(localStorage.getItem(ControllerUiDefineClass.KEY_INCLUDE_EXCLUDE_TIMEOUT)));
 	}
 
 	private _include_exclude_change(event:Event): void {
 		const el_target:HTMLInputElement|null = this.event_get_element_input(event);
 		if (el_target == null)
 			return ;
-		localStorage.setItem(ControllerUiDefineClass.KEY_INCLUDE_EXLUDE_TIMOUT, this._include_exclude_get_test_timout(el_target.value).toString());
+		localStorage.setItem(ControllerUiDefineClass.KEY_INCLUDE_EXCLUDE_TIMEOUT, this._include_exclude_get_test_timout(el_target.value).toString());
 	}
 
 	private _include_exclude_progress(text:ControllerUiLangClassId): void {
@@ -256,7 +256,7 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	private _include_exclude_click_end(el_target:HTMLButtonElement, txt:ControllerUiLangClassId|null, status:ZunoSapiClassStatus): void {
 		if (txt!= null)
 			this.log.errorFalledCode(txt, status);
-		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE, false);
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE_BUTTON_TITLE, false);
 		this._include_exclude_timout_show();
 	}
 
@@ -264,17 +264,17 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		const promise:Promise<boolean> = new Promise((resolve) => {
 			this.el_container_include_exlude.innerHTML = '';
 			const el_span:HTMLSpanElement = document.createElement("span");
-			el_span.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE);
-			el_span.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_QUEST_EXLUDE_INCLUDE_TITLE);
+			el_span.textContent = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_INCLUDE);
+			el_span.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_INCLUDE_TITLE);
 			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
 			const el_button_continue:HTMLButtonElement = document.createElement("button");
-			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_CONTINUE);
-			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_CONTINUE_TITLE);
+			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_CONTINUE);
+			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE);
 			el_button_continue.type = "button";
 			el_button_continue.className = "ZUnoRazberryModalContentSection_migration_action_button";
 			const el_button_stop:HTMLButtonElement = document.createElement("button");
-			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_STOP);
-			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.LERAN_PROCESS_STOP_TITLE);
+			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_STOP);
+			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_STOP_TITLE);
 			el_button_stop.type = "button";
 			el_button_stop.className = "ZUnoRazberryModalContentSection_migration_action_button";
 			el_button_stop.addEventListener("click", async () => { resolve(false)});
@@ -294,13 +294,13 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		const el_target:HTMLButtonElement|null = this.event_get_element_button(event);
 		if (el_target == null)
 			return ;
-		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE, true);
+		this.common_button_atrr(el_target, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE_BUTTON_TITLE, true);
 		const excluding_question:boolean = await this._include_exclude_click_start_stop_question();
 		if (excluding_question == false) {
 			this._include_exclude_click_end(el_target, null, ZunoSapiClassStatus.OK);
 			return ;
 		}
-		this._include_exclude_progress(ControllerUiLangClassId.INCLUDE_EXLUDE_WAIT);
+		this._include_exclude_progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_ENABLE_NIF_DEFAULT);
 		status = await this.zuno.enableNif();
 		if (status != ZunoSapiClassStatus.OK) {
@@ -319,28 +319,28 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		status = await this.zuno.enableLearn(this._include_exclude_get_storage());
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_START_LEARN);
 		switch (status) {
-			case ZunoSapiClassStatus.TIMOUT:
-				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
-				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT);
+			case ZunoSapiClassStatus.TIMEOUT:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT);
+				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT);
 				await sleep(3000);
 				break ;
-			case ZunoSapiClassStatus.TIMOUT_FORCE_RESTART:
-				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
-				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+			case ZunoSapiClassStatus.TIMEOUT_FORCE_RESTART:
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT_FORSE_RESTART);
+				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT_FORSE_RESTART);
 				await sleep(3000);
 				this.re_begin_func(true);
 				return ;
 				break ;
 			default:
-				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
-				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMOUT_FORSE_RESTART);
+				this.log.warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT_FORSE_RESTART);
+				this._include_exclude_message_warning(ControllerUiLangClassId.MESSAGE_LEARN_INFO_TIMEOUT_FORSE_RESTART);
 				await sleep(3000);
 				this.re_begin_func(true);
 				return ;
 				break ;
-			case ZunoSapiClassStatus.LEARN_EXLUDE:
-				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
-				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXLUDE_RESTART);
+			case ZunoSapiClassStatus.LEARN_EXCLUDE:
+				this.log.info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXCLUDE_RESTART);
+				this._include_exclude_message_info(ControllerUiLangClassId.MESSAGE_LEARN_INFO_EXCLUDE_RESTART);
 				await sleep(3000);
 				this.re_begin_func(false);
 				return ;
@@ -361,11 +361,11 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		if (status != ZunoSapiClassStatus.OK)
 			return (false);
 		const el_button:HTMLButtonElement = document.createElement("button");
-		el_button.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON_TITLE);
+		el_button.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE_BUTTON_TITLE);
 		el_button.type = "button";
-		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_BUTTON);
+		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE_BUTTON);
 		el_button.addEventListener("click", (event:Event) => {this._include_exclude_click(event);});
-		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXLUDE_TITLE, this.el_container_include_exlude, el_button);
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE, ControllerUiLangClassId.TABLE_NAME_INCLUDE_EXCLUDE_TITLE, this.el_container_include_exlude, el_button);
 		this._include_exclude_timout_show();
 		return (true);
 	}
@@ -421,8 +421,8 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 		const el_input:HTMLInputElement = document.createElement("input");
 		el_input.title = this.locale.getLocale(ControllerUiLangClassId.TABLE_NAME_POWER_SELECT_TITLE);
 		el_input.type = "number";
-		el_input.min = this.INCLUDE_EXLUDE_MIN.toString();
-		el_input.max = this.INCLUDE_EXLUDE_MAX.toString();
+		el_input.min = this.INCLUDE_EXCLUDE_MIN.toString();
+		el_input.max = this.INCLUDE_EXCLUDE_MAX.toString();
 		el_input.step = "1";
 		el_input.value = this._include_exclude_get_storage().toString();
 		el_input.addEventListener("change", (event:Event) => {this._include_exclude_change(event);});
