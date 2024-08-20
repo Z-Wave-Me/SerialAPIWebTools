@@ -128,6 +128,11 @@ $margin_section_log_item: 0.2rem;
 	max-width: 100%;
 }
 
+.ZUnoRazberryModalContentSection_table td:nth-child(3) > button
+{
+	min-width: 4rem;
+}
+
 .ZUnoRazberryModalContentSection_table input[type=number]:valid + span:after
 {
 	content: '✓';
