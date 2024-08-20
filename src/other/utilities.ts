@@ -129,7 +129,7 @@ function intToBytearrayLsbMsb(data:number, size:number = 0x4):Uint8Array {
 	const array:Uint8Array = new Uint8Array(size);
 	i = 0x0;
 	while (i < array.length) {
-		array[data & 0xFF];
+		array[i] = data & 0xFF;
 		data = data >> 8;
 		i = i + 1;
 	}
