@@ -170,6 +170,7 @@ class ControllerSapiClass {
 	private readonly RAZ7_COUNT_SUPPORT_OFFSET													= this.RAZ7_FLAG_OFFSET + this.RAZ7_FLAGS_SIZE
 
 	private readonly LICENSE_KEY_LONG_RANGE:number												= 0x5;
+	private readonly LICENSE_KEY_BACKUP:number													= 0x2;
 	private readonly license_flags: {[key:number]: ControllerSapiClassLicenseFlag}				=
 	{
 		0x00: {name:"Controller Static API", title: "Enables static cotroller mode. User can switch Razberry to \"staic\" mode instead of default \"bridge\"", active:false},
@@ -594,6 +595,14 @@ class ControllerSapiClass {
 
 	public isLr(region:string): boolean {
 		return (this.region.isLr(region));
+	}
+
+	public isLicenseSupportBackup(): boolean {
+		if (this.license.status != ControllerSapiClassStatus.OK)
+			return (false);
+		if (this.license.flags[this.LICENSE_KEY_BACKUP] != undefined && this.license.flags[this.LICENSE_KEY_BACKUP].active == true)
+			return (true);
+		return (false);
 	}
 
 	public async getRegion(): Promise<ControllerSapiClassRegion> {

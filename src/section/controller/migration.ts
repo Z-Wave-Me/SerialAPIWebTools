@@ -530,6 +530,10 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
 		}
+		if (this.razberry.isLicenseSupportBackup() == true) {
+			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_BACKUP);
+			return ;
+		}
 		paket = await this._update_raz_full();
 		if (paket == undefined)
 			return ;

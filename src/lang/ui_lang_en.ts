@@ -194,6 +194,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_READ_S2_KEY]: "Read s2 key",
 	[ControllerUiLangClassId.MIGRATION_NOT_AVIABLE_FINWARE]: "The required firmware is not in the database",
 	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR]: "LR is not supported",
+	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_BACKUP]: "Backup is not supported",
 	[ControllerUiLangClassId.MIGRATION_FALLED_SEE_LOG]: "Failed - see log",
 	[ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER]: "<div>The slave was turned on without the required keys.</div><div>Please turn on exluzion mode on you controller</div>",
 	[ControllerUiLangClassId.MIGRATIONLERAN_PROCESS_QUEST_EXLUDE_REPEATER_TITLE]: "",
