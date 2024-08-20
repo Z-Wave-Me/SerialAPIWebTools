@@ -363,7 +363,7 @@ class SapiClass {
 	private async _readWithTimeout(timeout:number): Promise<Uint8Array> {
 		let out:Uint8Array;
 
-		if (this.port == undefined)
+		if (this.port == undefined || this.port.readable == null)
 			return (new Uint8Array([]));
 		const reader = this.port.readable.getReader();
 		const timer = setTimeout(() => {
@@ -419,7 +419,7 @@ class SapiClass {
 	}
 
 	private async _write(data:Array<number>): Promise<boolean> {
-		if (this.port == undefined)
+		if (this.port == undefined || this.port.writable == null)
 			return (false);
 		const data_uint8:Uint8Array = new Uint8Array(data);
 		const writer = this.port.writable.getWriter();
