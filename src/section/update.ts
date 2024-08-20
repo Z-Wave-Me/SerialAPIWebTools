@@ -131,10 +131,10 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 		el.innerHTML = '';
 		el.appendChild(el_progress);
 		el.appendChild(el_span);
-		el_progress.setAttribute('value', "66");
+		el_progress.setAttribute('value', "00");
 		const status:SapiClassStatus = await update_firmware(data, (percentage:number) => {
 				el_progress.setAttribute('value', percentage.toFixed().toString());
-				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(6, '0') + '%';
+				el_span.textContent = ' ' + percentage.toFixed(0x2).padStart(5, '0') + '%';
 				if (percentage >= 100.00) {
 					el.innerHTML = '<div class="ZUnoRazberryModalContentSection_table_load_indicate">' +  locale.getLocale(ControllerUiLangClassId.TABLE_NAME_UPDATE_WAIT_UPDATE) +'</div>';
 				}

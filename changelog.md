@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - *Status:* in development
 
 ##### Improvements:
+1. The firmware loading indicator on the chip has been reduced from three integers to two.
 
 ##### Fixes:
 1. Fixed an error that occurred when an open COM port disappeared and resulted in the inability to close this utility.
