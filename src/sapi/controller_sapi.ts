@@ -1,6 +1,7 @@
 import {ModeOfOperation} from 'aes-js';
 import  {v4 as uuid_v4, parse as uuid_parse} from 'uuid';
 
+import {SapiRegionClass} from "./region";
 import {SapiClass, SapiClassStatus, SapiClassRet, SapiClassFuncId, SapiClassSerialAPISetupCmd, SapiClassNodeIdBaseType, SapiClassUpdateProcess, SapiClassDetectType, SapiClassDetectWait} from "./sapi";
 import {costruct_int, calcSigmaCRC16, intToBytearrayMsbLsb} from "../other/utilities";
 import {controller_vendor_ids} from "./vendorIds";
@@ -184,38 +185,11 @@ class ControllerSapiClass {
 		0x0B: {name:"Zniffer in PTI mode", title: "Enables Packet Trace Interface. Device dumps all the packets it sends and receives. This uses external UART interface and doesn't consume time of the main core", active:false},
 		0x0C: {name:"Zniffer and Advanced Radio Tool", title: "Razberry works as direct transmitter", active:false},
 	};
-	private readonly region_standart:string[]														=
-	[
-		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "JP", "KR"
-	];
-	private readonly region_full:string[]														=
-	[
-		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
-	];
-	private readonly region_string_to_number: {[key:string]: number}							=
-	{
-		"EU": 0x00, "US": 0x01, "ANZ": 0x02, "HK": 0x03, "IN": 0x05, "IL": 0x06,
-		"RU": 0x07, "CN": 0x08, "US_LR": 0x09, "JP": 0x20, "KR": 0x21
-	};
-	private readonly region_number_to_string: {[key:number]: string}							=
-	{
-		0x00:"EU", 0x01:"US", 0x02: "ANZ", 0x03:"HK", 0x05:"IN", 0x06:"IL",
-		0x07:"RU", 0x08:"CN", 0x09:"US_LR",0x20: "JP", 0x21:"KR", 0xFF:"EU"
-	};
-	private readonly custom_region_string_to_number: {[key:string]: number}						=
-	{
-		"EU": 0x00, "US": 0x03, "ANZ": 0x04, "HK": 0x05, "IN": 0x02, "IL": 0x09,
-		"RU": 0x01, "CN": 0x06, "US_LR": 0x0B, "JP": 0x07, "KR": 0x08
-	};
-	private readonly custom_region_number_to_string: {[key:number]: string}						=
-	{
-		0x00:"EU", 0x03:"US", 0x04:"ANZ", 0x05:"HK", 0x02:"IN", 0x09:"IL",
-		0x01:"RU", 0x06:"CN", 0x0B:"US_LR", 0x07:"JP", 0x08:"KR"
-	};
 
 	private readonly sapi:SapiClass;
 	private readonly raz_key:Array<number>														= [0x86, 0x78, 0x02, 0x09, 0x8D, 0x89, 0x4D, 0x41, 0x8F, 0x3F, 0xD2, 0x04, 0x2E, 0xEC, 0xF5, 0xC4, 0x05, 0x8C, 0xB9, 0x36, 0xA9, 0xCC, 0x4B, 0x87, 0x91, 0x39, 0x36, 0xB7, 0x43, 0x18, 0x37, 0x42];
 
+	private region:SapiRegionClass																= new SapiRegionClass();
 	private node_base:SapiClassNodeIdBaseType													= SapiClassNodeIdBaseType.TYPE_8_BIT;
 	private seqNo:number																		= 0x1;
 	private capabilities:ControllerSapiClassCapabilities										= {status:ControllerSapiClassStatus.NOT_INIT, ApiVersion:0x0, ApiRevision:0x0, VendorID:0x0, VendorIDName:"Unknown", cmd_mask:[]};
@@ -492,6 +466,8 @@ class ControllerSapiClass {
 	}
 
 	private async _begin(test:boolean):Promise<void> {
+		let us_lr:boolean, eu_lr:boolean;
+
 		await this._get_capabilities(this.capabilities);
 		if (test == true && this.capabilities.status != ControllerSapiClassStatus.OK)
 			return ;
@@ -503,7 +479,20 @@ class ControllerSapiClass {
 		if (this.isRazberry7() == true) {
 			await this._license_get(this.license);
 			await this._get_board_info(this.board_info);
+			us_lr = false;
+			eu_lr = false;
+			if (this.license.status == ControllerSapiClassStatus.OK) {
+				if (this.license.flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.license.flags[this.LICENSE_KEY_LONG_RANGE].active == true) {
+					us_lr = true;
+					const version:number = (this.capabilities.ApiVersion << 0x8) | this.capabilities.ApiRevision;
+					if (this.capabilities.status == ControllerSapiClassStatus.OK && version >= 0x72D)
+						eu_lr = true;
+				}
+			}
+			this.region = new SapiRegionClass(us_lr, eu_lr);
 		}
+		else
+			this.region = new SapiRegionClass();
 		return ;
 	}
 
@@ -603,14 +592,14 @@ class ControllerSapiClass {
 		return (ControllerSapiClassStatus.OK);
 	}
 
-	public isRegionStandart(region:string): boolean {
-		if (this.region_standart.includes(region)== false)
-			return (false);
-		return (true);
+	public isLr(region:string): boolean {
+		return (this.region.isLr(region));
 	}
 
 	public async getRegion(): Promise<ControllerSapiClassRegion> {
-		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region_standart};
+		let region:string|undefined;
+
+		const out:ControllerSapiClassRegion = {status:ControllerSapiClassStatus.OK, region:"", region_array:this.region.getListRegion()};
 		if (this.isRazberry7() == true) {
 			const custom_region_info:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [0xFF]);
 			if (custom_region_info.status != SapiClassStatus.OK) {
@@ -621,11 +610,12 @@ class ControllerSapiClass {
 				out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
 				return (out);
 			}
-			if (this.custom_region_number_to_string[custom_region_info.data[0x0]] == undefined) {
+			region = this.region.getNameRegionCustom(custom_region_info.data[0x0]);
+			if (region == undefined) {
 				out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
 				return (out);
 			}
-			out.region = this.custom_region_number_to_string[custom_region_info.data[0x0]];
+			out.region = region;
 		}
 		else {
 			const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_GET, []);
@@ -637,25 +627,22 @@ class ControllerSapiClass {
 				out.status = ControllerSapiClassStatus.WRONG_LENGTH_CMD;
 				return (out);
 			}
-			if (this.region_number_to_string[rerion_get.data[0x0]] == undefined) {
+			region = this.region.getNameRegion(rerion_get.data[0x0]);
+			if (region == undefined) {
 				out.status = ControllerSapiClassStatus.WRONG_IN_DATA;
 				return (out);
 			}
-			out.region = this.region_number_to_string[rerion_get.data[0x0]];
-		}
-		if (this.license.status == ControllerSapiClassStatus.OK) {
-			if (this.license.flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.license.flags[this.LICENSE_KEY_LONG_RANGE].active == true) {
-				out.region_array = this.region_full;
-			}
+			out.region = region;
 		}
 		return (out);
 	}
 
 	public async setRegion(region:string): Promise<ControllerSapiClassStatus> {
 		if (this.isRazberry7() == true) {
-			if (this.custom_region_string_to_number[region] == undefined)
-			return (ControllerSapiClassStatus.INVALID_ARG);
-			const custom_region_set:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [this.custom_region_string_to_number[region]]);
+			const custom_region_id:number|undefined = this.region.getIdRegionCustom(region);
+			if (custom_region_id == undefined)
+				return (ControllerSapiClassStatus.INVALID_ARG);
+			const custom_region_set:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [custom_region_id]);
 			if (custom_region_set.status != SapiClassStatus.OK)
 				return (((custom_region_set.status as unknown) as ControllerSapiClassStatus));
 			const res:SapiClassRet = await this.sapi.recvIncomingRequest(1000);
@@ -668,9 +655,10 @@ class ControllerSapiClass {
 		}
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
-		if (this.region_string_to_number[region] == undefined)
+		const region_id:number|undefined = this.region.getIdRegion(region);
+		if (region_id == undefined)
 			return (ControllerSapiClassStatus.INVALID_ARG);
-		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [this.region_string_to_number[region]]);
+		const rerion_get:ControllerSapiClassSerialApiSetup = await this._serial_api_setup(SapiClassSerialAPISetupCmd.SERIAL_API_SETUP_CMD_RF_REGION_SET, [region_id]);
 		if (rerion_get.status != ControllerSapiClassStatus.OK)
 			return (rerion_get.status);
 		if (rerion_get.data.length < 0x1)

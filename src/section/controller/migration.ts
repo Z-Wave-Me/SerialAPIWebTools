@@ -526,7 +526,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return ;
 		}
 		this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_REGION);
-		if (this.razberry.isRegionStandart(region_info.region) == false) {
+		if (this.razberry.isLr(region_info.region) == true) {
 			this._progress_error(ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_LR);
 			return ;
 		}
