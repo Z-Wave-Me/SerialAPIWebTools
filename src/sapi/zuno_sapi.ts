@@ -4,6 +4,8 @@ import {
 	SapiClassDetectTypeFunc, SapiClassDetect
 } from "./sapi";
 
+import {SapiRegionClass} from "./region";
+
 import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
@@ -55,6 +57,7 @@ enum ZunoSapiClassStatus
 	NOT_INIT = SapiClassStatus.LAST_STATUS,
 	WRONG_LENGTH_CMD,
 	WRONG_STATUS,
+	WRONG_IN_DATA,
 	NO_FREEZE,
 	INVALID_ARG,
 	TIMOUT,
@@ -81,9 +84,7 @@ interface ZunoSapiClassParamInfo
 	status:ZunoSapiClassStatus;
 	raw:Array<number>;
 	freq_i:number;
-	freq_str:string;
 	main_pow:number;
-	bLR:boolean;
 }
 
 interface ZunoSapiClassBoardInfoProduction
@@ -161,33 +162,15 @@ class ZunoSapiClass {
 	
 	private readonly sapi:SapiClass;
 
-	private readonly region_array:string[]														=
-	[
-		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "JP", "KR"
-	];
-	private readonly region_array_full:string[]														=
-	[
-		"EU", "US", "ANZ", "HK", "IN", "IL", "RU", "CN", "US_LR", "JP", "KR"
-	];
-	private readonly region_string_to_number: {[key:string]: number}							=
-	{
-		"EU": 0x00, "US": 0x01, "ANZ": 0x02, "HK": 0x03, "IN": 0x05, "IL": 0x06,
-		"RU": 0x07, "CN": 0x08, "US_LR": 0x09, "JP": 0x20, "KR": 0x21
-	};
-	private readonly region_number_to_string: {[key:number]: string}							=
-	{
-		0x00:"EU", 0x01:"US", 0x02: "ANZ", 0x03:"HK", 0x05:"IN", 0x06:"IL",
-		0x07:"RU", 0x08:"CN", 0x09:"US_LR",0x20: "JP", 0x21:"KR"
-	};
-
-
 	private board_info:ZunoSapiClassBoardInfo												= this._get_board_info_default();
 	private param_info:ZunoSapiClassParamInfo												= this._get_param_info_default();
+
+	private region:SapiRegionClass															= new SapiRegionClass();
 
 	private _get_param_info_default(): ZunoSapiClassParamInfo {
 		const param_info:ZunoSapiClassParamInfo												=
 		{	
-			status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, freq_str:"", bLR:false, raw:[], main_pow:0x0
+			status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, raw:[], main_pow:0x0
 		};
 		return (param_info);
 	}
@@ -235,8 +218,6 @@ class ZunoSapiClass {
 	}
 
 	private async _get_param_info(): Promise<void> {
-		let freq_str:string|undefined;
-
 		this.param_info = this._get_param_info_default();
 		const out:ZunoSapiClassParamInfo = this.param_info;
 		const param_info:SapiClassRet = await this._readNVM(0xFFE000, 0x09);
@@ -252,23 +233,14 @@ class ZunoSapiClass {
 		out.status = ZunoSapiClassStatus.OK;
 		out.raw = param;
 		out.freq_i = param_info.data[1];
-		freq_str = this.region_number_to_string[out.freq_i];
-		if (freq_str == undefined)
-			freq_str = "UNKNOWN";
-		out.freq_str = freq_str;
-		if ((freq_str == "US_LR") || (freq_str == "US") || (freq_str == "US_LR_BK"))
-			out.bLR = true;
 		out.main_pow = param_info.data[2];
 	}
 
 	private async _get_board_info_add(): Promise<void> {
-		let code_sz_shift:number, shift_smrt:number, bLR:boolean, byte_i:number, bit_i:number;
+		let code_sz_shift:number, shift_smrt:number, eu_lr:boolean, byte_i:number, bit_i:number;
 	
 		this.board_info = this._get_board_info_default();
 		const out:ZunoSapiClassBoardInfo = this.board_info;
-		bLR = false;
-		if (this.param_info.status == ZunoSapiClassStatus.OK)
-			bLR = this.param_info.bLR;
 		const board_info:SapiClassRet = await this._readNVM(0xFFFF00, 0x01);
 		if (board_info.status != SapiClassStatus.OK) {
 			out.status = ((board_info.status as unknown) as ZunoSapiClassStatus);
@@ -321,9 +293,9 @@ class ZunoSapiClass {
 				product_type: costruct_int(info.slice(53+code_sz_shift, 53+code_sz_shift+2), 2, false),
 				product_id: costruct_int(info.slice(55+code_sz_shift, 55+code_sz_shift+2), 2, false),
 				version: version,
-				LR: bLR,
+				LR: false,
 			};
-			out.smart_qr = await this.compile_zwave_qrcode(out.zwdata, out.s2_pub, version);
+			out.smart_qr = await this.compile_zwave_qrcode(out.zwdata, out.s2_pub, out.zwdata.version);
 		}
 		const offset_code:number = offset_base + code_sz_shift + shift_smrt;
 		if (info.length < (offset_code + 0x4))
@@ -364,6 +336,21 @@ class ZunoSapiClass {
 			}
 			byte_i++;
 		}
+		if (out.license.lic_flags[this.LICENSE_KEY_LONG_RANGE] != undefined && out.license.lic_flags[this.LICENSE_KEY_LONG_RANGE].active == true) {
+			if (out.version >= 0x30D124B)
+				eu_lr = true;
+			else
+				eu_lr = false;
+			this.region = new SapiRegionClass(true, eu_lr);
+			if (out.zwdata != undefined && this.param_info.status == ZunoSapiClassStatus.OK) {
+				const region:string|undefined = this.region.getNameRegion(this.param_info.freq_i);
+				if (region != undefined && this.region.isLr(region) == true) {
+					out.zwdata.LR = true;
+					out.smart_qr = await this.compile_zwave_qrcode(out.zwdata, out.s2_pub, out.zwdata.version);
+				}
+			}
+		}
+		
 		const offset_power:number = offset_license + 0xA;
 		if (info.length < (offset_power + 0x1))
 			return ;
@@ -542,13 +529,15 @@ class ZunoSapiClass {
 	}
 
 	public getRegion(): ZunoSapiClassRegion {
-		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:this.param_info.freq_str, region_array:this.region_array};
+		const out:ZunoSapiClassRegion = {status:this._isSupportRegionAndPower(), region:"", region_array:this.region.getListRegion()};
 		if (out.status != ZunoSapiClassStatus.OK)
 			return (out);
-		if (this.board_info.license != undefined) {
-			if (this.board_info.license.lic_flags[this.LICENSE_KEY_LONG_RANGE] != undefined && this.board_info.license.lic_flags[this.LICENSE_KEY_LONG_RANGE].active == true)
-				out.region_array = this.region_array_full;
+		const region:string|undefined = this.region.getNameRegion(this.param_info.freq_i);
+		if (region == undefined) {
+			out.status = ZunoSapiClassStatus.WRONG_IN_DATA;
+			return (out);
 		}
+		out.region = region;
 		return (out);
 	}
 
@@ -556,15 +545,15 @@ class ZunoSapiClass {
 		const status:ZunoSapiClassStatus = this._isSupportRegionAndPower();
 		if (status != ZunoSapiClassStatus.OK)
 			return (status);
-		const freq_i:number|undefined = this.region_string_to_number[region];
-		if (freq_i == undefined)
+		const region_id:number|undefined = this.region.getIdRegion(region);
+		if (region_id == undefined)
 			return (ZunoSapiClassStatus.INVALID_ARG);
 		if (this.param_info.status != ZunoSapiClassStatus.OK)
 			return (this.param_info.status);
 		const raw:Array<number> =  this.param_info.raw;
-		raw[0x1] = freq_i;
+		raw[0x1] = region_id;
 		if (raw.length > 0x8)
-			raw[0x8] = freq_i;
+			raw[0x8] = region_id;
 		return (await this._apply_param(raw));
 	}
 
@@ -723,6 +712,7 @@ class ZunoSapiClass {
 	}
 
 	public async connect(): Promise<void> {
+		this.region = new SapiRegionClass();
 		await this._get_param_info();
 		await this._get_board_info();
 		// await this._begin(true);
