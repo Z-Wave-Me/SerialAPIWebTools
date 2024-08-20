@@ -9,7 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
-import {conv2Decimal, intToBytearrayLsbMsb, arrayToStringHex, numberToStringHex, sleep} from "../../other/utilities";
+import {conv2Decimal, intToBytearrayMsbLsb, arrayToStringHex, sleep} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -564,7 +564,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		}
 		this._progress(ControllerUiLangClassId.MIGRATION_FINALIZE);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_SET_HOME_ID);
-		const set_home_id:ControllerSapiClassStatus = await this.razberry.nvmWrite(this.NVM_HOMEID, intToBytearrayLsbMsb(home.home));
+		const set_home_id:ControllerSapiClassStatus = await this.razberry.nvmWrite(this.NVM_HOMEID, intToBytearrayMsbLsb(home.home));
 		if (set_home_id != ControllerSapiClassStatus.OK) {
 			this._progress_faled(ControllerUiLangClassId.MESSAGE_SET_HOME_ID, set_home_id);
 			return ;
