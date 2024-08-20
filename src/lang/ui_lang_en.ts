@@ -86,6 +86,8 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.BUTTON_COPY_TITLE]: "Copy the log to clipboard",
 	[ControllerUiLangClassId.BUTTON_CLOSE_TEXT]: "Close",
 	[ControllerUiLangClassId.BUTTON_CLOSE_TITLE]: "Closes and stops working with the port",
+	[ControllerUiLangClassId.BUTTON_COPY_DSK]: "Copy dsk",
+	[ControllerUiLangClassId.BUTTON_COPY_DSK_TITLE]: "Copy the dsk to clipboard",
 	[ControllerUiLangClassId.BOARD_INFO_HEADER]: "Board Info",
 	[ControllerUiLangClassId.LICENSE_INFO_HEADER]: "License Info",
 	[ControllerUiLangClassId.UPDATE_INFO_HEADER]: "Update Info",

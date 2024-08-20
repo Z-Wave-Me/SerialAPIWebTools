@@ -37,8 +37,6 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 	}
 
 	private _board_info(): boolean {
-		let dsk:string;
-
 		this.log.infoStart(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 		const board_info:ZunoSapiClassBoardInfo = this.zuno.getBoardInfo();
 		if (board_info.status != ZunoSapiClassStatus.OK) {
@@ -54,9 +52,16 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 			this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_HOME, ControllerUiLangClassId.TABLE_NAME_HOME_TITLE, numberToStringHex(board_info.home_id), "");
 		if (board_info.node_id != undefined)
 			this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_NODE, ControllerUiLangClassId.TABLE_NAME_NODE_TITLE, board_info.node_id.toString(0xA), "");
-		dsk = conv2Decimal(board_info.s2_pub, " - ");
-		dsk = "<b>" + dsk.substring(0x0, 0x5) + "</b>" + dsk.substring(0x5);
-		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_DSK, ControllerUiLangClassId.TABLE_NAME_DSK_TITLE, dsk, "");
+		const dsk:string = conv2Decimal(board_info.s2_pub, " - ");
+		const event_copy:EventListener = () => {
+			navigator.clipboard.writeText(dsk);
+		};
+		const el_button:HTMLButtonElement = document.createElement("button");
+		el_button.textContent = this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_DSK);
+		el_button.title = this.locale.getLocale(ControllerUiLangClassId.BUTTON_COPY_DSK_TITLE);
+		el_button.addEventListener("click", event_copy);
+		el_button.type = "button";
+		this.create_tr_el(ControllerUiLangClassId.TABLE_NAME_DSK, ControllerUiLangClassId.TABLE_NAME_DSK_TITLE, "<b>" + dsk.substring(0x0, 0x5) + "</b>" + dsk.substring(0x5), el_button);
 		if (board_info.smart_qr != undefined) {
 			const el_span:HTMLSpanElement = document.createElement("span");
 			const option:QRCodeOption = {
