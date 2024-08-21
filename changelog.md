@@ -2,9 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Version 00.00.11
-- *Release date:* ---
-- *Status:* in development
-- *Commit:* ---
+- *Release date:* 21.08.2024
+- *Status:* release
+- *Commit:* be61aa8a9d6c53f9eee790d0bc1cd8876a1b1875
 
 ##### Improvements:
 1. The firmware loading indicator on the chip has been reduced from three integers to two.
