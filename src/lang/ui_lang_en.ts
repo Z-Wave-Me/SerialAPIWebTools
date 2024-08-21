@@ -177,6 +177,8 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE]: "",
 	[ControllerUiLangClassId.LEARN_PROCESS_STOP]: "Stop",
 	[ControllerUiLangClassId.LEARN_PROCESS_STOP_TITLE]: "",
+	[ControllerUiLangClassId.LEARN_PROCESS_REPEAT]: "Repeat",
+	[ControllerUiLangClassId.LEARN_PROCESS_REPEAT_TITLE]: "",
 	[ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_INCLUDE]: "Ready for inclusion/exclusion by you controller",
 	[ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_INCLUDE_TITLE]: "",
 	[ControllerUiLangClassId.MIGRATION_NOT_GET_URL_INFO]: "Could not get a link to the information needed for migration",
@@ -201,4 +203,6 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER]: "<div>The inclusion happeded without the required keys.</div><div>Please turn on exclusion mode on you controller</div>",
 	[ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER_TITLE]: "",
 	[ControllerUiLangClassId.MIGRATION_SUCESS]: "Success",
+	[ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY]:  "<div>These are all the keys that we were able to count, is everything correct or will you try again?</div>",
+	[ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE]: "",
 };

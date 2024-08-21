@@ -364,9 +364,24 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			return (false);
 		if (this._test_dump_key(dump_key.access) == false)
 			return (false);
-			if (this._test_dump_key(dump_key.s0) == false)
+		if (this._test_dump_key(dump_key.s0) == false)
 			return (false);
 		return (true);
+	}
+
+	private _dump_key_all_to_string(dump_key:ZunoSapiClassS2Key): string {
+		let out:string;
+
+		out = "";
+		if (this._test_dump_key(dump_key.unauth) == true)
+			out = out + '<div>'+ "<b>unauth:</b> " + arrayToStringHex(dump_key.unauth) +'</div>';
+		if (this._test_dump_key(dump_key.auth) == true)
+			out = out + '<div>'+ "<b>auth:</b>   " + arrayToStringHex(dump_key.auth) +'</div>';
+		if (this._test_dump_key(dump_key.access) == true)
+			out = out + '<div>'+ "<b>access:</b> " + arrayToStringHex(dump_key.access) +'</div>';
+		if (this._test_dump_key(dump_key.s0) == true)
+			out = out + '<div>'+ "<b>s0:</b>     " + arrayToStringHex(dump_key.s0) +'</div>';
+		return (out);
 	}
 
 	private async _click_start_stop_zuno_get_info(region:string): Promise<ControllerUiSectionMigrationClassNodeDumpKey|undefined> {
@@ -416,19 +431,24 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 						return ;
 					}
 					this.log.infoDone(ControllerUiLangClassId.MESSAGE_READ_S2_KEY);
-					if (this._test_dump_key_all(dump_key) == false) {
-						await this.quest_continue_stop(this.el_container,
-														ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER, ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER_TITLE,
-														ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
-														undefined, undefined);
-						this._progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
-						if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
-							return (undefined);
-						final = false;
-						continue ;
-					}
 					const zuno_node_id_dump_key:ControllerUiSectionMigrationClassNodeDumpKey = {zuno_node_id:board_info.node_id, dump_key:dump_key};
-					return (zuno_node_id_dump_key);
+					if (this._test_dump_key_all(dump_key) == true)
+						return (zuno_node_id_dump_key);
+					const quest_repear:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY) + this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key)
+					if (await this.quest_continue_stop(this.el_container,
+							quest_repear, ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE,
+							ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+							ControllerUiLangClassId.LEARN_PROCESS_REPEAT, ControllerUiLangClassId.LEARN_PROCESS_REPEAT_TITLE) == true)
+						return (zuno_node_id_dump_key);
+					await this.quest_continue_stop(this.el_container,
+						ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE, ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_TITLE,
+						ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+						undefined, undefined);
+					this._progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
+					if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
+						return (undefined);
+					final = false;
+					continue ;
 				}
 				await this.quest_continue_stop(this.el_container,
 												ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE, ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_TITLE,
@@ -581,11 +601,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		if (await this._remove_node(zuno_node_id_dump_key.zuno_node_id) == false)
 			return ;
 
-		this.el_container.innerHTML = '<h5 align="center">'+ this.locale.getLocale(ControllerUiLangClassId.MIGRATION_SUCESS) +'</h5>' +
-		'<div>'+ "<b>unauth:</b> " + arrayToStringHex(zuno_node_id_dump_key.dump_key.unauth) +'</div>' +
-		'<div>'+ "<b>auth:</b>   " + arrayToStringHex(zuno_node_id_dump_key.dump_key.auth) +'</div>' +
-		'<div>'+ "<b>access:</b> " + arrayToStringHex(zuno_node_id_dump_key.dump_key.access) +'</div>' +
-		'<div>'+ "<b>s0:</b>     " + arrayToStringHex(zuno_node_id_dump_key.dump_key.s0) +'</div>'
+		this.el_container.innerHTML = '<h5 align="center">'+ this.locale.getLocale(ControllerUiLangClassId.MIGRATION_SUCESS) +'</h5>' + this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key);
 	}
 
 	private async _begin(): Promise<boolean> {

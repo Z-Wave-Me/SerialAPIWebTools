@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 2. Optimized display of links in the log.
 3. For the slave, a button for copying dsk to the clipboard has been added.
 4. Aligned action buttons.
+5. Now he doesn’t demand all the keys, but asks about this one.
 
 ##### Fixes:
 1. Fixed an error that occurred when an open COM port disappeared and resulted in the inability to close this utility.
