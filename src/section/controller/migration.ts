@@ -58,7 +58,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_INCLUDE_START_MASTER;
 		}
 		await this.quest_continue_stop(this.el_container, question_id, "",
-												ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+												ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
 												undefined, undefined);
 
 		this.el_container.innerHTML = '';
@@ -437,12 +437,12 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 					const quest_repear:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY) + this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key)
 					if (await this.quest_continue_stop(this.el_container,
 							quest_repear, ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE,
-							ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
-							ControllerUiLangClassId.LEARN_PROCESS_REPEAT, ControllerUiLangClassId.LEARN_PROCESS_REPEAT_TITLE) == true)
+							ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
+							ControllerUiLangClassId.PROCESS_REPEAT, ControllerUiLangClassId.PROCESS_REPEAT_TITLE) == true)
 						return (zuno_node_id_dump_key);
 					await this.quest_continue_stop(this.el_container,
 						ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE, ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_TITLE,
-						ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+						ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
 						undefined, undefined);
 					this._progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
 					if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
@@ -452,7 +452,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				}
 				await this.quest_continue_stop(this.el_container,
 												ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE, ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_TITLE,
-												ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+												ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
 												undefined, undefined);
 				this._progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
 				if (await this._click_start_stop_zuno_get_info_include_exlude() == false)
@@ -462,7 +462,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			const quest_include:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE).replace("${dsk}", conv2Decimal(board_info.s2_pub, " - ").substring(0x0, 0x5));
 			await this.quest_continue_stop(this.el_container,
 											quest_include, ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE_TITLE,
-											ControllerUiLangClassId.LEARN_PROCESS_CONTINUE, ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE,
+											ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
 											undefined, undefined);
 			this._progress(ControllerUiLangClassId.INCLUDE_EXCLUDE_WAIT);
 			if (await this._click_start_stop_zuno_get_info_include_exlude() == false)

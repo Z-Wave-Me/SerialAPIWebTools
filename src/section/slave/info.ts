@@ -273,13 +273,13 @@ class SlaveUiSectionInfoClass extends CommonUiSectionClass {
 			el_span.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_INCLUDE_TITLE);
 			el_span.className = "ZUnoRazberryModal_color_question ZUnoRazberryModalContentSection_migration_action_button";
 			const el_button_continue:HTMLButtonElement = document.createElement("button");
-			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_CONTINUE);
-			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_CONTINUE_TITLE);
+			el_button_continue.textContent = this.locale.getLocale(ControllerUiLangClassId.PROCESS_CONTINUE);
+			el_button_continue.title = this.locale.getLocale(ControllerUiLangClassId.PROCESS_CONTINUE_TITLE);
 			el_button_continue.type = "button";
 			el_button_continue.className = "ZUnoRazberryModalContentSection_migration_action_button";
 			const el_button_stop:HTMLButtonElement = document.createElement("button");
-			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_STOP);
-			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.LEARN_PROCESS_STOP_TITLE);
+			el_button_stop.textContent = this.locale.getLocale(ControllerUiLangClassId.PROCESS_STOP);
+			el_button_stop.title = this.locale.getLocale(ControllerUiLangClassId.PROCESS_STOP_TITLE);
 			el_button_stop.type = "button";
 			el_button_stop.className = "ZUnoRazberryModalContentSection_migration_action_button";
 			el_button_stop.addEventListener("click", async () => { resolve(false)});
