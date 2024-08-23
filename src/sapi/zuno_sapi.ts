@@ -404,7 +404,7 @@ class ZunoSapiClass {
 		const soft_reset:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [])
 		if (soft_reset.status != SapiClassStatus.OK)
 			return ((soft_reset.status as unknown) as ZunoSapiClassStatus);
-		const freeze_zuno_info:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 0x2, 3000);
+		const freeze_zuno_info:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [0x2], 3000);
 		if (freeze_zuno_info.status != SapiClassStatus.OK || freeze_zuno_info.data[0x0] != 0x0)
 			return (ZunoSapiClassStatus.NO_FREEZE);
 		return (ZunoSapiClassStatus.OK);

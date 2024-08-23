@@ -1,6 +1,16 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+
+
+## Version 00.00.12
+- *Release date:* ---
+- *Status:* in development
+- *Commit:* ---
+
+##### Fixes:
+* Fixed sending commands - via receiving asynchronous messages and added more attempts to send when receiving CAN.
+
 ## Version 00.00.11
 - *Release date:* 21.08.2024
 - *Status:* release

@@ -63,13 +63,13 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 		// 	}
 		// 	this.log.infoDone(ControllerUiLangClassId.MESSAGE_SET_DEFAULT);
 		// 	await sleep(1000);
-		// 	this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
+		// 	this.log.infoStart(ControllerUiLangClassId.MESSAGE_DETECTION);
 		// 	const detect_dict:SapiClassDetect = await this.zuno.detect([115200], null);
 		// 	if (detect_dict.status != SapiClassStatus.OK) {
-		// 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
+		// 		this.log.errorFalledCode(ControllerUiLangClassId.MESSAGE_DETECTION, detect_dict.status);
 		// 		return ((detect_dict.status as unknown) as SapiClassStatus);
 		// 	}
-		// 	this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		// 	this.log.infoDone(ControllerUiLangClassId.MESSAGE_DETECTION);
 		// 	await this.zuno.connect();
 		// }
 		const status:ZunoSapiClassStatus = await this.zuno.updateFirmware(data, process, target_type);

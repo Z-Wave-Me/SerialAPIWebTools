@@ -336,13 +336,13 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 				break ;
 		}
 		await sleep(2000);//что бы точно ресетнулось
-		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_DETECTION);
 		const detect_dict:SapiClassDetect = await this.sapi.detect([115200], null);
 		if (detect_dict.status != SapiClassStatus.OK) {
-			this._progress_faled(ControllerUiLangClassId.MESSAGE_CONNECT, detect_dict.status);
+			this._progress_faled(ControllerUiLangClassId.MESSAGE_DETECTION, detect_dict.status);
 			return (false);
 		}
-		this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
+		this.log.infoDone(ControllerUiLangClassId.MESSAGE_DETECTION);
 		await this.zuno.connect();
 		return (true);
 	}

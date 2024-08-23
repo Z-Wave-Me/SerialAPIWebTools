@@ -8,6 +8,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MESSAGE_NOT_SUPPORT_BROWSER]: "Sorry, this feature is supported only on Chrome, Edge and Opera",
 	[ControllerUiLangClassId.MESSAGE_PORT_USE]: "Check yours, maybe another application is using it",
 	[ControllerUiLangClassId.MESSAGE_CONNECT]: "Connect device",
+	[ControllerUiLangClassId.MESSAGE_DETECTION]: "Detection device",
 	[ControllerUiLangClassId.MESSAGE_READ_CAPABILITIES]: "Read capabilities the device",
 	[ControllerUiLangClassId.MESSAGE_READ_REGION]: "Read region the device",
 	[ControllerUiLangClassId.MESSAGE_READ_POWER]: "Read power the device",

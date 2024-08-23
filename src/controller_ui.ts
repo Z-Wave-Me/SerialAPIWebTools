@@ -77,13 +77,19 @@ class ControllerUiClass {
 				return ;
 		}
 		this.detect_type = this.sapi.type();
+		this.log.infoStart(ControllerUiLangClassId.MESSAGE_CONNECT);
 		switch (this.detect_type) {
 			case SapiClassDetectType.ZUNO:
 				await this.zuno.connect();
+				this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
 				break;
 			case SapiClassDetectType.RAZBERRY:
 				await this.razberry.connect();
+				this.log.infoDone(ControllerUiLangClassId.MESSAGE_CONNECT);
 				break;
+			default:
+				this.log.errorFalled(ControllerUiLangClassId.MESSAGE_CONNECT);
+				break ;
 		}
 		const array_type:all_array_type = this._get_all_array_type();
 		i = 0x0;

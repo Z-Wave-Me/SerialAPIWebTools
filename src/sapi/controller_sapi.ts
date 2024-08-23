@@ -678,7 +678,7 @@ class ControllerSapiClass {
 	}
 
 	public async softReset(timeout:number = 3000): Promise<ControllerSapiClassStatus> {
-		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], 3, timeout, SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED);
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET, [], timeout, SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED);
 		if (res.status != SapiClassStatus.OK)
 			return ((res.status as unknown) as ControllerSapiClassStatus);
 		await this._begin(false);
@@ -757,7 +757,7 @@ class ControllerSapiClass {
 	public async clear_node(): Promise<ControllerSapiClassStatus> {
 		if (this._test_cmd(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION) == false)
 			return (ControllerSapiClassStatus.UNSUPPORT_CMD);
-		const send_mode:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION, [0x80, 2, 7, 0], 3, 0x0);
+		const send_mode:SapiClassRet = await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION, [0x80, 2, 7, 0], 200);
 		if (send_mode.status == SapiClassStatus.OK || send_mode.status == SapiClassStatus.TIMEOUT_RCV)
 			return (ControllerSapiClassStatus.OK);
 		return (((send_mode.status as unknown) as ControllerSapiClassStatus));
