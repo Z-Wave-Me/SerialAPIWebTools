@@ -504,8 +504,6 @@ class SapiClass {
 		retries_can = this.RETRIES_CAN;
 		retries_ack = 0x6;
 		for (;;) {
-			if (retries_ack < 0x0)
-				return (SapiClassStatus.NO_ACK);
 			if (retries_nak < 0x0)
 				return (SapiClassStatus.WRONG_RETRIES_NAK);
 			if (retries_can < 0x0)
@@ -513,6 +511,8 @@ class SapiClass {
 			if (await this._sendData(cmd, databuff) == false)
 				return (SapiClassStatus.WRITE);
 			for (;;) {
+				if (retries_ack < 0x0)
+					return (SapiClassStatus.NO_ACK);
 				rbuff = await this._read(0x1)
 				if (rbuff.length == 0x0) {
 					retries_ack--;
