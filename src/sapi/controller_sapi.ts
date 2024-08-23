@@ -283,7 +283,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_LENGTH_CMD);
 		if (nonse_info.data[0x0] != this.RAZ7_LICENSE_STATUS_OK)
 			return (ControllerSapiClassStatus.WRONG_OUT_STATUS);
-		nonse_info = await this.sapi.recvIncomingRequest(1000);
+		nonse_info = await this.sapi.recvIncomingRequest(1000, this.RAZ7_LICENSE_CMD);
 		if (nonse_info.status != SapiClassStatus.OK)
 			return ((nonse_info.status as unknown) as ControllerSapiClassStatus);
 		if (nonse_info.data.length < 0x1)//0x1 seq
@@ -654,11 +654,9 @@ class ControllerSapiClass {
 			const custom_region_set:SapiClassRet =  await this.sapi.sendCommandUnSz(SapiClassFuncId.FUNC_ID_PROPRIETARY_2, [custom_region_id]);
 			if (custom_region_set.status != SapiClassStatus.OK)
 				return (((custom_region_set.status as unknown) as ControllerSapiClassStatus));
-			const res:SapiClassRet = await this.sapi.recvIncomingRequest(1000);
+			const res:SapiClassRet = await this.sapi.recvIncomingRequest(1000, SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED);
 			if (res.status != SapiClassStatus.OK)
 				return (((res.status as unknown) as ControllerSapiClassStatus));
-			if (res.cmd != SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED)
-				return (ControllerSapiClassStatus.NOT_SET);
 			await this._begin(false);
 			return (ControllerSapiClassStatus.OK);
 		}
@@ -742,7 +740,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_LENGTH);
 		if (response.data[0x0] != 0x00)
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_STATUS);
-		const callback = await this.sapi.recvIncomingRequest(1000);
+		const callback = await this.sapi.recvIncomingRequest(1000, SapiClassFuncId.FUNC_ID_PROPRIETARY_4,);
 		if (callback.status != SapiClassStatus.OK)
 			return (((callback.status as unknown) as ControllerSapiClassStatus));
 		if (callback.data.length < 0x2)//0x1 seq
@@ -861,7 +859,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_LENGTH);
 		if (response.data[0x0] != 0x00)
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_STATUS);
-		const callback = await this.sapi.recvIncomingRequest(1000);
+		const callback = await this.sapi.recvIncomingRequest(1000, SapiClassFuncId.FUNC_ID_ZW_REMOVE_FAILED_NODE_ID);
 		if (callback.status != SapiClassStatus.OK)
 			return (((callback.status as unknown) as ControllerSapiClassStatus));
 		if (callback.data.length < 0x2)//0x1 seq
@@ -884,7 +882,7 @@ class ControllerSapiClass {
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_LENGTH);
 		if (response.data[0x0] != 0x01)
 			return (ControllerSapiClassStatus.WRONG_RESPONSE_STATUS);
-		const callback = await this.sapi.recvIncomingRequest(1000);
+		const callback = await this.sapi.recvIncomingRequest(1000, SapiClassFuncId.FUNC_ID_ZW_SEND_DATA);
 		if (callback.status != SapiClassStatus.OK)
 			return (((callback.status as unknown) as ControllerSapiClassStatus));
 		if (callback.data.length < 0x2)//0x1 seq

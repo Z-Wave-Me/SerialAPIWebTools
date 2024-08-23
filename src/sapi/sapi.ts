@@ -77,7 +77,9 @@ enum SapiClassStatus
 	UPDATE_TIMEOUT,
 	UPDATE_PROCESS,
 	UPDATE_STEP_FAILL,
-	WRONG_RETRIES,
+	WRONG_RETRIES_CAN,
+	WRONG_RETRIES_NAK,
+	TIMEOUT_RCV_I,
 	LAST_STATUS,
 }
 
@@ -430,7 +432,15 @@ class SapiClass {
 		return (true);
 	}
 
+	private async _recv_async():  Promise<void> {
+		for (;;) {
+			if (await this._recvIncomingRequestAsyn(100) == false)
+				break
+		}
+	}
+
 	private async _clear():  Promise<void> {
+		await this._recv_async();
 		this.queue = [];
 		for (;;) {
 			const value = await this._read(50);
@@ -483,19 +493,18 @@ class SapiClass {
 	}
 
 	private async _send_cmd(cmd:number, databuff:Array<number>): Promise<SapiClassStatus> {
-		let rbuff:Array<number>, retries:number;
+		let rbuff:Array<number>, retries_nak:number, retries_can:number;
 
 		if (this.b_open == false)
 			return (SapiClassStatus.PORT_NOT_OPEN);
+		await this._recv_async();
+		retries_nak = 0x3;
+		retries_can = 0x20;
 		for (;;) {
-			if (await this._recvIncomingRequestAsyn(100) == false)
-				break
-		}
-		retries = 0x6;
-		for (;;) {
-			retries--;
-			if (retries < 0x0)
-				return (SapiClassStatus.WRONG_RETRIES);
+			if (retries_nak < 0x0)
+				return (SapiClassStatus.WRONG_RETRIES_NAK);
+			if (retries_can < 0x0)
+				return (SapiClassStatus.WRONG_RETRIES_CAN);
 			if (await this._sendData(cmd, databuff) == false)
 				return (SapiClassStatus.WRITE);
 			for (;;) {
@@ -511,14 +520,14 @@ class SapiClass {
 			if (rbuff[0] == this.ACK)
 				break ;
 			if (rbuff[0] == this.CAN) {
-				for (;;) {
-					if (await this._recvIncomingRequestAsyn(100) == false)
-						break ;
-				}
+				await this._recv_async();
+				retries_can--;
 				continue ;
 			}
-			if (rbuff[0] == this.NAK)
+			if (rbuff[0] == this.NAK) {
+				retries_nak--;
 				continue ;
+			}
 		}
 		return (SapiClassStatus.OK);
 	}
@@ -648,7 +657,6 @@ class SapiClass {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
 		out.status = await this._send_cmd(cmd, args);
 		if (out.status != SapiClassStatus.OK) {
-			console.log(out.status);
 			return (out);
 		}
 		const wait_timeout:number = Date.now() + timeout;
@@ -666,14 +674,36 @@ class SapiClass {
 		}
 	}
 
-	public async recvIncomingRequest(timeout:number): Promise<SapiClassRet> {
+	private async _recvIncomingRequest_wait(timeout:number, cmd_ret?:number): Promise<SapiClassRet> {
+		let res:SapiClassRet, i:number;
+
+		res = await this._recvIncomingRequest(timeout);
+		if (cmd_ret == undefined)
+			return (res);
+		i = 0x0;
+		for (;;) {
+			if (i >= 100) {
+				res.status = SapiClassStatus.TIMEOUT_RCV_I;
+				break ;
+			}
+			if (res.status != SapiClassStatus.OK)
+				break ;
+			if (res.cmd == cmd_ret)
+				break ;
+			res = await this._recvIncomingRequest(100);
+			i++;
+		}
+		return (res);
+	}
+
+	public async recvIncomingRequest(timeout:number, cmd_ret?:number): Promise<SapiClassRet> {
 		const out:SapiClassRet = { status: SapiClassStatus.OK, crc:0x0, cmd:0x0, raw:[], data:[]};
 		if (this.busy() == true) {
 			out.status = SapiClassStatus.PORT_BUSY;
 			return (out);
 		}
 		this.b_busy = true;
-		const res = await this._recvIncomingRequest(timeout);
+		const res:SapiClassRet = await this._recvIncomingRequest_wait(timeout, cmd_ret);
 		this.b_busy = false;
 		return (res);
 	}
@@ -818,7 +848,6 @@ class SapiClass {
 		i = 0x0;
 		while (i < baudrate_array.length) {
 			out.baudrate = baudrate_array[i];
-			console.log(out.baudrate);
 			out.status = await this._open(baudrate_array[i]);
 			if (out.status != SapiClassStatus.OK)
 				return ;
