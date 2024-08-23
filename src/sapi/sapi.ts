@@ -356,6 +356,8 @@ class SapiClass {
 	public readonly BAUDRATE																			= [115200, 230400, 460800, 921600];
 	private readonly dtr_timeout:number																	= 250;// The time for the capacitor on the DTR line to recharge
 
+	private readonly RETRIES_CAN:number																	= 100;
+
 	private b_busy:boolean																				= false;
 	private state_lock:boolean																			= false;
 	private b_open:boolean																				= false;
@@ -387,7 +389,7 @@ class SapiClass {
 		let out:Array<number>, i:number, rep:number, tempos:number|undefined;
 
 		rep = 0x0;
-		while (rep < 2) {
+		while (rep < 1) {
 			if (this.queue.length >= num) {
 				out = [];
 				i = 0x0;
@@ -400,7 +402,7 @@ class SapiClass {
 				}
 				return (out);
 			}
-			const value:Uint8Array = await this._readWithTimeout(50);
+			const value:Uint8Array = await this._readWithTimeout(20);
 			i = 0x0;
 			while (i < value.byteLength) {
 				this.queue.push(value[i])
@@ -493,14 +495,17 @@ class SapiClass {
 	}
 
 	private async _send_cmd(cmd:number, databuff:Array<number>): Promise<SapiClassStatus> {
-		let rbuff:Array<number>, retries_nak:number, retries_can:number;
+		let rbuff:Array<number>, retries_nak:number, retries_can:number, retries_ack:number;
 
 		if (this.b_open == false)
 			return (SapiClassStatus.PORT_NOT_OPEN);
 		await this._recv_async();
 		retries_nak = 0x3;
-		retries_can = 0x20;
+		retries_can = this.RETRIES_CAN;
+		retries_ack = 0x6;
 		for (;;) {
+			if (retries_ack < 0x0)
+				return (SapiClassStatus.NO_ACK);
 			if (retries_nak < 0x0)
 				return (SapiClassStatus.WRONG_RETRIES_NAK);
 			if (retries_can < 0x0)
@@ -509,8 +514,10 @@ class SapiClass {
 				return (SapiClassStatus.WRITE);
 			for (;;) {
 				rbuff = await this._read(0x1)
-				if (rbuff.length == 0x0)
-					return (SapiClassStatus.NO_ACK);
+				if (rbuff.length == 0x0) {
+					retries_ack--;
+					continue ;
+				}
 				if (rbuff[0] == this.SOF) {
 					await this._recvIncomingRequestAsyn(100, false);
 					continue ;
@@ -680,18 +687,18 @@ class SapiClass {
 		res = await this._recvIncomingRequest(timeout);
 		if (cmd_ret == undefined)
 			return (res);
-		i = 0x0;
+		i = this.RETRIES_CAN;
 		for (;;) {
-			if (i >= 100) {
-				res.status = SapiClassStatus.TIMEOUT_RCV_I;
-				break ;
-			}
 			if (res.status != SapiClassStatus.OK)
 				break ;
 			if (res.cmd == cmd_ret)
 				break ;
+			if (i < 0x0) {
+				res.status = SapiClassStatus.TIMEOUT_RCV_I;
+				break ;
+			}
 			res = await this._recvIncomingRequest(100);
-			i++;
+			i--;
 		}
 		return (res);
 	}

@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 ##### Fixes:
 * Fixed sending commands - via receiving asynchronous messages and added more attempts to send when receiving CAN.
 
+##### Improvements:
+* Optimized timeouts for reading from the com port.
+
 ## Version 00.00.11
 - *Release date:* 21.08.2024
 - *Status:* release
