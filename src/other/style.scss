@@ -26,6 +26,11 @@ $color_question: rgb(13, 66, 238);
 	color: $color_error;
 }
 
+.ZUnoRazberryModal_color_sucess
+{
+	color: $color_info;
+}
+
 .ZUnoRazberryModal_color_info
 {
 	color: $color_info;
@@ -172,4 +177,15 @@ $margin_section_log_item: 0.2rem;
 .ZUnoRazberryModalContentSection_migration_action_button
 {
 	margin: 0.2rem;
+}
+
+.ZUnoRazberryMigrationKey_table td
+{
+	border-top: none;
+	padding: 0rem;
+}
+
+.ZUnoRazberryMigrationKey_table td:nth-child(1)
+{
+	width: 5rem;
 }

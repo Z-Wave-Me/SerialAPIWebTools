@@ -6,7 +6,7 @@ import {
 
 import {SapiRegionClass} from "./region";
 
-import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum} from "../other/utilities";
+import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum, arrayToStringHex} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
 export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower, ZunoSapiClassS2Key};
@@ -37,10 +37,7 @@ interface ZunoSapiClassPower
 interface ZunoSapiClassS2Key
 {
 	status:ZunoSapiClassStatus;
-	unauth:Uint8Array;
-	auth:Uint8Array;
-	access:Uint8Array;
-	s0:Uint8Array;
+	list:Array<{key: Uint8Array; name: string;}>;
 }
 
 
@@ -148,6 +145,11 @@ interface ZunoSapiClassBoardInfo
 // ------------------------------------------------------------------------------------------------------
 
 class ZunoSapiClass {
+	private readonly KEY_UNAUTH_NAME:string													= "unauth";
+	private readonly KEY_AUTH_NAME:string													= "auth";
+	private readonly KEY_ACCESS_NAME:string													= "access";
+	private readonly KEY_S0_NAME:string														= "s0";
+
 	private readonly LICENSE_KEY_DUMP_S2:number												= 0x1;
 	private readonly LICENSE_KEY_LONG_RANGE:number											= 0x5;
 	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
@@ -507,8 +509,20 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.UN_SUPPORT);
 	}
 
+	private _test_dump_key(array:Uint8Array): boolean {
+		const empty_v1:string = "00000000000000000000000000000000";
+		const empty_v2:string = "ffffffffffffffffffffffffffffffff";
+
+		const key:string = arrayToStringHex(array);
+		if (key === empty_v1 || key === empty_v2)
+			return (false);
+		return (true);
+	}
+
 	public async readS2Key(): Promise<ZunoSapiClassS2Key> {
-		const out:ZunoSapiClassS2Key = {status:ZunoSapiClassStatus.OK, unauth: new Uint8Array([]), auth: new Uint8Array([]), access: new Uint8Array([]), s0: new Uint8Array([])};
+		let i:number;
+
+		const out:ZunoSapiClassS2Key = {status:ZunoSapiClassStatus.OK, list:[]};
 		out.status = this.isSupportDumpKey();
 		if (out.status != ZunoSapiClassStatus.OK)
 			return (out);
@@ -521,10 +535,16 @@ class ZunoSapiClass {
 			out.status = ZunoSapiClassStatus.WRONG_LENGTH_CMD;
 			return (out);
 		}
-		out.unauth = new Uint8Array(dump_key_info.data.slice(0, 16));
-		out.auth = new Uint8Array(dump_key_info.data.slice(16, 32));
-		out.access = new Uint8Array(dump_key_info.data.slice(32, 48));
-		out.s0 = new Uint8Array(dump_key_info.data.slice(48, 64));
+		out.list.push({key:new Uint8Array(dump_key_info.data.slice(0, 16)), name:this.KEY_UNAUTH_NAME});
+		out.list.push({key:new Uint8Array(dump_key_info.data.slice(16, 32)), name:this.KEY_AUTH_NAME});
+		out.list.push({key:new Uint8Array(dump_key_info.data.slice(32, 48)), name:this.KEY_ACCESS_NAME});
+		out.list.push({key:new Uint8Array(dump_key_info.data.slice(48, 64)), name:this.KEY_S0_NAME});
+		i = 0x0;
+		while (i < out.list.length) {
+			if (this._test_dump_key(out.list[i].key) == false)
+				out.list[i].key = new Uint8Array([]);
+			i++;
+		}
 		return (out);
 	}
 

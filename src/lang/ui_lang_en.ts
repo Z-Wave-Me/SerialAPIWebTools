@@ -204,6 +204,6 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER]: "<div>The inclusion happeded without the required keys.</div><div>Please turn on exclusion mode on you controller</div>",
 	[ControllerUiLangClassId.MIGRATION_LEARN_PROCESS_QUEST_EXCLUDE_REPEATER_TITLE]: "",
 	[ControllerUiLangClassId.MIGRATION_SUCESS]: "Success",
-	[ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY]:  "<div>These are all the keys that we were able to count, is everything correct or will you try again?</div>",
+	[ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY]:  "<div>These are all the keys that we were able to read, is everything correct or will you try again?</div>",
 	[ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE]: "",
 };

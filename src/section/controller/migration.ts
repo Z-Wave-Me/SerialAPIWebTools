@@ -9,7 +9,7 @@ import {ControllerUiSectionUpdateClass} from "./update"
 import {SlaveUiSectionUpdateClass} from "../slave/update"
 import {PaketUiClassUpdateInfoPaket, UpdateUiSectionClass, UpdateUiSectionClassPaket, PaketUiClassUpdateInfoData, UpdateUiSectionClassFirmware} from "../update"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClass, SapiClassDetect} from "../../sapi/sapi";
-import {conv2Decimal, intToBytearrayMsbLsb, arrayToStringHex, sleep} from "../../other/utilities";
+import {conv2Decimal, intToBytearrayMsbLsb, arrayToStringHex, sleep, hexToBytes} from "../../other/utilities";
 
 export {ControllerUiSectionMigrationClass};
 
@@ -347,40 +347,62 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		return (true);
 	}
 
-	private _test_dump_key(array:Uint8Array): boolean {
-		const empty_v1:string = "00000000000000000000000000000000";
-		const empty_v2:string = "ffffffffffffffffffffffffffffffff";
-
-		const key:string = arrayToStringHex(array);
-		if (key === empty_v1 || key === empty_v2)
-			return (false);
-		return (true);
-	}
-
 	private _test_dump_key_all(dump_key:ZunoSapiClassS2Key): boolean {
-		if (this._test_dump_key(dump_key.unauth) == false)
-			return (false);
-		if (this._test_dump_key(dump_key.auth) == false)
-			return (false);
-		if (this._test_dump_key(dump_key.access) == false)
-			return (false);
-		if (this._test_dump_key(dump_key.s0) == false)
-			return (false);
+		let i:number;
+
+		i = 0x0;
+		while (i < dump_key.list.length) {
+			if (dump_key.list[i].key.length <= 0x0)
+				return (false);
+			i++;
+		}
 		return (true);
 	}
 
 	private _dump_key_all_to_string(dump_key:ZunoSapiClassS2Key): string {
-		let out:string;
+		let out:string, i:number, lenght:number, index:number;
 
-		out = "";
-		if (this._test_dump_key(dump_key.unauth) == true)
-			out = out + '<div>'+ "<b>unauth:</b> " + arrayToStringHex(dump_key.unauth) +'</div>';
-		if (this._test_dump_key(dump_key.auth) == true)
-			out = out + '<div>'+ "<b>auth:</b>   " + arrayToStringHex(dump_key.auth) +'</div>';
-		if (this._test_dump_key(dump_key.access) == true)
-			out = out + '<div>'+ "<b>access:</b> " + arrayToStringHex(dump_key.access) +'</div>';
-		if (this._test_dump_key(dump_key.s0) == true)
-			out = out + '<div>'+ "<b>s0:</b>     " + arrayToStringHex(dump_key.s0) +'</div>';
+		i = 0x0;
+		lenght = 0x0;
+		while (i < dump_key.list.length) {
+			if (dump_key.list[i].key.length > 0x0 && dump_key.list[i].name.length > lenght)
+				lenght = dump_key.list[i].name.length;
+			i++;
+		}
+		out = '<span style="font-family: monospace;"><h3 align="center" class="ZUnoRazberryModal_color_sucess">'+ this.locale.getLocale(ControllerUiLangClassId.MIGRATION_SUCESS) +'</h3>';
+		i = 0x0;
+		lenght++;
+		while (i < dump_key.list.length) {
+			if (dump_key.list[i].key.length > 0x0) {
+				out = out + '<div>'+ "<b>" + dump_key.list[i].name + ":"
+				index = dump_key.list[i].name.length;
+				while (index < lenght) {
+					out = out + '&nbsp;';
+					index++;
+				}
+				out = out + "</b>" + arrayToStringHex(dump_key.list[i].key) +'</div>';
+			}
+			i++;
+		}
+		out = out + "</span>";
+		return (out);
+	}
+
+	private _key_all_to_string_quest(dump_key:ZunoSapiClassS2Key): string {
+		let out:string, i:number;
+
+		out = "<div class='ZUnoRazberryModal_color_question'>" + this.locale.getLocale(ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY) + "</div><table class='ZUnoRazberryMigrationKey_table'>";
+		i = 0x0;
+		while (i < dump_key.list.length) {
+			out = out + "<tr><td><b>" + dump_key.list[i].name + "</b></td><td ";
+			if (dump_key.list[i].key.length <= 0x0)
+				out = out + "class='ZUnoRazberryModal_color_error'>✘";
+			else
+				out = out + "class='ZUnoRazberryModal_color_sucess'>✔";
+			out = out + "</td></tr>";
+			i++;
+		}
+		out = out + "</table>";
 		return (out);
 	}
 
@@ -434,9 +456,8 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 					const zuno_node_id_dump_key:ControllerUiSectionMigrationClassNodeDumpKey = {zuno_node_id:board_info.node_id, dump_key:dump_key};
 					if (this._test_dump_key_all(dump_key) == true)
 						return (zuno_node_id_dump_key);
-					const quest_repear:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY) + this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key)
 					if (await this.quest_continue_stop(this.el_container,
-							quest_repear, ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE,
+							this._key_all_to_string_quest(zuno_node_id_dump_key.dump_key), ControllerUiLangClassId.MIGRATION_QUEST_REPEATER_ALL_KEY_TITLE,
 							ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
 							ControllerUiLangClassId.PROCESS_REPEAT, ControllerUiLangClassId.PROCESS_REPEAT_TITLE) == true)
 						return (zuno_node_id_dump_key);
@@ -601,7 +622,7 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 		if (await this._remove_node(zuno_node_id_dump_key.zuno_node_id) == false)
 			return ;
 
-		this.el_container.innerHTML = '<h5 align="center">'+ this.locale.getLocale(ControllerUiLangClassId.MIGRATION_SUCESS) +'</h5>' + this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key);
+		this.el_container.innerHTML = this._dump_key_all_to_string(zuno_node_id_dump_key.dump_key);
 	}
 
 	private async _begin(): Promise<boolean> {
