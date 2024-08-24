@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 
 
-## Version 00.00.12
+## Version 00.01.00
 - *Release date:* ---
 - *Status:* in development
 - *Commit:* ---
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 * Optimized timeouts for reading from the com port.
 * Optimized display of security keys.
 * The application version is now stored only in 'package.json'.
+* Added branch for beta.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024
