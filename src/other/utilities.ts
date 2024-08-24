@@ -1,5 +1,5 @@
 export {	sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString, intToBytearrayLsbMsb, intToBytearrayMsbLsb, versionNumberToStringSlave, numberToStringHex, conv2Decimal, toString,
-			conv2DecimalPadding
+			conv2DecimalPadding, version_str_to_int, version_int_to_str
 };
 
 function toString(array:Array<number>): string {
@@ -175,3 +175,40 @@ function conv2Decimal(buff:Uint8Array, separator:string = "-"): string {
 	return (text)
 }
 
+function version_str_to_int(version:string): number {
+	let i:number, out:number;
+
+	const version_list:Array<string> = version.split(".");
+	i = version_list.length;
+	out = 0x0;
+	while (i != 0x0) {
+		out = out | (Number(version_list[i - 0x1]) << (0x8 * (version_list.length - i)));
+		i--;
+	}
+	return (out)
+}
+
+function version_int_to_str(version:number, min:number): string {
+	let out:string, i:number;
+
+	const list:Array<number> = [];
+	while (version != 0x0) {
+		list.unshift(version & 0xFF);
+		version = version >> 0x8;
+	}
+	while (list.length < min) {
+		list.unshift(0x0);
+	}
+	out = "";
+	i = 0x0;
+	while (true) {
+		out = out + String(list[i]).padStart(2, '0')
+		i++;
+		if (i < list.length) {
+			out = out + ".";
+			continue ;
+		}
+		break ;
+	}
+	return (out)
+}

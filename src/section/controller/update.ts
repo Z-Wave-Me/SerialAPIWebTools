@@ -6,7 +6,7 @@ import {CommonUiSectionClass} from "../common"
 import {UpdateUiSectionClass, PaketUiClassUpdateInfoPaket} from "../update"
 import {arrayToStringHex, versionNumberToString} from "../../other/utilities";
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus} from "./../../sapi/sapi";
-import {ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass, NAME_APP_VERSION_FULL} from "../../ui_define"
 import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 
 export {ControllerUiSectionUpdateClass};
@@ -41,7 +41,7 @@ class ControllerUiSectionUpdateClass extends CommonUiSectionClass {
 			url:'vendorId=' + capabilities_info.VendorID.toString() + '&appVersionMajor=' + capabilities_info.ApiVersion.toString() + '&appVersionMinor=' + capabilities_info.ApiRevision.toString() +
 							'&uuid=' + arrayToStringHex(board_info.chip_uuid) + "&bootloaderVersion=" + board_info.bootloader_version.toString() +
 							'&org_family=' + board_info.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.RAZBERRY.toString() + '&chip_family=' + board_info.chip_family.toString() +
-							'&chip_id=' + board_info.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL
+							'&chip_id=' + board_info.chip_type.toString() + '&zway=' + NAME_APP_VERSION_FULL
 		};
 		return (paket);
 	}

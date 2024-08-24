@@ -1,6 +1,6 @@
 {
   "name": "controller_ui",
-  "version": "0.0.1",
+  "version": "0.0.12",
   "description": "",
   "main": "src/controller_ui.ts",
   "scripts": {

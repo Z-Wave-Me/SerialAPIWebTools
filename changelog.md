@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 ##### Improvements:
 * Optimized timeouts for reading from the com port.
 * Optimized display of security keys.
+* The application version is now stored only in 'package.json'.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024

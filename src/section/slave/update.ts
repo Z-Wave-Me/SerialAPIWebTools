@@ -6,7 +6,7 @@ import {CommonUiSectionClass} from "../common"
 import {UpdateUiSectionClass, PaketUiClassUpdateInfoPaket} from "../update"
 import {ControllerUiDefineClassReBeginFunc} from "../../section/detection"
 import {arrayToStringHex, versionNumberToString, versionNumberToStringSlave, sleep} from "../../other/utilities";
-import {ControllerUiDefineClass} from "../../ui_define"
+import {ControllerUiDefineClass, NAME_APP_VERSION_FULL} from "../../ui_define"
 import {SapiClassDetectType, SapiClassUpdateProcess, SapiClassStatus, SapiClassDetect} from "./../../sapi/sapi";
 
 export {SlaveUiSectionUpdateClass};
@@ -31,7 +31,7 @@ class SlaveUiSectionUpdateClass extends CommonUiSectionClass {
 					update:false, update_type:false, data: []},
 			url:'vendorId=327&appVersionMajor=' + ((board_info.version >> 16) & 0xFFFF).toString() + '&appVersionMinor=' + (board_info.version & 0xFFFF).toString()
 				+ "&bootloaderVersion=" + board_info.boot_version.toString() + '&org_family=' + board_info.chip.keys_hash.toString() + '&fw_family=' + SapiClassDetectType.ZUNO.toString()
-				+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + ControllerUiDefineClass.NAME_APP_VERSION_FULL + '&uuid='
+				+ '&chip_family=' + board_info.chip.chip_family.toString() + '&chip_id=' + board_info.chip.chip_type.toString() + '&zway=' + NAME_APP_VERSION_FULL + '&uuid='
 				+ arrayToStringHex(board_info.chip_uuid)
 		};
 		return (paket);

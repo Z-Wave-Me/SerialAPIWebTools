@@ -11,7 +11,7 @@ import {DetectionUiSectionClass} from "./section/detection"
 import {SlaveUiSectionInfoClass} from "./section/slave/info"
 import {SlaveUiSectionLicenseClass} from "./section/slave/license"
 import {SlaveUiSectionUpdateClass} from "./section/slave/update"
-import {ControllerUiDefineClass} from "./ui_define"
+import {ControllerUiDefineClass, NAME_APP_VERSION_FULL} from "./ui_define"
 import {ControllerUiDefineClassReBeginFunc} from "./section/detection"
 
 import {ControllerSapiClass} from "./sapi/controller_sapi";
@@ -100,7 +100,7 @@ class ControllerUiClass {
 	}
 
 	private async _start(): Promise<void> {
-		this.log.info(ControllerUiDefineClass.NAME_APP_VERSION_FULL);
+		this.log.info(NAME_APP_VERSION_FULL);
 		this.log.infoStart(ControllerUiLangClassId.MESSAGE_PORT_SELECT);
 		const status:SapiClassStatus = await this.sapi.request(this.filters);
 		if (status == SapiClassStatus.SERIAL_UN_SUPPORT)
