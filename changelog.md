@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 * Optimized display of security keys.
 * The application version is now stored only in 'package.json'.
 * Added branch for beta.
+* Added the ability to restart some steps in the migration.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024

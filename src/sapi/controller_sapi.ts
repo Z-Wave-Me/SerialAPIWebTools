@@ -153,6 +153,7 @@ enum ControllerSapiClassLearMode
 {
 	DISABLED = 0x0,
 	INCLUSION_EXCLUSION = 0x1,
+	NETWORK_WIDE_INCLUSION = 0x81,
 }
 
 class ControllerSapiClass {
