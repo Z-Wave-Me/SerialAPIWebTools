@@ -263,7 +263,7 @@ class ControllerSapiClass {
 		out.ApiRevision = capabilities_info.data[0x1];
 		out.VendorID = capabilities_info.data[0x2] << 0x8 | capabilities_info.data[0x3];
 		out.cmd_mask = capabilities_info.data.slice(0x8, capabilities_info.data.length);
-		if (Object.hasOwn(controller_vendor_ids, out.VendorID) == true) {
+		if (controller_vendor_ids[out.VendorID] != undefined) {
 			out.VendorIDName = controller_vendor_ids[out.VendorID].Name;
 			out.VendorIDWebpage = controller_vendor_ids[out.VendorID].Webpage;
 		}
@@ -383,7 +383,7 @@ class ControllerSapiClass {
 			bit_i = 0x0;
 			while (bit_i < 0x8) {
 				if ((raw_license[this.RAZ7_FLAG_OFFSET + byte_i] & (0x1 << bit_i)) != 0x0) {
-					if (Object.hasOwn(license_info.flags, byte_i * 0x8 + bit_i) == true)
+					if (license_info.flags[byte_i * 0x8 + bit_i] != undefined)
 						license_info.flags[byte_i * 0x8 + bit_i].active = true;
 				}
 				bit_i++;

@@ -8,7 +8,7 @@ class ControllerUiLangClass {
 	private locale:ControllerUiLangClassList							= controller_lang_en;
 
 	public getLocale(id:ControllerUiLangClassId): string {
-		if (Object.hasOwn(this.locale, id) == true)
+		if (this.locale[id] != undefined)
 			return (this.locale[id]);
 		return ("");
 	}

@@ -28,7 +28,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 	private license_timer_id?:number;
 
 	private _license_timer_valid_data(in_json:ControllerUiClassNewLicenseXhr): boolean {
-		if (Object.hasOwn(in_json, "crc") == false || Object.hasOwn(in_json, "uuid") == false || Object.hasOwn(in_json, "license") == false)
+		if (in_json.crc == undefined || in_json.uuid == undefined || in_json.license == undefined)
 			return (false);
 		if (typeof (in_json.crc) != "string")
 			return (false);
