@@ -211,7 +211,8 @@ class UpdateUiSectionClass extends CommonUiSectionHtmlClass {
 				this.download_process.timer_id = window.setTimeout(fun_bus_timer, this.bus_timout);
 				return ;
 			}
-			await UpdateUiSectionClass.updateProcess(txt, paket.el_span, gbl, type, update_firmware, this.locale, this.log);
+			if (type != undefined)
+				await UpdateUiSectionClass.updateProcess(txt, paket.el_span, gbl, type, update_firmware, this.locale, this.log);
 			this.re_begin_func(true);
 			return ;
 
