@@ -40,8 +40,10 @@ function version_int_to_str(version, min) {
 	return (out);
 }
 
-module.exports = function(env, argv, entry_patch, out_filename, library_name) {
-	const web_tools_version = version_int_to_str(version_str_to_int(package.version), 0x3);
+const web_tools_version = version_int_to_str(version_str_to_int(package.version), 0x3);
+
+function func_common(env, argv, entry_patch, out_filename, library_name) {
+	
 	const tester_plugin_options =
 	{
 		terserOptions: { format: {comments: false,},},
@@ -101,3 +103,9 @@ module.exports = function(env, argv, entry_patch, out_filename, library_name) {
 	}
 	return (config);
 };
+module.exports.common = func_common;
+if ((version_str_to_int(package.version) & 0xFF) == 0x0)
+	module.exports.beta = false;
+else
+	module.exports.beta = true;
+module.exports.web_tools_version = web_tools_version
