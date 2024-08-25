@@ -1,13 +1,15 @@
 {
-  "name": "controller_ui",
+  "name": "serial-api-web-tools",
   "version": "0.0.14",
-  "description": "",
-  "main": "src/controller_ui.ts",
+  "description": "This set tools allows to configure Z-Wave.Me hardware",
+  "main": "src/main.ts",
   "scripts": {
     "dev": "webpack --mode=development",
-    "build": "rm -rf build && webpack --mode=production"
+    "build": "rm -rf build && webpack --mode=production",
+    "dev_zuno": "webpack --config ./webpack.z-uno-compiler.js --mode=development",
+    "build_zuno": "rm -rf build && webpack --config ./webpack.z-uno-compiler.js --mode=production"
   },
-  "author": "",
+  "author": "Z-Wave.Me",
   "license": "ISC",
   "dependencies":{
     "@types/uuid": "9.0.1",

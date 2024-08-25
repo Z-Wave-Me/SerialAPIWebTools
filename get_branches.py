@@ -17,6 +17,6 @@ file = open("./package.json")
 package = json.load(file)
 file.close()
 if (version_str_to_int(package["version"]) & 0xFF) == 0x0:
-	sys.stdout.write("gh-pages")
+	sys.stdout.write("")
 else:
-	sys.stdout.write("gh-pages-beta")
+	sys.stdout.write("-beta")
