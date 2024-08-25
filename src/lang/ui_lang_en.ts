@@ -196,7 +196,7 @@ const controller_lang_en:ControllerUiLangClassList					=
 	[ControllerUiLangClassId.LEARN_PROCESS_QUEST_EXCLUDE_TITLE]: "",
 	[ControllerUiLangClassId.MIGRATION_LEARN_INFO_EXCLUDE_INCLUDE]: "Learn completed",
 	[ControllerUiLangClassId.MIGRATION_FAILED_DETECT]: "Сould not be detected",
-	[ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE]: "<div>Turn on inclusion mode on you controller</div><div>When inclusion starts, you have to select all the supported security keys and use the following security code:<b>${dsk}</b></div>",
+	[ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE]: "<div>Turn on inclusion mode on you controller</div><div>When inclusion starts, you have to select all the supported security keys and use the following security code:</div><div>${dsk}</div>",
 	[ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE_TITLE]: "",
 	[ControllerUiLangClassId.MIGRATION_NOT_SUPPORT_DUMP_KEY]: "No support for dump key",
 	[ControllerUiLangClassId.MESSAGE_READ_S2_KEY]: "Reading S2 keys",

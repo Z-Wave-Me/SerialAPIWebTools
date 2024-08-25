@@ -469,7 +469,8 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 					return (undefined);
 				continue ;
 			}
-			const quest_include:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE).replace("${dsk}", conv2Decimal(board_info.s2_pub, " - ").substring(0x0, 0x5));
+			const dsk:string = conv2Decimal(board_info.s2_pub, " - ");
+			const quest_include:string = this.locale.getLocale(ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE).replace("${dsk}", "<b>" + dsk.substring(0x0, 0x5) + "</b>" + dsk.substring(0x5));
 			await this.quest_continue_stop(this.el_container,
 											quest_include, ControllerUiLangClassId.MIGRATION_PROCESS_QUEST_INCLUDE_TITLE,
 											ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
