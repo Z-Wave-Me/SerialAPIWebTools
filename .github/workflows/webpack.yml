@@ -27,6 +27,21 @@ jobs:
         key: npm-${{ hashFiles('package-lock.json') }}
         restore-keys: npm-
 
+    - name: Build controller_ui
+      run: |
+        npm install
+        npm run build
+
+    - name: Build controller_ui
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
+        user_name: 'amatilda'
+        user_email: '<kpk@z-wave.me>'
+        commit_message: 'Auto-generated commit'
+        publish_branch: 'gh-pages-beta'
+
     - name: Build z-uno-compiler
       run: |
         npm install
