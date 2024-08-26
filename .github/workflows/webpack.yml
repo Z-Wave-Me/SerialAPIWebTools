@@ -26,7 +26,17 @@ jobs:
         path: ~/.npm
         key: npm-${{ hashFiles('package-lock.json') }}
         restore-keys: npm-
-  
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
+        user_name: 'amatilda'
+        user_email: '<kpk@z-wave.me>'
+        commit_message: 'Auto-generated commit'
+        publish_branch: 'gh-pages-z-uno-compiler-beta'
+
     # - name: Build
     #   env:
     #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,14 +56,4 @@ jobs:
     #     git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
     #     OUTPUT=$(python3 ./get_branches.py)
     #     npx gh-pages -b "gh-pages-z-uno-compiler${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
-
-  - name: Deploy
-    uses: peaceiris/actions-gh-pages@v4
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-      publish_dir: ./build
-      user_name: 'amatilda'
-      user_email: '<kpk@z-wave.me>'
-      commit_message: 'Auto-generated commit'
-      publish_branch: 'gh-pages-z-uno-compiler-beta'
 
