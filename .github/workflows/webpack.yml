@@ -43,7 +43,7 @@ jobs:
         user_name: 'amatilda'
         user_email: '<kpk@z-wave.me>'
         commit_message: 'Auto-generated commit'
-        publish_branch: 'gh-pages$(python3 ./get_branches.py)'
+        publish_branch: 'gh-pages-beta'
 
     - name: Build z-uno-compiler
       run: |
@@ -57,4 +57,4 @@ jobs:
         user_name: 'amatilda'
         user_email: '<kpk@z-wave.me>'
         commit_message: 'Auto-generated commit'
-        publish_branch: 'gh-pages-z-uno-compiler$(python3 ./get_branches.py)'
+        publish_branch: 'gh-pages-z-uno-compiler-beta'
