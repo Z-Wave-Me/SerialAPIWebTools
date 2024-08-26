@@ -1,12 +1,17 @@
 {
 	"version": "0.2.0",
 	"configurations": [
-		
 		{
 			"type": "msedge",
 			"request": "launch",
-			"name": "Example",
-			"file": "example.html"
+			"name": "controller_ui",
+			"file": "./example/controller_ui.html"
+		},
+		{
+			"type": "msedge",
+			"request": "launch",
+			"name": "z-uno-compiler",
+			"file": "./example/z-uno-compiler.html"
 		},
 		{
 			"type": "node",
