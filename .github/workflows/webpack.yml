@@ -27,15 +27,15 @@ jobs:
         key: npm-${{ hashFiles('package-lock.json') }}
         restore-keys: npm-
   
-    - name: Build
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        npm install
-        npm run build
-        git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-        OUTPUT=$(python3 ./get_branches.py)
-        npx gh-pages -b "gh-pages${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
+    # - name: Build
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     npm install
+    #     npm run build
+    #     git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+    #     OUTPUT=$(python3 ./get_branches.py)
+    #     npx gh-pages -b "gh-pages${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
 
     - name: Build z-uno-compiler
       env:
@@ -45,8 +45,5 @@ jobs:
         npm run build_zuno
         git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         OUTPUT=$(python3 ./get_branches.py)
-        git checkout "origin/gh-pages-z-uno-compiler${OUTPUT}"
-        git pull
-        git checkout main
         npx gh-pages -b "gh-pages-z-uno-compiler${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
 
