@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 * Added the ability to restart some steps in the migration.
 * During migration, the slave's dsk is now completely output.
 * During migration, the inclusion/exclusion method was changed, now after 10 seconds during the timeout, wide inclusion/exclusion starts.
+* For beta, added sapi output to log.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024
