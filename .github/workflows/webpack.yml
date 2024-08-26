@@ -37,13 +37,23 @@ jobs:
     #     OUTPUT=$(python3 ./get_branches.py)
     #     npx gh-pages -b "gh-pages${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
 
-    - name: Build z-uno-compiler
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        npm install
-        npm run build_zuno
-        git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-        OUTPUT=$(python3 ./get_branches.py)
-        npx gh-pages -b "gh-pages-z-uno-compiler${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
+    # - name: Build z-uno-compiler
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     npm install
+    #     npm run build_zuno
+    #     git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+    #     OUTPUT=$(python3 ./get_branches.py)
+    #     npx gh-pages -b "gh-pages-z-uno-compiler${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
+
+  - name: Deploy
+    uses: peaceiris/actions-gh-pages@v4
+    with:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      publish_dir: ./build
+      user_name: 'amatilda'
+      user_email: '<kpk@z-wave.me>'
+      commit_message: 'Auto-generated commit'
+      publish_branch: 'gh-pages-z-uno-compiler-beta'
 
