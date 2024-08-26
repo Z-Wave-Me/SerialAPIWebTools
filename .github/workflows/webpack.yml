@@ -27,7 +27,12 @@ jobs:
         key: npm-${{ hashFiles('package-lock.json') }}
         restore-keys: npm-
 
-    - name: Deploy
+    - name: Build z-uno-compiler
+      run: |
+        npm install
+        npm run build_zuno
+
+    - name: Build z-uno-compiler deploy
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
