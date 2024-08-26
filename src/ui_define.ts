@@ -1,10 +1,9 @@
+import {WEB_TOOLS_VERSION} from "./other/define"
+
 export {ControllerUiDefineClass, TABLE_NAME_LICENSE_YES, TABLE_NAME_LICENSE_NO, NAME_APP_VERSION_FULL};
 
 const TABLE_NAME_LICENSE_YES:string = '<input disabled="disabled" checked type="checkbox">';
 const TABLE_NAME_LICENSE_NO:string = '<input disabled="disabled" type="checkbox">';
-
-declare const WEB_TOOLS_VERSION : string;
-
 
 enum ControllerUiDefineClass
 {

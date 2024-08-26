@@ -1,4 +1,6 @@
 import {sleep, checksum, calcSigmaCRC16} from "../other/utilities";
+import {WEB_TOOLS_BETA} from "../other/define"
+import {splitHexBuff} from "../other/utilities"
 
 export {SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassSerialAPISetupCmd, SapiSerialOptionFilters, SapiClassNodeIdBaseType, SapiClassDetect, SapiClassDetectType, SapiClassDetectTypeFunc, SapiClassDetectWait, SapiClassUpdateProcess};
 
@@ -431,6 +433,8 @@ class SapiClass {
 		const writer = this.port.writable.getWriter();
 		await writer.write(data_uint8);
 		writer.releaseLock();
+		if (WEB_TOOLS_BETA == true)
+			console.log(">> ", splitHexBuff(data_uint8));
 		return (true);
 	}
 
@@ -639,6 +643,8 @@ class SapiClass {
 		}
 		await this._sendAck();
 		out.raw = [this.SOF, len_data].concat(buff_data);
+		if (WEB_TOOLS_BETA == true)
+			console.log("<< ", splitHexBuff(out.raw));
 		out.cmd = out.raw[0x3];
 		out.data = out.raw.slice(0x4, out.raw.length - 0x1);
 		return (out);

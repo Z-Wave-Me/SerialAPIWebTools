@@ -1,5 +1,5 @@
 export {	sleep, checksum, calcSigmaCRC16, costruct_int, hexToBytes, arrayToStringHex, versionNumberToString, intToBytearrayLsbMsb, intToBytearrayMsbLsb, versionNumberToStringSlave, numberToStringHex, conv2Decimal, toString,
-			conv2DecimalPadding, version_str_to_int, version_int_to_str
+			conv2DecimalPadding, version_str_to_int, version_int_to_str, splitHexBuff
 };
 
 function toString(array:Array<number>): string {
@@ -37,6 +37,22 @@ function arrayToStringHex(data:Array<number>|Uint8Array):string {
 	}
 	return (str_hex);
 }
+
+function splitHexBuff(data:Array<number>|Uint8Array):string {
+	let str_hex:string, i:number;
+
+	str_hex = "";
+	i = 0x0;
+	while (true) {
+		str_hex = str_hex + data[i].toString(0x10).padStart(2, '0').toUpperCase();
+		i++;
+		if (i >= data.length)
+			break ;
+		str_hex = str_hex + " ";
+	}
+	return (str_hex);
+}
+
 
 function hexToBytes(hex:string):Array<number>|undefined {
 	let i:number;

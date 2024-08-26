@@ -41,6 +41,7 @@ function version_int_to_str(version, min) {
 }
 
 const web_tools_version = version_int_to_str(version_str_to_int(package.version), 0x3);
+const web_tools_beta = ((version_str_to_int(package.version) & 0xFF) == 0x0)? false:true;
 
 function func_common(env, argv, entry_patch, out_filename, library_name) {
 	
@@ -60,7 +61,8 @@ function func_common(env, argv, entry_patch, out_filename, library_name) {
 		plugins: [
 			new MiniCssExtractPlugin(),
 			new webpack.DefinePlugin({
-				WEB_TOOLS_VERSION: JSON.stringify(web_tools_version),
+				__VERSION__: JSON.stringify(web_tools_version),
+				__BETA__: JSON.stringify(web_tools_beta),
 			})
 		],
 		entry: entry_patch,
@@ -104,8 +106,5 @@ function func_common(env, argv, entry_patch, out_filename, library_name) {
 	return (config);
 };
 module.exports.common = func_common;
-if ((version_str_to_int(package.version) & 0xFF) == 0x0)
-	module.exports.beta = false;
-else
-	module.exports.beta = true;
+module.exports.beta = web_tools_beta;
 module.exports.web_tools_version = web_tools_version
