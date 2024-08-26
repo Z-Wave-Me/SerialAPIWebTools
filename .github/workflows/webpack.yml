@@ -45,7 +45,7 @@ jobs:
         npm run build_zuno
         git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         OUTPUT=$(python3 ./get_branches.py)
-        git checkout "gh-pages-z-uno-compiler${OUTPUT}"
+        git checkout "origin/gh-pages-z-uno-compiler${OUTPUT}"
         git pull
         git checkout main
         npx gh-pages -b "gh-pages-z-uno-compiler${OUTPUT}" -d build -m "Auto-generated commit" -u "amatilda <kpk@z-wave.me>"
