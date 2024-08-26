@@ -153,7 +153,8 @@ enum ControllerSapiClassLearMode
 {
 	DISABLED = 0x0,
 	INCLUSION_EXCLUSION = 0x1,
-	NETWORK_WIDE_INCLUSION = 0x81,
+	WIDE_INCLUSION = 0x2,
+	WIDE_EXCLUSION = 0x3,
 }
 
 class ControllerSapiClass {
@@ -760,6 +761,14 @@ class ControllerSapiClass {
 		if (send_mode.status == SapiClassStatus.OK || send_mode.status == SapiClassStatus.TIMEOUT_RCV)
 			return (ControllerSapiClassStatus.OK);
 		return (((send_mode.status as unknown) as ControllerSapiClassStatus));
+	}
+
+	public async includeWide(): Promise<ControllerSapiClassLearnMode> {
+		return (await this._learn_mode(ControllerSapiClassLearMode.WIDE_INCLUSION));
+	}
+
+	public async excludingWide(): Promise<ControllerSapiClassLearnMode> {
+		return (await this._learn_mode(ControllerSapiClassLearMode.WIDE_EXCLUSION));
 	}
 
 	public async include_excluding(): Promise<ControllerSapiClassLearnMode> {

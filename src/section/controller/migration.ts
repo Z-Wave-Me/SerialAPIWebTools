@@ -31,7 +31,6 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private readonly NVM_HOMEID:number								= 0x8;
 
 	private readonly progress_timer_id_ms_period:number				= 1000;
-	private readonly progress_timer_id_count:number					= 30;
 	private readonly el_button:HTMLButtonElement					= document.createElement("button");
 	private readonly el_container:HTMLElement;
 	private readonly razberry:ControllerSapiClass;
@@ -44,41 +43,21 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 	private process:boolean											= false;
 	private progress_timer_id?:number;
 
-	private async _click_start_stop_include_excluding(excluding:boolean): Promise<boolean> {
-		let index_timout:number, start_id:ControllerUiLangClassId, question_id:ControllerUiLangClassId, wait_id:ControllerUiLangClassId;
+	private async _raz_include_excluding_wait(progress_timer_id_count:number, start_id:ControllerUiLangClassId, wait_id:ControllerUiLangClassId,
+											include_excluding:ControllerSapiClassLearnMode): Promise<boolean|undefined> {
+		let index_timout:number;
 
-		if (excluding == true) {
-			start_id = ControllerUiLangClassId.MESSAGE_START_EXCLUDING;
-			question_id = ControllerUiLangClassId.MIGRATION_QUESTION_EXCLUDE;
-			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_EXCLUDE_START_MASTER;
-		}
-		else {
-			start_id = ControllerUiLangClassId.MESSAGE_START_INCLUDE;
-			question_id = ControllerUiLangClassId.MIGRATION_QUESTION_INCLUDE;
-			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_INCLUDE_START_MASTER;
-		}
-		await this.quest_continue_stop(this.el_container, question_id, "",
-												ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
-												undefined, undefined);
-
-		this.el_container.innerHTML = '';
-		this.log.infoStart(start_id);
-		const include_excluding:ControllerSapiClassLearnMode = await this.razberry.include_excluding();
-		if (include_excluding.status != ControllerSapiClassStatus.OK) {
-			this.log.errorFalledCode(start_id, include_excluding.status);
-			return (false);
-		}
 		const el_progress:HTMLProgressElement = document.createElement('progress');
 		const el_span:HTMLSpanElement = document.createElement('span');
 		const el_container:HTMLSpanElement = document.createElement('span');
 		el_container.title = this.locale.getLocale(wait_id);
 		el_container.appendChild(el_progress);
 		el_container.appendChild(el_span);
-		el_progress.max = this.progress_timer_id_count;
+		el_progress.max = progress_timer_id_count;
 		this.el_container.appendChild(el_container);
-		index_timout = this.progress_timer_id_count;
+		index_timout = progress_timer_id_count;
 		const seconds:string = this.locale.getLocale(ControllerUiLangClassId.SECONDS);
-		const max_lenght:number = this.progress_timer_id_count.toString().length;
+		const max_lenght:number = progress_timer_id_count.toString().length;
 		const fun_timer:TimerHandler = () => {
 			el_progress.value = index_timout;
 			el_span.textContent = ' ' + index_timout.toString().padStart(max_lenght, '0') + seconds;
@@ -107,10 +86,56 @@ class ControllerUiSectionMigrationClass extends CommonUiSectionClass {
 			if (this.progress_timer_id == undefined) {
 				await this.razberry.disabled();
 				this.log.errorFalledCode(start_id, ControllerSapiClassStatus.TIMEOUT);
-				return (false);
+				return (undefined);
 			}
 		}
-		return (true);
+	}
+
+	private async _click_start_stop_include_excluding(excluding:boolean): Promise<boolean> {
+		let out_progress:boolean|undefined, start_id:ControllerUiLangClassId, question_id:ControllerUiLangClassId, wait_id:ControllerUiLangClassId, include_excluding:ControllerSapiClassLearnMode;
+
+		if (excluding == true) {
+			start_id = ControllerUiLangClassId.MESSAGE_START_EXCLUDING;
+			question_id = ControllerUiLangClassId.MIGRATION_QUESTION_EXCLUDE;
+			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_EXCLUDE_START_MASTER;
+		}
+		else {
+			start_id = ControllerUiLangClassId.MESSAGE_START_INCLUDE;
+			question_id = ControllerUiLangClassId.MIGRATION_QUESTION_INCLUDE;
+			wait_id = ControllerUiLangClassId.MIGRATION_WAIT_INCLUDE_START_MASTER;
+		}
+		await this.quest_continue_stop(this.el_container, question_id, "",
+												ControllerUiLangClassId.PROCESS_CONTINUE, ControllerUiLangClassId.PROCESS_CONTINUE_TITLE,
+												undefined, undefined);
+
+		this.el_container.innerHTML = '';
+		this.log.infoStart(start_id);
+		include_excluding = await this.razberry.include_excluding();
+		if (include_excluding.status != ControllerSapiClassStatus.OK) {
+			this.log.errorFalledCode(start_id, include_excluding.status);
+			return (false);
+		}
+		out_progress = await this._raz_include_excluding_wait(10, start_id, wait_id, include_excluding);
+		if (out_progress != undefined)
+			return (out_progress);
+		this.el_container.innerHTML = '';
+		this.log.infoStart(start_id);
+		if (excluding == true) {
+			start_id = ControllerUiLangClassId.MESSAGE_START_WIDE_EXCLUDING;
+			include_excluding = await this.razberry.excludingWide();
+		}
+		else {
+			start_id = ControllerUiLangClassId.MESSAGE_START_WIDE_INCLUDE;
+			include_excluding = await this.razberry.includeWide();
+		}
+		if (include_excluding.status != ControllerSapiClassStatus.OK) {
+			this.log.errorFalledCode(start_id, include_excluding.status);
+			return (false);
+		}
+		out_progress = await this._raz_include_excluding_wait(30, start_id, wait_id, include_excluding);
+		if (out_progress == undefined)
+			return (false);
+		return (out_progress);
 	}
 
 	private async _click_start_stop_test_include(home:ControllerUiSectionMigrationClassHome): Promise<boolean|undefined> {

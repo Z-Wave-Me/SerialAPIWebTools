@@ -1,6 +1,6 @@
 {
   "name": "serial-api-web-tools",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "This set tools allows to configure Z-Wave.Me hardware",
   "main": "src/main.ts",
   "scripts": {
