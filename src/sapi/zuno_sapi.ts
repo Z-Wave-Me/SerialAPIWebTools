@@ -6,10 +6,10 @@ import {
 
 import {SapiRegionClass} from "./region";
 
-import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum, arrayToStringHex} from "../other/utilities";
+import {costruct_int, toString, conv2Decimal, conv2DecimalPadding, checksum, arrayToStringHex, calcSigmaCRC16} from "../other/utilities";
 import {HardwareChipClass} from "../hardware/chip"
 
-export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower, ZunoSapiClassS2Key};
+export {ZunoSapiClass, ZunoSapiClassStatus, ZunoSapiClassBoardInfo, ZunoSapiClassParamInfo, ZunoSapiClassRegion, ZunoSapiClassPower, ZunoSapiClassS2Key, ZunoSapiClassSec};
 
 enum ELearnStatus
 {
@@ -32,6 +32,12 @@ interface ZunoSapiClassPower
 	step:number;
 	min:number;
 	max:number;
+}
+
+interface ZunoSapiClassSec
+{
+	status:ZunoSapiClassStatus;
+	sec:boolean;
 }
 
 interface ZunoSapiClassS2Key
@@ -62,6 +68,11 @@ enum ZunoSapiClassStatus
 	TIMEOUT_FORCE_RESTART,
 	LEARN_EXCLUDE,
 	LEARN_INCLUDE,
+	SCETCH_TOO_LONG,
+	SCETCH_FALLED_PRIAMLE,
+	SCETCH_FALLED_CORE_VERSION,
+	SCETCH_FALLED_REVISION,
+	SCETCH_FALLED_CRC16,
 }
 
 interface ZunoSapiClassBoardInfoZwDataProt
@@ -82,6 +93,7 @@ interface ZunoSapiClassParamInfo
 	raw:Array<number>;
 	freq_i:number;
 	main_pow:number;
+	sec:boolean;
 }
 
 interface ZunoSapiClassBoardInfoProduction
@@ -120,6 +132,7 @@ interface ZunoSapiClassBoardInfoChip
 interface ZunoSapiClassBoardInfo
 {
 	status:ZunoSapiClassStatus;
+	core_version:number;
 	version:number;
 	build_number:number;
 	build_ts:number;
@@ -150,6 +163,15 @@ class ZunoSapiClass {
 	private readonly KEY_ACCESS_NAME:string													= "access";
 	private readonly KEY_S0_NAME:string														= "s0";
 
+	private readonly ZUNO_HEADER_PREAMBL:string												= "ZMEZUNOC";
+
+	private readonly SK_HEADER_SIZE:number													= 0xC0;
+	private readonly SK_HEADER_VERSION_MSB_OFFSET:number									= 0x08;
+	private readonly SK_HEADER_VERSION_LSB_OFFSET:number									= 0x09;
+	private readonly SK_HEADER_NAME_START:number											= 56;
+	private readonly SK_HEADER_MAX_NAME:number												= 47;
+	private readonly SK_HEADER_HWREW_OFFSET:number											= this.SK_HEADER_NAME_START + this.SK_HEADER_MAX_NAME + 1;
+
 	private readonly LICENSE_KEY_DUMP_S2:number												= 0x1;
 	private readonly LICENSE_KEY_LONG_RANGE:number											= 0x5;
 	private readonly license_flags: {[key:number]: ZunoSapiClassLicenseFlag}				=
@@ -172,7 +194,7 @@ class ZunoSapiClass {
 	private _get_param_info_default(): ZunoSapiClassParamInfo {
 		const param_info:ZunoSapiClassParamInfo												=
 		{	
-			status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, raw:[], main_pow:0x0
+			status:ZunoSapiClassStatus.NOT_INIT, freq_i:0x0, raw:[], main_pow:0x0, sec:false
 		};
 		return (param_info);
 	}
@@ -181,7 +203,8 @@ class ZunoSapiClass {
 		const board_info:ZunoSapiClassBoardInfo												=
 		{	
 			status:ZunoSapiClassStatus.NOT_INIT, version:0x0, build_number:0x0, build_ts:0x0, hw_rev:0x0, code_size:0x0, ram_size:0x0, dbg_lock:0x0, custom_code_offset:0x30000, chip_uuid: new Uint8Array(), s2_pub: new Uint8Array(),
-			boot_offset:0x3a000, boot_version: 0x0, max_default_power:50, ext_nvm:0x0, chip : {chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x8E19CC54, se_version:0x0}
+			boot_offset:0x3a000, boot_version: 0x0, max_default_power:50, ext_nvm:0x0, chip : {chip_type:HardwareChipClass.CHIP_ZGM130S037HGN1, chip_family:HardwareChipClass.FAMILY_ZGM13, keys_hash:0x8E19CC54, se_version:0x0},
+			core_version:0x0
 		};
 		return (board_info);
 	}
@@ -228,7 +251,7 @@ class ZunoSapiClass {
 			return ;
 		}
 		const param:Array<number> = param_info.data;
-		if (param.length < 0x3) {
+		if (param.length < 0x5) {
 			out.status = ZunoSapiClassStatus.WRONG_LENGTH_CMD;
 			return ;
 		}
@@ -236,6 +259,8 @@ class ZunoSapiClass {
 		out.raw = param;
 		out.freq_i = param_info.data[1];
 		out.main_pow = param_info.data[2];
+		if (param_info.data[4] != 0x0)
+			out.sec = true;
 	}
 
 	private async _get_board_info_add(): Promise<void> {
@@ -255,6 +280,7 @@ class ZunoSapiClass {
 		}
 		out.status = ZunoSapiClassStatus.OK;
 		const version:number = ((info[0] << 8) | (info[1]));
+		out.core_version = version;
 		out.build_number = (info[2] << 24) | (info[3] << 16) |  (info[4] << 8) | (info[5]);
 		out.version = (version << 16 | (out.build_number & 0xFFFF));
 		out.build_ts = (info[6] << 24) | (info[7] << 16) | (info[8] << 8) | (info[9]);
@@ -446,6 +472,44 @@ class ZunoSapiClass {
 		return (ZunoSapiClassStatus.OK);
 	}
 
+	private async _pushSketch(addr:number, size:number, crc16:number): Promise<ZunoSapiClassStatus> {
+		const res:SapiClassRet = await this.sapi.sendCommandUnSz(0x08, [0x01, (addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, (size >> 8) & 0xFF, size & 0xFF, (crc16 >> 8) & 0xFF, (crc16) & 0xFF])
+		if (res.status != SapiClassStatus.OK)
+			return ((res.status as unknown) as ZunoSapiClassStatus);
+		if (res.data.length < 0x1)
+			return (ZunoSapiClassStatus.WRONG_LENGTH_CMD);
+		if (res.data[0x0] == 0xFE)
+			return (ZunoSapiClassStatus.SCETCH_FALLED_CRC16);
+		return (ZunoSapiClassStatus.OK);
+	}
+
+	public async updateSketch(scetch:Uint8Array, process:SapiClassUpdateProcess|null): Promise<ZunoSapiClassStatus> {
+		let status:ZunoSapiClassStatus;
+
+		if (this.board_info.status != ZunoSapiClassStatus.OK)
+			return (this.board_info.status);
+		if (scetch.length > this.board_info.code_size)
+			return (ZunoSapiClassStatus.SCETCH_TOO_LONG);
+		const data_uint8 = scetch.slice(0, this.ZUNO_HEADER_PREAMBL.length);
+		const preamble:string = new TextDecoder().decode(data_uint8);
+		if (this.ZUNO_HEADER_PREAMBL != preamble)
+			return (ZunoSapiClassStatus.SCETCH_FALLED_PRIAMLE);
+		const header_version:number = (scetch[this.SK_HEADER_VERSION_MSB_OFFSET] << 8) | scetch[this.SK_HEADER_VERSION_LSB_OFFSET];
+		if (header_version != this.board_info.core_version)
+			return (ZunoSapiClassStatus.SCETCH_FALLED_CORE_VERSION);
+		if (this.board_info.hw_rev != -1 && this.board_info.build_number >= 2849) {
+			const header_hw_rev:number = costruct_int(scetch.slice(this.SK_HEADER_HWREW_OFFSET, this.SK_HEADER_HWREW_OFFSET + 0x2), 2);
+			if (this.board_info.hw_rev != header_hw_rev)
+				return (ZunoSapiClassStatus.SCETCH_FALLED_REVISION);
+		}
+		status = await this._load_file(this.board_info.custom_code_offset, scetch, process);
+		if (status != ZunoSapiClassStatus.OK)
+			return (status);
+		const crc16:number = calcSigmaCRC16(0x1D0F, scetch, 0, scetch.length);
+		status = await this._pushSketch(this.board_info.custom_code_offset, scetch.length, crc16);
+		return (status);
+	}
+
 	public getBoardInfo(): ZunoSapiClassBoardInfo {
 		return (this.board_info);
 	}
@@ -588,6 +652,28 @@ class ZunoSapiClass {
 		if (out.status != ZunoSapiClassStatus.OK)
 			return (out);
 		return (out);
+	}
+
+	public getSec(): ZunoSapiClassSec {
+		const out:ZunoSapiClassSec = {
+			status:this._isSupportRegionAndPower(),
+			sec:this.param_info.sec,
+		};
+		if (out.status != ZunoSapiClassStatus.OK)
+			return (out);
+		return (out);
+	}
+
+	public async setSec(sec:boolean): Promise<ZunoSapiClassStatus> {
+		const status:ZunoSapiClassStatus = this._isSupportRegionAndPower();
+		if (status != ZunoSapiClassStatus.OK)
+			return (status);
+		const raw:Array<number> =  this.param_info.raw;
+		if (sec == true)
+			raw[0x4] = 0x1;
+		else
+			raw[0x4] = 0x0;
+		return (await this._apply_param(raw));
 	}
 
 	public async setPower(power:number): Promise<ZunoSapiClassStatus> {

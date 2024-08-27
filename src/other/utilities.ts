@@ -121,7 +121,7 @@ function calcSigmaCRC16(crc:number, data:Array<number>|Uint8Array, offset:number
 	return (crc);
 }
 
-function costruct_int(arr:Array<number>, n:number, inv:boolean = true): number {
+function costruct_int(arr:Array<number>|Uint8Array, n:number, inv:boolean = true): number {
 	let val:number, i:number, indx:number;
 
 	val = 0;

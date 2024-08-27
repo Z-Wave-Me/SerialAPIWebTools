@@ -9,12 +9,15 @@
 		<input id="but" type="button" onclick="compileAndLoad()" value="load scetch">
 		<script src="../build/z-uno-compiler.js"></script>
 		<script>
+			function compileAndLoad_log(severity, txt) {
+				console.log(severity, txt);
+			}
 			async function compileAndLoad() {
 				const text_sceth = document.getElementById('textArea').value;
-				const z_uno_compiler = new ZUnoCompiler.ZUnoCompilerClass(text_sceth, null, true, 50);
-				let res = z_uno_compiler.getWait(text_sceth, null, true, 50);
+				const z_uno_compiler = new ZUnoCompiler.ZUnoCompilerClass(text_sceth, null, true, 50, compileAndLoad_log);
+				let res = z_uno_compiler.getWait();
 				res.then(function(result) {
-					z_uno_compiler.drawQR("qrcode", result["smart_qr"]);
+					z_uno_compiler.drawQR("qr-code", result["smart_qr"]);
 					document.getElementById("dsk").innerHTML = result["dsk"];
 					console.log(result);
 				}, function(err) {
