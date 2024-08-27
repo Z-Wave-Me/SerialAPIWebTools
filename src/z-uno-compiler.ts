@@ -289,7 +289,7 @@ class ZUnoCompilerClass {
 			return (this._error(ControllerUiLangClassId.MESSAGE_PORT_SELECT));
 		if (status != SapiClassStatus.OK)
 			return (this._error_code(ControllerUiLangClassId.MESSAGE_PORT_SELECT, status));
-		this._info(ControllerUiLangClassId.MESSAGE_DETECTION);
+		this._info_wait(ControllerUiLangClassId.MESSAGE_DETECTION);
 		const baudrate_array:Array<number> = this._get_baudrate_cache();
 		detect_dict = await this.sapi.detect(baudrate_array, null);
 		if (detect_dict.status != SapiClassStatus.OK) {
@@ -298,34 +298,35 @@ class ZUnoCompilerClass {
 		}
 		this._set_baudrate_cache(baudrate_array, detect_dict.baudrate);
 		this._info_done(ControllerUiLangClassId.MESSAGE_DETECTION);
-		this._info(ControllerUiLangClassId.MESSAGE_CONNECT);
+		this._info_wait(ControllerUiLangClassId.MESSAGE_CONNECT);
 		if (this.sapi.type() != SapiClassDetectType.ZUNO) {
 			this._error(ControllerUiLangClassId.MESSAGE_CONNECT);
 			return ;
 		}
 		await this.zuno.connect();
-		this._info(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
+		this._info_done(ControllerUiLangClassId.MESSAGE_CONNECT);
+		this._info_wait(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 		board_info = this.zuno.getBoardInfo();
 		if (board_info.status != ZunoSapiClassStatus.OK) {
 			this._error_code(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
 			return ;
 		}
 		this._info_done(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
-		this._info(ControllerUiLangClassId.MESSAGE_READ_REGION);
+		this._info_wait(ControllerUiLangClassId.MESSAGE_READ_REGION);
 		const region_info:ZunoSapiClassRegion = this.zuno.getRegion();
 		if (region_info.status != ZunoSapiClassStatus.OK) {
 			this._error_code(ControllerUiLangClassId.MESSAGE_READ_REGION, region_info.status);
 			return ;
 		}
 		this._info_done(ControllerUiLangClassId.MESSAGE_READ_REGION);
-		this._info(ControllerUiLangClassId.MESSAGE_READ_POWER);
+		this._info_wait(ControllerUiLangClassId.MESSAGE_READ_POWER);
 		const power:ZunoSapiClassPower = this.zuno.getPower();
 		if (power.status != ZunoSapiClassStatus.OK) {
 			this._error_code(ControllerUiLangClassId.MESSAGE_READ_POWER, power.status);
 			return ;
 		}
 		this._info_done(ControllerUiLangClassId.MESSAGE_READ_POWER);
-		this._info(ControllerUiLangClassId.MESSAGE_READ_SEC);
+		this._info_wait(ControllerUiLangClassId.MESSAGE_READ_SEC);
 		const sec_info:ZunoSapiClassSec = this.zuno.getSec();
 		if (sec_info.status != ZunoSapiClassStatus.OK) {
 			this._error_code(ControllerUiLangClassId.MESSAGE_READ_SEC, sec_info.status);
@@ -333,7 +334,7 @@ class ZUnoCompilerClass {
 		}
 		this._info_done(ControllerUiLangClassId.MESSAGE_READ_SEC);
 		if (freq != null && freq != region_info.region) {
-			this._info(ControllerUiLangClassId.MESSAGE_SET_REGION);
+			this._info_wait(ControllerUiLangClassId.MESSAGE_SET_REGION);
 			const set_region_status:ZunoSapiClassStatus = await this.zuno.setRegion(freq);
 			if (set_region_status != ZunoSapiClassStatus.OK) {
 				this._error_code(ControllerUiLangClassId.MESSAGE_SET_REGION, set_region_status);
@@ -346,7 +347,7 @@ class ZUnoCompilerClass {
 			return ;
 		}
 		if (power.power_raw != main_pow) {
-			this._info(ControllerUiLangClassId.MESSAGE_SET_POWER);
+			this._info_wait(ControllerUiLangClassId.MESSAGE_SET_POWER);
 			const set_power_status:ZunoSapiClassStatus = await this.zuno.setPower(main_pow);
 			if (set_power_status != ZunoSapiClassStatus.OK) {
 				this._error_code(ControllerUiLangClassId.MESSAGE_SET_POWER, set_power_status);
@@ -355,7 +356,7 @@ class ZUnoCompilerClass {
 			this._info_done(ControllerUiLangClassId.MESSAGE_SET_POWER);
 		}
 		if (sec_info.sec != sec) {
-			this._info(ControllerUiLangClassId.MESSAGE_SET_SEC);
+			this._info_wait(ControllerUiLangClassId.MESSAGE_SET_SEC);
 			const set_power_status:ZunoSapiClassStatus = await this.zuno.setSec(sec);
 			if (set_power_status != ZunoSapiClassStatus.OK) {
 				this._error_code(ControllerUiLangClassId.MESSAGE_SET_SEC, set_power_status);
@@ -394,7 +395,7 @@ class ZUnoCompilerClass {
 			}
 			await this.zuno.connect();
 			this._info_done("Uploading a new firmware to the Z-Uno");
-			this._info(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
+			this._info_wait(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO);
 			board_info = this.zuno.getBoardInfo();
 			if (board_info.status != ZunoSapiClassStatus.OK) {
 				this._error_code(ControllerUiLangClassId.SLAVE_MESSAGE_READ_BOARD_INFO, board_info.status);
