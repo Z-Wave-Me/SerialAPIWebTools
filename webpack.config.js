@@ -13,7 +13,7 @@ const template_html = '<input type="button" onclick="connectToZMESerial()" value
 module.exports = function(env, argv) {
 	let template_html_replace;
 	
-	if (common.beta == true)
+	if (argv.mode == "development")
 		template_html_replace = "-beta";
 	else
 		template_html_replace = "";

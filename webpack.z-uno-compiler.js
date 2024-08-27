@@ -6,7 +6,7 @@ const template_html = '<script src="/files/z-uno2/Z-Uno-Compiler{{beta}}/z-uno-c
 module.exports = function(env, argv) {
 	let template_html_replace;
 	
-	if (common.beta == true)
+	if (argv.mode == "development")
 		template_html_replace = "-beta";
 	else
 		template_html_replace = "";

@@ -1,0 +1,63 @@
+name: NodeJS with Webpack
+
+on:
+  push:
+    tags:
+      - v*
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: npm-
+
+    - name: Install node module
+      run: |
+        npm install
+
+    - name: Build controller_ui
+      run: |
+        npm run build
+
+    - name: Deploy controller_ui
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        publish_dir: ./build
+        user_name: 'amatilda'
+        user_email: '<kpk@z-wave.me>'
+        commit_message: 'Auto-generated commit'
+        publish_branch: 'gh-pages'
+
+    - name: Build z-uno-compiler
+      run: |
+        npm run build_zuno
+
+    - name: Deploy z-uno-compiler
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        publish_dir: ./build
+        user_name: 'amatilda'
+        user_email: '<kpk@z-wave.me>'
+        commit_message: 'Auto-generated commit'
+        publish_branch: 'gh-pages-z-uno-compiler'

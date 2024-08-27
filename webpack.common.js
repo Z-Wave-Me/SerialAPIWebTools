@@ -41,10 +41,9 @@ function version_int_to_str(version, min) {
 }
 
 const web_tools_version = version_int_to_str(version_str_to_int(package.version), 0x3);
-const web_tools_beta = ((version_str_to_int(package.version) & 0xFF) == 0x0)? false:true;
 
 function func_common(env, argv, entry_patch, out_filename, library_name) {
-	
+	const web_tools_beta = ((argv.mode == "development"))? true:false;
 	const tester_plugin_options =
 	{
 		terserOptions: { format: {comments: false,},},
@@ -106,5 +105,4 @@ function func_common(env, argv, entry_patch, out_filename, library_name) {
 	return (config);
 };
 module.exports.common = func_common;
-module.exports.beta = web_tools_beta;
 module.exports.web_tools_version = web_tools_version

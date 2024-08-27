@@ -33,7 +33,8 @@ jobs:
 
     - name: Build controller_ui
       run: |
-        npm run build
+        rm -rf build
+        npm run dev
 
     - name: Deploy controller_ui
       uses: peaceiris/actions-gh-pages@v4
@@ -47,7 +48,8 @@ jobs:
 
     - name: Build z-uno-compiler
       run: |
-        npm run build_zuno
+        rm -rf build
+        npm run dev_zuno
 
     - name: Deploy z-uno-compiler
       uses: peaceiris/actions-gh-pages@v4
