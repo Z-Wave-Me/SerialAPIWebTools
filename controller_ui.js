@@ -1696,7 +1696,7 @@ exports.ControllerUiLogClass = ControllerUiLogClass;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.17";
+const WEB_TOOLS_VERSION = "00.00.18";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
