@@ -607,7 +607,7 @@ exports.controller_lang_en = controller_lang_en;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.17";
+const WEB_TOOLS_VERSION = "00.00.18";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
@@ -2885,7 +2885,7 @@ class ZUnoCompilerClass {
                 const result = res.data;
                 if (result["status"] != 0x0) {
                     out.res.status = XhrStatus.INVALID_DATA;
-                    out.res.error = "Get version returned incorrect status: " + result["status"] + " message: " + result["message"];
+                    out.res.error = "Get bootloader returned incorrect status: " + result["status"] + " log: " + result["log"] + " message: " + result["message"];
                     return (out);
                 }
                 out.bin = this._base64ToArrayBuffer(result["bin"]);
@@ -2920,7 +2920,7 @@ class ZUnoCompilerClass {
                 const result = res.data;
                 if (result["status"] != 0x0) {
                     out.res.status = XhrStatus.INVALID_DATA;
-                    out.res.error = "Get version returned incorrect status: " + result["status"] + " message: " + result["message"];
+                    out.res.error = "Compilation returned incorrect status: " + result["status"] + " log: " + result["log"] + " message: " + result["message"];
                     return (out);
                 }
                 out.bin = this._base64ToArrayBuffer(result["bin"]);
