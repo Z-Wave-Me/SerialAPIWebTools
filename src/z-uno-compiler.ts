@@ -232,7 +232,7 @@ class ZUnoCompilerClass {
 			const result:ZUnoCompilerLoadSketchResultProt = res.data;
 			if (result["status"] != 0x0) {
 				out.res.status = XhrStatus.INVALID_DATA;
-				out.res.error = "Get version returned incorrect status: " + result["status"] + " message: " +  result["message"];
+				out.res.error = "Get bootloader returned incorrect status: " + result["status"] + " log: " + result["log"] + " message: " +  result["message"];
 				return (out);
 			}
 			out.bin = this._base64ToArrayBuffer(result["bin"]);
@@ -266,7 +266,7 @@ class ZUnoCompilerClass {
 			const result:ZUnoCompilerLoadSketchResultProt = res.data;
 			if (result["status"] != 0x0) {
 				out.res.status = XhrStatus.INVALID_DATA;
-				out.res.error = "Get version returned incorrect status: " + result["status"] + " message: " +  result["message"];
+				out.res.error = "Compilation returned incorrect status: " + result["status"] + " log: " + result["log"] + " message: " +  result["message"];
 				return (out);
 			}
 			out.bin = this._base64ToArrayBuffer(result["bin"]);
