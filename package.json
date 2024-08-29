@@ -5,9 +5,9 @@
   "main": "src/main.ts",
   "scripts": {
     "dev": "webpack --mode=development",
-    "build": "rm -rf build && webpack --mode=production",
+    "build": "webpack --mode=production",
     "dev_zuno": "webpack --config ./webpack.z-uno-compiler.js --mode=development",
-    "build_zuno": "rm -rf build && webpack --config ./webpack.z-uno-compiler.js --mode=production"
+    "build_zuno": "webpack --config ./webpack.z-uno-compiler.js --mode=production"
   },
   "author": "Z-Wave.Me",
   "license": "ISC",

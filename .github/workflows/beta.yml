@@ -33,7 +33,6 @@ jobs:
 
     - name: Build controller_ui
       run: |
-        rm -rf build
         npm run dev
 
     - name: Deploy controller_ui
@@ -48,7 +47,6 @@ jobs:
 
     - name: Build z-uno-compiler
       run: |
-        rm -rf build
         npm run dev_zuno
 
     - name: Deploy z-uno-compiler

@@ -90,6 +90,7 @@ function func_common(env, argv, entry_patch, out_filename, library_name) {
 		},
 		output:
 		{
+			clean: true,
 			filename: out_filename,
 			libraryTarget: 'umd',
 			library: library_name,
