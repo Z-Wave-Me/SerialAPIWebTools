@@ -607,7 +607,7 @@ exports.controller_lang_en = controller_lang_en;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.19";
+const WEB_TOOLS_VERSION = "00.00.20";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
@@ -1966,6 +1966,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ZunoSapiClassStatus = exports.ZunoSapiClass = void 0;
+const define_1 = __webpack_require__(/*! ../other/define */ "./src/other/define.ts");
 const sapi_1 = __webpack_require__(/*! ./sapi */ "./src/sapi/sapi.ts");
 const region_1 = __webpack_require__(/*! ./region */ "./src/sapi/region.ts");
 const utilities_1 = __webpack_require__(/*! ../other/utilities */ "./src/other/utilities.ts");
@@ -2253,7 +2254,7 @@ class ZunoSapiClass {
     }
     _load_file(addr, data, process) {
         return __awaiter(this, void 0, void 0, function* () {
-            let step, i, percentage;
+            let step, i, percentage, i_ask;
             step = this.getQuantumSize();
             percentage = 0x0;
             i = 0x0;
@@ -2263,9 +2264,19 @@ class ZunoSapiClass {
                 percentage = (i * 100.0) / data.length;
                 if (process != null)
                     process(percentage);
-                const status = yield this._writeNVM(addr, Array.from(data.subarray(i, i + step)));
-                if (status.status != sapi_1.SapiClassStatus.OK)
-                    return status.status;
+                i_ask = 0x0;
+                for (;;) {
+                    const status = yield this._writeNVM(addr, Array.from(data.subarray(i, i + step)));
+                    if (status.status == sapi_1.SapiClassStatus.OK)
+                        break;
+                    if (i_ask >= 0x2)
+                        return status.status;
+                    if (status.status != sapi_1.SapiClassStatus.NO_ACK)
+                        return status.status;
+                    if (define_1.WEB_TOOLS_BETA == true)
+                        console.error("second wind in renewal");
+                    i_ask++;
+                }
                 i = i + step;
                 addr = addr + step;
             }
