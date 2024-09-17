@@ -1,3 +1,4 @@
+import {WEB_TOOLS_BETA} from "../other/define"
 
 import {
 	SapiClass, SapiClassStatus, SapiClassFuncId, SapiClassRet, SapiClassDetectWait, SapiClassDetectType, SapiClassUpdateProcess,
@@ -439,7 +440,7 @@ class ZunoSapiClass {
 	}
 
 	private async _load_file(addr:number, data:Uint8Array, process:SapiClassUpdateProcess|null): Promise<ZunoSapiClassStatus> {
-		let step:number, i:number, percentage:number;
+		let step:number, i:number, percentage:number, i_ask:number;
 		step = this.getQuantumSize();
 		percentage = 0x0;
 		i = 0x0
@@ -449,9 +450,19 @@ class ZunoSapiClass {
 			percentage = (i * 100.0) / data.length;
 			if (process != null)
 				process(percentage);
-			const status:SapiClassRet = await this._writeNVM(addr, Array.from(data.subarray(i, i + step)));
-			if (status.status != SapiClassStatus.OK)
-				return ((status.status as unknown) as ZunoSapiClassStatus);
+			i_ask = 0x0;
+			for (;;) {
+				const status:SapiClassRet = await this._writeNVM(addr, Array.from(data.subarray(i, i + step)));
+				if (status.status == SapiClassStatus.OK)
+					break ;
+				if (i_ask >= 0x2)
+					return ((status.status as unknown) as ZunoSapiClassStatus);
+				if (status.status != SapiClassStatus.NO_ACK)
+					return ((status.status as unknown) as ZunoSapiClassStatus);
+				if (WEB_TOOLS_BETA == true)
+					console.error("second wind in renewal");
+				i_ask++;
+			}
 			i = i + step
 			addr = addr + step
 		}

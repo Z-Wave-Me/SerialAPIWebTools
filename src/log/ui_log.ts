@@ -1,3 +1,5 @@
+import {WEB_TOOLS_BETA} from "../other/define"
+
 import {ControllerUiLangClassId} from "../lang/ui_lang_define"
 import {ControllerUiLangClass} from "../lang/ui_lang"
 
@@ -42,6 +44,8 @@ class ControllerUiLogClass {
 		if (typeof txt !== "string")
 			txt = this.locale.getLocale(txt);
 		this._log('<div class="ZUnoRazberryModal_color_error">' + txt + "</div>");
+		if (WEB_TOOLS_BETA == true)
+			console.error(txt);
 	}
 
 	public infoStart(txt:string|ControllerUiLangClassId): void {

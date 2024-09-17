@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
 * During migration, the inclusion/exclusion method was changed, now after 10 seconds during the timeout, wide inclusion/exclusion starts.
 * For beta, added sapi output to log.
 * To compile the sketch, support for EU_LR was added and ported to the common sapi library.
+* Additional log output has been added for the beta version.
+* For updating ZUNO, an additional attempt to write data has been added.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024
