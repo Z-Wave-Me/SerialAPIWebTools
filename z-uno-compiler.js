@@ -607,7 +607,7 @@ exports.controller_lang_en = controller_lang_en;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.20";
+const WEB_TOOLS_VERSION = "00.00.21";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
@@ -1675,36 +1675,51 @@ class SapiClass {
             return;
         });
     }
-    _detect_rcv(res, out) {
+    _detect_rcv_timout_async(out, timout) {
         return __awaiter(this, void 0, void 0, function* () {
-            out.status = SapiClassStatus.OK;
+            const res = yield this._recvIncomingRequest(timout);
+            if (res.status != SapiClassStatus.OK)
+                return (false);
             if (res.status == SapiClassStatus.OK && res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_SOFT_RESET) {
                 if (res.data.length < 0x2) {
                     out.status = SapiClassStatus.ZUNO_START_WRONG_LENG;
-                    return;
+                    return (true);
                 }
                 if (res.data[0x0] != 0xFF) {
                     out.status = SapiClassStatus.ZUNO_START_WRONG_FRAME;
-                    return;
+                    return (true);
                 }
                 yield this._detect_rcv_freeze_zuno(out);
-                return;
+                return (true);
             }
             if (res.cmd == SapiClassFuncId.FUNC_ID_SERIAL_API_STARTED) {
                 out.type = SapiClassDetectType.RAZBERRY;
-                return;
+                return (true);
             }
-            const capabilities_info = yield this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 300);
-            if (capabilities_info.status == SapiClassStatus.OK) {
-                //VendorID = 0x0115 and ProductTypeID = 0x0210
-                if (capabilities_info.data.length >= 0x6 && capabilities_info.data[0x2] == 0x1 && capabilities_info.data[0x3] == 0x15 && capabilities_info.data[0x4] == 0x2 && capabilities_info.data[0x5] == 0x10) {
-                    yield this._detect_rcv_freeze_zuno(out);
+            return (false);
+        });
+    }
+    _detect_rcv_timout(out, timout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const wait_timeout = Date.now() + timout;
+            while (wait_timeout > Date.now()) {
+                out.status = SapiClassStatus.OK;
+                if ((yield this._detect_rcv_timout_async(out, 200)) == true)
+                    return;
+                const capabilities_info = yield this._sendCommandUnSz(SapiClassFuncId.FUNC_ID_SERIAL_API_GET_CAPABILITIES, [], 300);
+                if (capabilities_info.status == SapiClassStatus.OK) {
+                    //VendorID = 0x0115 and ProductTypeID = 0x0210
+                    if (capabilities_info.data.length >= 0x6 && capabilities_info.data[0x2] == 0x1 && capabilities_info.data[0x3] == 0x15 && capabilities_info.data[0x4] == 0x2 && capabilities_info.data[0x5] == 0x10) {
+                        yield this._detect_rcv_freeze_zuno(out);
+                        return;
+                    }
+                    out.type = SapiClassDetectType.RAZBERRY;
                     return;
                 }
-                out.type = SapiClassDetectType.RAZBERRY;
-                return;
+                if ((yield this._detect_rcv_timout_async(out, 200)) == true) //for old zuno
+                    return;
             }
-            out.status = SapiClassStatus.UPDATE_PROCESS;
+            out.status = SapiClassStatus.UPDATE_TIMEOUT;
         });
     }
     _detect_update(res) {
@@ -1748,24 +1763,32 @@ class SapiClass {
                 out.status = yield this._open(baudrate_array[i]);
                 if (out.status != SapiClassStatus.OK)
                     return;
-                res = yield this._recvIncomingRequest(1000);
-                if (res.status != SapiClassStatus.OK && func != null) {
+                const wait = { status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN };
+                yield this._detect_rcv_timout(wait, 1000);
+                if (wait.status == SapiClassStatus.OK) {
+                    out.type = wait.type;
+                    return;
+                }
+                if (wait.status != SapiClassStatus.UPDATE_TIMEOUT) {
+                    out.status = wait.status;
+                    return;
+                }
+                if (func != null) {
                     yield this._clear();
                     if ((yield func()) == false) {
                         out.status = SapiClassStatus.DETECTED_CANCEL;
                         return;
                     }
-                    res = yield this._recvIncomingRequest(2000);
-                }
-                const wait = { status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN };
-                yield this._detect_rcv(res, wait);
-                if (wait.status == SapiClassStatus.OK) {
-                    out.type = wait.type;
-                    return;
-                }
-                if (wait.status != SapiClassStatus.UPDATE_PROCESS) {
-                    out.status = wait.status;
-                    return;
+                    const wait = { status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN };
+                    yield this._detect_rcv_timout(wait, 2000);
+                    if (wait.status == SapiClassStatus.OK) {
+                        out.type = wait.type;
+                        return;
+                    }
+                    if (wait.status != SapiClassStatus.UPDATE_TIMEOUT) {
+                        out.status = wait.status;
+                        return;
+                    }
                 }
                 out.status = yield this._close();
                 if (out.status != SapiClassStatus.OK)
@@ -1805,7 +1828,7 @@ class SapiClass {
             while (wait_timeout > Date.now()) {
                 const res = yield this._recvIncomingRequest(1000);
                 out.status = yield this._detect_update(res);
-                if (out.status == SapiClassStatus.UPDATE_PROCESS)
+                if (out.status == SapiClassStatus.UPDATE_TIMEOUT)
                     continue;
                 break;
             }
@@ -1817,11 +1840,8 @@ class SapiClass {
                 out.status = out_detect.status;
                 return;
             }
-            while (wait_timeout > Date.now()) {
-                const res = yield this._recvIncomingRequest(1000);
-                yield this._detect_rcv(res, out);
-                if (out.status == SapiClassStatus.UPDATE_PROCESS)
-                    continue;
+            if (wait_timeout > Date.now()) {
+                yield this._detect_rcv_timout(out, wait_timeout - Date.now());
                 return;
             }
             out.status = SapiClassStatus.UPDATE_TIMEOUT;
@@ -1829,16 +1849,8 @@ class SapiClass {
     }
     _update_wait_razberry(target_type, out) {
         return __awaiter(this, void 0, void 0, function* () {
-            const wait_timeout = Date.now() + 30000;
             if (target_type == SapiClassDetectType.RAZBERRY) {
-                while (wait_timeout > Date.now()) {
-                    const res = yield this._recvIncomingRequest(1000);
-                    yield this._detect_rcv(res, out);
-                    if (out.status == SapiClassStatus.UPDATE_PROCESS)
-                        continue;
-                    return;
-                }
-                out.status = SapiClassStatus.UPDATE_TIMEOUT;
+                yield this._detect_rcv_timout(out, 30000);
                 return;
             }
             yield (0, utilities_1.sleep)(20000);
@@ -1887,18 +1899,6 @@ class SapiClass {
             return (out);
         });
     }
-    _detect_rcv_add(out) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const wait_timeout = Date.now() + 3000;
-            while (wait_timeout > Date.now()) {
-                const res = yield this._recvIncomingRequest(1000);
-                yield this._detect_rcv(res, out);
-                if (out.status == SapiClassStatus.UPDATE_PROCESS)
-                    continue;
-                return;
-            }
-        });
-    }
     detect_rcv() {
         return __awaiter(this, void 0, void 0, function* () {
             const out = { status: SapiClassStatus.OK, type: SapiClassDetectType.UNKNOWN };
@@ -1912,7 +1912,7 @@ class SapiClass {
             }
             this.b_busy = true;
             const detect_type = this.detect_type;
-            yield this._detect_rcv_add(out);
+            yield this._detect_rcv_timout(out, 3000);
             this.detect_type = out.type;
             this.b_busy = false;
             if (out.type != detect_type) {
