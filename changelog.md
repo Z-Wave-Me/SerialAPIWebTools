@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 * To compile the sketch, support for EU_LR was added and ported to the common sapi library.
 * Additional log output has been added for the beta version.
 * For updating ZUNO, an additional attempt to write data has been added.
+* Updated zuno detection method to support new mac axis curvature
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024
