@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 * Additional log output has been added for the beta version.
 * For updating ZUNO, an additional attempt to write data has been added.
 * Updated zuno detection method to support new mac axis curvature
+* Fixed uuid comparison when validating the received license.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024

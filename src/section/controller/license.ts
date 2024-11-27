@@ -40,7 +40,7 @@ class ControllerUiSectionLicenseClass extends CommonUiSectionClass {
 	}
 
 	private _license_timer_get_pack(in_json:ControllerUiClassNewLicenseXhr, uuid:string, crc16_old:number): undefined|string {
-		if (uuid.toLowerCase() != in_json.uuid.toLowerCase())
+		if (uuid.toLowerCase().padStart(16, '0') != in_json.uuid.toLowerCase().padStart(16, '0'))
 			return (undefined);
 		const crc16:number = Number(in_json.crc);
 		if (crc16 == 0x0)
