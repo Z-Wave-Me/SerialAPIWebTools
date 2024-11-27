@@ -1699,7 +1699,7 @@ exports.ControllerUiLogClass = ControllerUiLogClass;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.21";
+const WEB_TOOLS_VERSION = "00.00.22";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
@@ -6658,7 +6658,7 @@ class ControllerUiSectionLicenseClass extends common_1.CommonUiSectionClass {
         return (true);
     }
     _license_timer_get_pack(in_json, uuid, crc16_old) {
-        if (uuid.toLowerCase() != in_json.uuid.toLowerCase())
+        if (uuid.toLowerCase().padStart(16, '0') != in_json.uuid.toLowerCase().padStart(16, '0'))
             return (undefined);
         const crc16 = Number(in_json.crc);
         if (crc16 == 0x0)
