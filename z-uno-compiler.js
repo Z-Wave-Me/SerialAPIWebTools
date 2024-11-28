@@ -607,7 +607,7 @@ exports.controller_lang_en = controller_lang_en;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WEB_TOOLS_BETA = exports.WEB_TOOLS_VERSION = void 0;
-const WEB_TOOLS_VERSION = "00.00.22";
+const WEB_TOOLS_VERSION = "00.00.23";
 exports.WEB_TOOLS_VERSION = WEB_TOOLS_VERSION;
 const WEB_TOOLS_BETA = true;
 exports.WEB_TOOLS_BETA = WEB_TOOLS_BETA;
@@ -664,7 +664,7 @@ function arrayToStringHex(data) {
     str_hex = "";
     i = 0x0;
     while (i < data.length) {
-        str_hex = str_hex + data[i].toString(0x10);
+        str_hex = str_hex + data[i].toString(0x10).padStart(2, '0');
         i++;
     }
     return (str_hex);
