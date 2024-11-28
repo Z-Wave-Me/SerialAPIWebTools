@@ -32,7 +32,7 @@ function arrayToStringHex(data:Array<number>|Uint8Array):string {
 	str_hex = "";
 	i = 0x0;
 	while (i < data.length) {
-		str_hex = str_hex + data[i].toString(0x10);
+		str_hex = str_hex + data[i].toString(0x10).padStart(2, '0');
 		i++;
 	}
 	return (str_hex);

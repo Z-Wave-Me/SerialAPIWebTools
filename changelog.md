@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 * For updating ZUNO, an additional attempt to write data has been added.
 * Updated zuno detection method to support new mac axis curvature
 * Fixed uuid comparison when validating the received license.
+* Fixed output of hex strings, and in particular incorrect display of chip UUID, which occurred due to truncation of zeros.
 
 ## Version 00.00.11
 - *Release date:* 21.08.2024
