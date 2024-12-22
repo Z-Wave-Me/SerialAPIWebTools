@@ -31,30 +31,30 @@ jobs:
       run: |
         npm install
 
+    - name: Create dir for deploy
+      run: |
+        mkdir ./deploy
+        mkdir ./deploy/controller_ui
+        mkdir ./deploy/z_uno_compiler
+        mkdir ./deploy/controller_ui/beta
+        mkdir ./deploy/z_uno_compiler/beta
+
     - name: Build controller_ui
       run: |
         npm run dev
-
-    - name: Deploy controller_ui
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        publish_dir: ./build
-        user_name: 'amatilda'
-        user_email: '<kpk@z-wave.me>'
-        commit_message: 'Auto-generated commit'
-        publish_branch: 'gh-pages-beta'
+        mv ./build/* ./deploy/controller_ui/beta
 
     - name: Build z-uno-compiler
       run: |
         npm run dev_zuno
+        mv ./build/* ./deploy/z_uno_compiler/beta
 
-    - name: Deploy z-uno-compiler
+    - name: Deploy
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
-        publish_dir: ./build
+        publish_dir: ./deploy
         user_name: 'amatilda'
         user_email: '<kpk@z-wave.me>'
         commit_message: 'Auto-generated commit'
-        publish_branch: 'gh-pages-z-uno-compiler-beta'
+        publish_branch: 'gh-pages'
